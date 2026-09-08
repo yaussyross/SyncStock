@@ -118,7 +118,14 @@ export async function fetchShopifyOrderForRetry(
     order: null | {
       legacyResourceId: string;
       name: string;
+      currencyCode?: string;
+      totalPriceSet?: { shopMoney?: { amount?: string } };
       totalTaxSet?: { shopMoney?: { amount?: string } };
+      totalDiscountsSet?: { shopMoney?: { amount?: string } };
+      totalShippingPriceSet?: { shopMoney?: { amount?: string } };
+      totalTipReceivedSet?: { shopMoney?: { amount?: string } };
+      currentTotalDutiesSet?: { shopMoney?: { amount?: string } } | null;
+      currentTotalAdditionalFeesSet?: { shopMoney?: { amount?: string } } | null;
       lineItems?: {
         nodes?: Array<{
           sku?: string | null;
@@ -137,7 +144,14 @@ export async function fetchShopifyOrderForRetry(
         order(id: $id) {
           legacyResourceId
           name
+          currencyCode
+          totalPriceSet { shopMoney { amount } }
           totalTaxSet { shopMoney { amount } }
+          totalDiscountsSet { shopMoney { amount } }
+          totalShippingPriceSet { shopMoney { amount } }
+          totalTipReceivedSet { shopMoney { amount } }
+          currentTotalDutiesSet { shopMoney { amount } }
+          currentTotalAdditionalFeesSet { shopMoney { amount } }
           lineItems(first: 250) {
             nodes {
               sku
@@ -156,10 +170,23 @@ export async function fetchShopifyOrderForRetry(
   const order = data.order;
   if (!order) throw new Error("Shopify order was not found");
 
+  const moneySet = (value?: { shopMoney?: { amount?: string } } | null) => value?.shopMoney?.amount ?? "0";
+
   return {
     id: String(order.legacyResourceId),
     name: order.name,
-    total_tax: order.totalTaxSet?.shopMoney?.amount ?? "0",
+    currency: order.currencyCode ?? null,
+    total_price: moneySet(order.totalPriceSet),
+    total_tax: moneySet(order.totalTaxSet),
+    total_discounts: moneySet(order.totalDiscountsSet),
+    total_shipping_price_set: { shop_money: { amount: moneySet(order.totalShippingPriceSet) } },
+    total_tip_received: moneySet(order.totalTipReceivedSet),
+    current_total_duties_set: order.currentTotalDutiesSet
+      ? { shop_money: { amount: moneySet(order.currentTotalDutiesSet) } }
+      : null,
+    current_total_additional_fees_set: order.currentTotalAdditionalFeesSet
+      ? { shop_money: { amount: moneySet(order.currentTotalAdditionalFeesSet) } }
+      : null,
     line_items: (order.lineItems?.nodes ?? []).map((item) => ({
       variant_id: item.variant?.legacyResourceId ? String(item.variant.legacyResourceId) : null,
       sku: item.sku?.trim() ?? "",
