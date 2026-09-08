@@ -3,13 +3,7 @@ import crypto from "crypto";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { syncQueue } from "@/lib/queue";
-
-const quotaLimits: Record<string, number> = {
-  trial: 20,
-  starter: 200,
-  growth: 1000,
-  unlimited: Infinity,
-};
+import { getQuotaState } from "@/lib/quota";
 
 function verifyShopifyHmac(rawBody: string, providedHmac: string | null) {
   const secret = process.env.SHOPIFY_API_SECRET;
@@ -29,6 +23,12 @@ function verifyShopifyHmac(rawBody: string, providedHmac: string | null) {
 
 function isUniqueConstraintError(error: unknown) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
+}
+
+function quotaMessage(reason: ReturnType<typeof getQuotaState>["reason"]) {
+  if (reason === "subscription_inactive") return "Your SyncStock subscription is not active. Update billing before retrying.";
+  if (reason === "billing_period_expired") return "Sync is paused until Stripe confirms the next paid billing period.";
+  return "Your SyncStock order quota for this billing period has been reached.";
 }
 
 export async function POST(req: NextRequest) {
@@ -104,24 +104,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true });
   }
 
-  const limit = quotaLimits[user.planTier] ?? quotaLimits.trial;
-  if (user.orderQuotaUsed >= limit) {
+  const quota = getQuotaState(user);
+  if (!quota.allowed) {
+    const message = quotaMessage(quota.reason);
     await db.syncLog.upsert({
       where: { userId_shopifyOrderId: { userId: user.id, shopifyOrderId: String(order.id) } },
-      update: { status: "skipped_quota_exceeded", errorMessage: "Monthly SyncStock order quota reached." },
+      update: { status: "skipped_quota_exceeded", errorMessage: message },
       create: {
         userId: user.id,
         shopifyOrderId: String(order.id),
         orderNumber: order.name,
         status: "skipped_quota_exceeded",
-        errorMessage: "Monthly SyncStock order quota reached.",
+        errorMessage: message,
       },
     });
     await db.webhookDelivery.update({
       where: { deliveryId },
-      data: { status: "ignored", processedAt: new Date() },
+      data: { status: "ignored", processedAt: new Date(), error: message },
     });
-    return NextResponse.json({ received: true, skipped: "quota_exceeded" });
+    return NextResponse.json({ received: true, skipped: quota.reason });
   }
 
   const existingLog = await db.syncLog.findUnique({
