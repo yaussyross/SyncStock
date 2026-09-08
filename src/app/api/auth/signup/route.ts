@@ -1,22 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { createSessionToken, sessionCookieOptions } from "@/lib/session";
+import { hashPassword, normalizeEmail } from "@/lib/password";
 import { z } from "zod";
 
-const schema = z.object({ email: z.string().email() });
+const schema = z.object({
+  email: z.string().email().max(254),
+  password: z.string().min(12).max(128),
+});
 
-// MVP SHORTCUT: this is email-only, no password/magic-link verification.
-// Fine for a closed beta with people you're personally onboarding.
-// Before any public launch, replace with real email verification
-// (e.g. Resend + a verification token, or swap to Clerk/Auth.js).
 export async function POST(req: NextRequest) {
-  const { email } = schema.parse(await req.json());
+  const parsed = schema.safeParse(await req.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Enter a valid email and a password of at least 12 characters." }, { status: 400 });
+  }
 
-  const user = await db.user.upsert({
-    where: { email },
-    update: {},
-    create: { email },
-  });
+  const email = normalizeEmail(parsed.data.email);
+  const passwordHash = await hashPassword(parsed.data.password);
+
+  let user;
+  try {
+    user = await db.user.create({ data: { email, passwordHash } });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return NextResponse.json({ error: "An account already exists for this email. Log in instead." }, { status: 409 });
+    }
+    throw error;
+  }
 
   const token = createSessionToken(user.id);
   const res = NextResponse.json({ ok: true });
