@@ -10,6 +10,7 @@ export interface ReconciliationLineItem {
 
 export interface ShopifyOrderForReconciliation {
   currency?: string | null;
+  taxes_included?: boolean | null;
   current_total_price?: string | null;
   total_price?: string | null;
   current_total_tax?: string | null;
@@ -29,6 +30,22 @@ export interface ShopifyOrderForReconciliation {
   line_items: ReconciliationLineItem[];
 }
 
+export interface ReconciliationOptions {
+  includeShipping?: boolean;
+  includeDiscounts?: boolean;
+  includeDuties?: boolean;
+  includeAdditionalFees?: boolean;
+  includeTips?: boolean;
+}
+
+export interface ShopifyAdjustmentTotals {
+  shipping: string;
+  discounts: string;
+  duties: string;
+  additionalFees: string;
+  tips: string;
+}
+
 export interface TotalComparison {
   matches: boolean;
   expectedTotal: string;
@@ -41,6 +58,9 @@ export interface PreflightReconciliation extends TotalComparison {
   currency: string;
   lineSubtotal: string;
   taxTotal: string;
+  taxesIncluded: boolean;
+  adjustments: ShopifyAdjustmentTotals;
+  unsupportedAdjustments: string[];
   adjustmentSummary: string | null;
   message: string | null;
 }
@@ -102,20 +122,34 @@ function shippingAmount(order: ShopifyOrderForReconciliation): bigint {
   }, 0n);
 }
 
-function buildAdjustmentSummary(order: ShopifyOrderForReconciliation): string | null {
+function rawAdjustmentValues(order: ShopifyOrderForReconciliation) {
+  return {
+    shipping: shippingAmount(order),
+    discounts: abs(parseScaled(order.current_total_discounts ?? order.total_discounts ?? "0")),
+    duties: parseScaled(amountFromMoneySet(order.current_total_duties_set) ?? "0"),
+    additionalFees: parseScaled(amountFromMoneySet(order.current_total_additional_fees_set) ?? "0"),
+    tips: parseScaled(order.total_tip_received ?? "0"),
+  };
+}
+
+export function getShopifyAdjustmentTotals(order: ShopifyOrderForReconciliation): ShopifyAdjustmentTotals {
+  const values = rawAdjustmentValues(order);
+  return {
+    shipping: formatScaled(values.shipping),
+    discounts: formatScaled(values.discounts),
+    duties: formatScaled(values.duties),
+    additionalFees: formatScaled(values.additionalFees),
+    tips: formatScaled(values.tips),
+  };
+}
+
+function buildAdjustmentSummary(values: ReturnType<typeof rawAdjustmentValues>): string | null {
   const adjustments: string[] = [];
-  const shipping = shippingAmount(order);
-  const discounts = parseScaled(order.current_total_discounts ?? order.total_discounts ?? "0");
-  const duties = parseScaled(amountFromMoneySet(order.current_total_duties_set) ?? "0");
-  const additionalFees = parseScaled(amountFromMoneySet(order.current_total_additional_fees_set) ?? "0");
-  const tips = parseScaled(order.total_tip_received ?? "0");
-
-  if (shipping !== 0n) adjustments.push(`shipping ${formatScaled(shipping)}`);
-  if (discounts !== 0n) adjustments.push(`discounts -${formatScaled(abs(discounts))}`);
-  if (duties !== 0n) adjustments.push(`duties ${formatScaled(duties)}`);
-  if (additionalFees !== 0n) adjustments.push(`additional fees ${formatScaled(additionalFees)}`);
-  if (tips !== 0n) adjustments.push(`tips ${formatScaled(tips)}`);
-
+  if (values.shipping !== 0n) adjustments.push(`shipping ${formatScaled(values.shipping)}`);
+  if (values.discounts !== 0n) adjustments.push(`discounts -${formatScaled(values.discounts)}`);
+  if (values.duties !== 0n) adjustments.push(`duties ${formatScaled(values.duties)}`);
+  if (values.additionalFees !== 0n) adjustments.push(`additional fees ${formatScaled(values.additionalFees)}`);
+  if (values.tips !== 0n) adjustments.push(`tips ${formatScaled(values.tips)}`);
   return adjustments.length ? adjustments.join(", ") : null;
 }
 
@@ -134,12 +168,17 @@ export function compareMoneyTotals(expected: string | number, actual: string | n
 }
 
 /**
- * Computes the total that the current QuickBooks Sales Receipt payload will produce
- * before any financial transaction is created. The current payload contains mapped
- * Shopify product lines plus Shopify tax. Any other order adjustment must reconcile
- * to zero or the order is blocked for accounting safety.
+ * Computes the total that the configured QuickBooks Sales Receipt payload should
+ * produce before any financial transaction is created. Non-product Shopify
+ * adjustments are included only when the merchant has explicitly configured the
+ * corresponding QuickBooks accounting item. Transaction discounts are native QBO
+ * discount lines. Tax is added only for tax-exclusive Shopify orders; Shopify line
+ * and shipping prices already include tax when taxes_included=true.
  */
-export function reconcileShopifyOrder(order: ShopifyOrderForReconciliation): PreflightReconciliation {
+export function reconcileShopifyOrder(
+  order: ShopifyOrderForReconciliation,
+  options: ReconciliationOptions = {}
+): PreflightReconciliation {
   const expectedRaw = order.current_total_price ?? order.total_price;
   if (expectedRaw == null || expectedRaw === "") {
     throw new Error("Shopify order is missing its total price");
@@ -153,16 +192,36 @@ export function reconcileShopifyOrder(order: ShopifyOrderForReconciliation): Pre
   }, 0n);
 
   const taxScaled = parseScaled(order.current_total_tax ?? order.total_tax ?? "0");
-  const draftScaled = lineSubtotalScaled + taxScaled;
+  const taxesIncluded = order.taxes_included === true;
+  const values = rawAdjustmentValues(order);
+  const unsupportedAdjustments: string[] = [];
+
+  if (values.shipping !== 0n && !options.includeShipping) unsupportedAdjustments.push("shipping");
+  if (values.discounts !== 0n && !options.includeDiscounts) unsupportedAdjustments.push("discounts");
+  if (values.duties !== 0n && !options.includeDuties) unsupportedAdjustments.push("duties");
+  if (values.additionalFees !== 0n && !options.includeAdditionalFees) unsupportedAdjustments.push("additional fees");
+  if (values.tips !== 0n && !options.includeTips) unsupportedAdjustments.push("tips");
+
+  let draftScaled = lineSubtotalScaled;
+  if (options.includeShipping) draftScaled += values.shipping;
+  if (options.includeDuties) draftScaled += values.duties;
+  if (options.includeAdditionalFees) draftScaled += values.additionalFees;
+  if (options.includeTips) draftScaled += values.tips;
+  if (options.includeDiscounts) draftScaled -= values.discounts;
+  if (!taxesIncluded) draftScaled += taxScaled;
+
   const expectedScaled = parseScaled(expectedRaw);
   const difference = draftScaled - expectedScaled;
-  const matches = abs(difference) <= CENT_TOLERANCE;
+  const matches = unsupportedAdjustments.length === 0 && abs(difference) <= CENT_TOLERANCE;
   const currency = order.currency?.trim() || "shop currency";
-  const adjustmentSummary = buildAdjustmentSummary(order);
+  const adjustmentSummary = buildAdjustmentSummary(values);
 
   const expectedTotal = formatScaled(expectedScaled);
   const actualTotal = formatScaled(draftScaled);
   const absoluteDifference = formatScaled(abs(difference));
+  const unsupportedText = unsupportedAdjustments.length
+    ? ` Missing accounting mappings: ${unsupportedAdjustments.join(", ")}.`
+    : "";
 
   return {
     matches,
@@ -173,11 +232,20 @@ export function reconcileShopifyOrder(order: ShopifyOrderForReconciliation): Pre
     currency,
     lineSubtotal: formatScaled(lineSubtotalScaled),
     taxTotal: formatScaled(taxScaled),
+    taxesIncluded,
+    adjustments: {
+      shipping: formatScaled(values.shipping),
+      discounts: formatScaled(values.discounts),
+      duties: formatScaled(values.duties),
+      additionalFees: formatScaled(values.additionalFees),
+      tips: formatScaled(values.tips),
+    },
+    unsupportedAdjustments,
     adjustmentSummary,
     message: matches
       ? null
-      : `Reconciliation blocked: Shopify ${currency} total ${expectedTotal}, QuickBooks draft ${actualTotal} (difference ${absoluteDifference}).${
-          adjustmentSummary ? ` Detected Shopify adjustments: ${adjustmentSummary}.` : ""
+      : `Reconciliation blocked: Shopify ${currency} total ${expectedTotal}, QuickBooks draft ${actualTotal} (difference ${absoluteDifference}).${unsupportedText}${
+          adjustmentSummary ? ` Shopify adjustments: ${adjustmentSummary}.` : ""
         } SyncStock did not create a QuickBooks transaction.`,
   };
 }
