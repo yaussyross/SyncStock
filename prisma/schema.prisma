@@ -65,17 +65,22 @@ model ProductMapping {
 }
 
 model SyncLog {
-  id             String   @id @default(cuid())
-  userId         String
-  user           User     @relation(fields: [userId], references: [id])
-  shopifyOrderId String
-  orderNumber    String?
-  qboInvoiceId   String?
-  status         String   // pending | success | failed | skipped_no_mapping
-  errorMessage   String?
-  attempts       Int      @default(0)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                       String   @id @default(cuid())
+  userId                   String
+  user                     User     @relation(fields: [userId], references: [id])
+  shopifyOrderId           String
+  orderNumber              String?
+  qboInvoiceId             String?
+  status                   String   // pending | success | failed | skipped_no_mapping | blocked_reconciliation | reconciliation_failed_qbo | queue_failed | skipped_quota_exceeded
+  errorMessage             String?
+  currency                 String?
+  shopifyTotal             String?
+  qboDraftTotal            String?
+  qboActualTotal           String?
+  reconciliationDifference String?
+  attempts                 Int      @default(0)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
 
   @@index([userId, status])
   @@unique([userId, shopifyOrderId])
