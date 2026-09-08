@@ -88,6 +88,24 @@ export function findSalesReceiptByDocNumber(qbo: QuickBooks, docNumber: string):
   });
 }
 
+export function getSalesReceiptById(qbo: QuickBooks, id: string): Promise<any> {
+  return new Promise((resolve, reject) => {
+    qbo.getSalesReceipt(id, (err: any, receipt: any) => {
+      if (err) reject(err);
+      else resolve(receipt);
+    });
+  });
+}
+
+export function deleteSalesReceipt(qbo: QuickBooks, receiptOrId: any): Promise<any> {
+  return new Promise((resolve, reject) => {
+    qbo.deleteSalesReceipt(receiptOrId, (err: any, result: any) => {
+      if (err) reject(err);
+      else resolve(result);
+    });
+  });
+}
+
 /** Creates a QuickBooks Sales Receipt with a stable SyncStock document number. */
 export function createSalesReceipt(
   qbo: QuickBooks,
