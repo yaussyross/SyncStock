@@ -108,11 +108,16 @@ export async function POST(req: NextRequest) {
 
   if (topic === "app/uninstalled") {
     await db.$transaction([
+      db.shopTombstone.upsert({
+        where: { shopDomain },
+        update: { userId: connection.userId, uninstalledAt: new Date() },
+        create: { shopDomain, userId: connection.userId },
+      }),
       db.productMapping.deleteMany({ where: { userId: connection.userId } }),
       db.shopifyConnection.delete({ where: { id: connection.id } }),
       db.webhookDelivery.update({
         where: { deliveryId },
-        data: { status: "ignored", processedAt: new Date(), error: "Shopify app uninstalled; connection credentials removed" },
+        data: { status: "ignored", processedAt: new Date(), error: "Shopify app uninstalled; access token and mappings removed" },
       }),
     ]);
     return NextResponse.json({ received: true, disconnected: true });
