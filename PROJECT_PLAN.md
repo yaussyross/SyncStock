@@ -17,6 +17,7 @@ Ship a reliable Shopify → QuickBooks Online micro-SaaS where one paid Shopify 
 - [x] Verify QuickBooks `TotalAmt` after creation and block mismatches.
 - [x] Roll back a newly-created mismatched Sales Receipt when safe to do so.
 - [x] Prevent unsafe retry when a pre-existing QuickBooks transaction requires manual review.
+- [x] Add CI for reconciliation smoke tests and the production Next.js build.
 - [ ] Model supported accounting adjustments (shipping, discounts, tips, duties/additional fees) instead of blocking them.
 - [ ] Validate tax behavior across QuickBooks sandbox configurations and tax-inclusive Shopify stores.
 
@@ -35,6 +36,7 @@ Ship a reliable Shopify → QuickBooks Online micro-SaaS where one paid Shopify 
 - [ ] Add refunds/cancellations handling.
 - [ ] Add app uninstall/data cleanup webhooks.
 - [ ] Add structured logging/monitoring and broader automated tests.
+- [ ] Restore a deterministic package lock and review dependency warnings.
 - [ ] Review encryption/key management and rotate all previously exposed secrets.
 - [ ] Finish legal/business details and legal review.
 
@@ -50,6 +52,15 @@ For the current private beta:
 
 Orders requiring shipping, discount, duty, tip, additional-fee, tax-inclusive, or other unsupported accounting treatment remain safely blocked until those treatments are explicitly modeled and sandbox-tested.
 
+## CI verification
+The current `feature/launch-site-reliability` branch passes GitHub Actions checks for:
+- dependency installation;
+- reconciliation smoke tests;
+- Prisma Client generation as part of the build;
+- the optimized Next.js production build and TypeScript validation.
+
+This does **not** replace Shopify development-store and QuickBooks Online sandbox integration testing.
+
 ## Acceptance test for MVP core
 A paid Shopify test order must:
 - be accepted once even if the webhook is delivered multiple times;
@@ -62,4 +73,4 @@ A paid Shopify test order must:
 - retry safely without creating duplicates.
 
 ## Current priority
-Run the new reconciliation smoke tests and a production build in CI, then validate the complete paid-order flow against Shopify development data + a QuickBooks Online sandbox. After sandbox verification, implement explicit accounting treatment for shipping and discounts before widening the private beta.
+Validate the complete paid-order flow against Shopify development data + a QuickBooks Online sandbox, including tax and rollback behavior. After sandbox verification, implement explicit accounting treatment for shipping and discounts before widening the private beta.
