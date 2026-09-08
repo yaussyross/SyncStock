@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { createSessionToken, sessionCookieOptions } from "@/lib/session";
 import { hashPassword, normalizeEmail } from "@/lib/password";
+import { allowAuthAttempt, clientIp } from "@/lib/rate-limit";
 import { z } from "zod";
 
 const schema = z.object({
@@ -14,6 +15,11 @@ export async function POST(req: NextRequest) {
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: "Enter a valid email and a password of at least 12 characters." }, { status: 400 });
+  }
+
+  const allowed = await allowAuthAttempt("signup", clientIp(req.headers), 5, 60 * 60);
+  if (!allowed) {
+    return NextResponse.json({ error: "Too many account creation attempts. Try again later." }, { status: 429 });
   }
 
   const email = normalizeEmail(parsed.data.email);
