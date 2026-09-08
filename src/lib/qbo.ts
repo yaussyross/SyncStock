@@ -3,11 +3,18 @@ import QuickBooks from "node-quickbooks";
 import { db } from "./db";
 import { encrypt, decrypt } from "./crypto";
 
+export interface QboCatalogItem {
+  id: string;
+  name: string;
+  sku: string | null;
+  type: string | null;
+}
+
 export async function getQboClientForUser(userId: string): Promise<QuickBooks> {
   const conn = await db.qboConnection.findUniqueOrThrow({ where: { userId } });
 
   let accessToken = decrypt(conn.accessToken);
-  const refreshToken = decrypt(conn.refreshToken);
+  let refreshToken = decrypt(conn.refreshToken);
   const expiringSoon = conn.tokenExpiry.getTime() - Date.now() < 5 * 60 * 1000;
 
   if (expiringSoon) {
@@ -32,6 +39,7 @@ export async function getQboClientForUser(userId: string): Promise<QuickBooks> {
     });
 
     accessToken = newToken.access_token;
+    refreshToken = newToken.refresh_token;
   }
 
   return new QuickBooks(
@@ -46,6 +54,27 @@ export async function getQboClientForUser(userId: string): Promise<QuickBooks> {
     "2.0",
     refreshToken
   );
+}
+
+export function listQboItems(qbo: QuickBooks): Promise<QboCatalogItem[]> {
+  return new Promise((resolve, reject) => {
+    qbo.findItems({ Active: true, asc: "Name", limit: 1000 }, (err: any, result: any) => {
+      if (err) return reject(err);
+
+      const raw = result?.QueryResponse?.Item ?? result?.Item ?? result ?? [];
+      const items = (Array.isArray(raw) ? raw : raw?.Id ? [raw] : [])
+        .filter((item: any) => item?.Active !== false && item?.Type !== "Category")
+        .map((item: any) => ({
+          id: String(item.Id),
+          name: String(item.Name ?? item.FullyQualifiedName ?? `Item ${item.Id}`),
+          sku: item.Sku ? String(item.Sku).trim() : null,
+          type: item.Type ? String(item.Type) : null,
+        }))
+        .sort((a: QboCatalogItem, b: QboCatalogItem) => a.name.localeCompare(b.name));
+
+      resolve(items);
+    });
+  });
 }
 
 export function findSalesReceiptByDocNumber(qbo: QuickBooks, docNumber: string): Promise<any | null> {

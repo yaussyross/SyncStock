@@ -18,21 +18,28 @@ const badgeClass: Record<string, string> = {
 
 export default function SyncLogTable({ logs }: { logs: LogRow[] }) {
   async function retry(id: string) {
-    await fetch("/api/sync/retry", {
+    const response = await fetch("/api/sync/retry", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ syncLogId: id }),
     });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      window.alert(body.error || "Could not retry this order");
+      return;
+    }
+
     window.location.reload();
   }
 
   if (logs.length === 0) {
-    return <p style={{ color: "#888" }}>No orders synced yet. New Shopify orders will appear here automatically.</p>;
+    return <p style={{ color: "#888" }}>No orders synced yet. New paid Shopify orders will appear here automatically.</p>;
   }
 
   return (
-    <div className="card">
-      <table>
+    <div className="card" style={{ overflowX: "auto" }}>
+      <table style={{ minWidth: 820 }}>
         <thead>
           <tr>
             <th>Order</th>
@@ -56,11 +63,15 @@ export default function SyncLogTable({ logs }: { logs: LogRow[] }) {
                 {new Date(log.createdAt).toLocaleString()}
               </td>
               <td>
-                {(log.status === "failed" || log.status === "skipped_no_mapping") && (
+                {log.status === "skipped_no_mapping" ? (
+                  <a href="/dashboard/products" className="btn btn-secondary" style={{ padding: "4px 12px", fontSize: 13 }}>
+                    Map products
+                  </a>
+                ) : log.status === "failed" ? (
                   <button onClick={() => retry(log.id)} className="btn btn-secondary" style={{ padding: "4px 12px", fontSize: 13 }}>
                     Retry
                   </button>
-                )}
+                ) : null}
               </td>
             </tr>
           ))}

@@ -4,7 +4,13 @@ import { getQboClientForUser, createSalesReceipt, findSalesReceiptByDocNumber } 
 interface ShopifyOrder {
   id: number | string;
   name: string;
-  line_items: { sku: string; title: string; quantity: number; price: string }[];
+  line_items: {
+    variant_id?: number | string | null;
+    sku?: string | null;
+    title: string;
+    quantity: number;
+    price: string;
+  }[];
   total_tax: string;
 }
 
@@ -22,16 +28,30 @@ export async function processOrderSync(userId: string, order: ShopifyOrder) {
   // A duplicate BullMQ job must never recreate an already-synced receipt.
   if (log?.status === "success" && log.qboInvoiceId) return;
 
-  const mappings: { shopifySku: string; qboItemId: string }[] =
-    await db.productMapping.findMany({ where: { userId } });
-  const mappingBySku = new Map<string, string>(
-    mappings.map((m): [string, string] => [m.shopifySku, m.qboItemId])
+  const mappings = await db.productMapping.findMany({ where: { userId } });
+  const mappingByVariantId = new Map(
+    mappings
+      .filter((mapping) => !mapping.shopifyVariantId.startsWith("legacy:"))
+      .map((mapping) => [mapping.shopifyVariantId, mapping.qboItemId] as const)
+  );
+  const legacyMappingBySku = new Map(
+    mappings
+      .filter((mapping) => mapping.shopifySku)
+      .map((mapping) => [mapping.shopifySku!, mapping.qboItemId] as const)
   );
 
   const unmapped: string[] = [];
   const lineItems = order.line_items.map((li) => {
-    const qboItemId = mappingBySku.get(li.sku);
-    if (!qboItemId) unmapped.push(li.sku || li.title);
+    const variantId = li.variant_id == null ? null : String(li.variant_id);
+    const sku = li.sku?.trim() || null;
+    const qboItemId =
+      (variantId ? mappingByVariantId.get(variantId) : undefined) ||
+      (sku ? legacyMappingBySku.get(sku) : undefined);
+
+    if (!qboItemId) {
+      unmapped.push(sku ? `${li.title} (${sku})` : `${li.title} (no SKU)`);
+    }
+
     return {
       qboItemId: qboItemId!,
       quantity: li.quantity,
@@ -45,7 +65,7 @@ export async function processOrderSync(userId: string, order: ShopifyOrder) {
       where: { userId_shopifyOrderId: { userId, shopifyOrderId } },
       data: {
         status: "skipped_no_mapping",
-        errorMessage: `No QBO item mapped for SKU(s): ${unmapped.join(", ")}. Add a mapping and retry.`,
+        errorMessage: `Map these Shopify variants before retrying: ${unmapped.join(", ")}.`,
       },
     });
     return;

@@ -4,37 +4,39 @@
 Ship a reliable Shopify → QuickBooks Online micro-SaaS where one paid Shopify order produces exactly one correct QuickBooks transaction.
 
 ## Source of truth
-- Original Claude handoff is preserved at `../../original/syncstock-handoff.zip`.
-- Active web app lives in this directory.
-- Mobile app is deferred until the core web sync is production-safe.
+- GitHub repository `yaussyross/SyncStock` is the canonical source of truth.
+- The original Claude handoff remains reference material only.
+- Mobile is deferred until the core web sync is production-safe.
 
 ## Phase 1 — Make order sync trustworthy
-1. Switch order trigger to the appropriate paid-order workflow.
-2. Add webhook delivery/order idempotency and duplicate protection.
-3. Make QuickBooks creation retry-safe.
-4. Unify Shopify API access on supported GraphQL endpoints.
-5. Validate Shopify totals against the generated QuickBooks transaction.
-6. Improve sync errors and retry behavior.
+- [x] Switch order trigger to the paid-order workflow.
+- [x] Add webhook delivery/order idempotency and duplicate protection.
+- [x] Make QuickBooks creation retry-safer with a stable transaction reference.
+- [x] Unify Shopify order/catalog reads on the GraphQL Admin API.
+- [ ] Validate Shopify totals against the generated QuickBooks transaction.
+- [ ] Finish sync error classification and retry hardening.
 
 ## Phase 2 — Finish merchant workflow
-1. Build product mapping UI.
-2. Fetch Shopify products/variants and QuickBooks items.
-3. Support mapping status and bulk mapping.
-4. Surface failed/unmapped orders in dashboard.
-5. Add safe manual retry.
+- [x] Build product mapping UI.
+- [x] Fetch Shopify variants and QuickBooks items.
+- [x] Support mapping status, SKU suggestions, no-SKU variants, and bulk save.
+- [x] Surface product mapping setup and unmapped orders in the dashboard.
+- [x] Keep manual order retry behind an explicit user action.
+- [ ] Add a post-mapping bulk retry action for orders waiting on mappings.
 
 ## Phase 3 — Production hardening
-1. Replace email-only impersonation auth with real authentication.
-2. Fix billing-period quota tracking.
-3. Add refunds/cancellations handling.
-4. Add app uninstall/data cleanup webhooks.
-5. Add structured logging/monitoring and tests.
-6. Review encryption/key management and secrets.
+- [ ] Replace email-only impersonation auth with real authentication.
+- [ ] Fix billing-period quota tracking.
+- [ ] Add refunds/cancellations handling.
+- [ ] Add app uninstall/data cleanup webhooks.
+- [ ] Add structured logging/monitoring and tests.
+- [ ] Review encryption/key management and rotate all previously exposed secrets.
+- [ ] Finish legal/business details and legal review.
 
 ## Acceptance test for MVP core
 A paid Shopify test order must:
 - be accepted once even if the webhook is delivered multiple times;
-- map every required line item;
+- map every required line item by Shopify variant ID;
 - create exactly one QuickBooks transaction;
 - reconcile to the expected order total;
 - persist Shopify ↔ QuickBooks IDs;
@@ -42,4 +44,4 @@ A paid Shopify test order must:
 - retry safely without creating duplicates.
 
 ## Current priority
-Start with idempotency and the product-mapping flow before adding more features.
+The merchant mapping workflow is implemented. Next: exact Shopify ↔ QuickBooks transaction-total reconciliation, including shipping, discounts, taxes, tips/duties where applicable, and rounding safeguards.

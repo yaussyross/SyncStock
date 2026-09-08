@@ -49,16 +49,19 @@ model QboConnection {
 }
 
 model ProductMapping {
-  id           String   @id @default(cuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id])
-  shopifySku   String
-  shopifyTitle String?
-  qboItemId    String
-  qboItemName  String?
-  createdAt    DateTime @default(now())
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id])
+  shopifyVariantId String
+  shopifySku       String?
+  shopifyTitle     String?
+  qboItemId        String
+  qboItemName      String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  @@unique([userId, shopifySku])
+  @@unique([userId, shopifyVariantId])
+  @@index([userId, shopifySku])
 }
 
 model SyncLog {
