@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "This order has already synced successfully" }, { status: 409 });
   }
 
-  if (log.status === "reconciliation_failed_qbo" || (log.qboInvoiceId && log.status !== "failed")) {
+  if (log.qboInvoiceId || log.status === "reconciliation_failed_qbo") {
     return NextResponse.json(
       {
         error:
