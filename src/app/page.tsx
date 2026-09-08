@@ -35,7 +35,7 @@ const plans = [
     suffix: "/mo",
     description: "For stores with steady volume",
     orders: "Up to 1,000 orders / month",
-    features: ["Everything in Solo", "Higher monthly volume", "Priority sync queue", "Priority support"],
+    features: ["Everything in Solo", "Higher monthly volume", "Expanded sync history", "Email support"],
     cta: "Start free",
     featured: true,
   },
@@ -45,7 +45,7 @@ const plans = [
     suffix: "/mo",
     description: "For high-volume operators",
     orders: "Unlimited orders",
-    features: ["Everything in Growth", "Unlimited order volume", "Advanced controls as released", "Priority support"],
+    features: ["Everything in Growth", "Unlimited order volume", "Advanced controls as released", "Email support"],
     cta: "Start free",
     featured: false,
   },
@@ -120,7 +120,7 @@ export default function LandingPage() {
                   <span className="badge badge-success">SYNCED</span>
                 </div>
                 <div className="receipt-id mono">SS-4821 · $58.00</div>
-                <div className="reconcile-row"><span>Transaction recorded</span><strong>Balanced ✓</strong></div>
+                <div className="reconcile-row"><span>Transaction recorded</span><strong>Example flow</strong></div>
               </div>
             </div>
           </section>
