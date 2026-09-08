@@ -36,6 +36,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
         </div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <a href="/dashboard/products" className="btn btn-secondary">Product mappings</a>
+          <a href="/dashboard/privacy" className="btn btn-secondary">Privacy requests</a>
           <a href="/dashboard/billing" className="btn btn-secondary">Billing</a>
           <LogoutButton />
         </div>
