@@ -5,6 +5,11 @@ interface LogRow {
   orderNumber: string | null;
   status: string;
   errorMessage: string | null;
+  currency?: string | null;
+  shopifyTotal?: string | null;
+  qboDraftTotal?: string | null;
+  qboActualTotal?: string | null;
+  reconciliationDifference?: string | null;
   createdAt: Date;
 }
 
@@ -14,6 +19,9 @@ const badgeClass: Record<string, string> = {
   failed: "badge-failed",
   skipped_no_mapping: "badge-failed",
   skipped_quota_exceeded: "badge-failed",
+  blocked_reconciliation: "badge-failed",
+  reconciliation_failed_qbo: "badge-failed",
+  queue_failed: "badge-failed",
 };
 
 export default function SyncLogTable({ logs }: { logs: LogRow[] }) {
@@ -39,12 +47,13 @@ export default function SyncLogTable({ logs }: { logs: LogRow[] }) {
 
   return (
     <div className="card" style={{ overflowX: "auto" }}>
-      <table style={{ minWidth: 820 }}>
+      <table style={{ minWidth: 1020 }}>
         <thead>
           <tr>
             <th>Order</th>
             <th>Status</th>
             <th>Details</th>
+            <th>Reconciliation</th>
             <th>When</th>
             <th></th>
           </tr>
@@ -58,7 +67,19 @@ export default function SyncLogTable({ logs }: { logs: LogRow[] }) {
                   {log.status.replace(/_/g, " ")}
                 </span>
               </td>
-              <td style={{ color: "#888", fontSize: 13 }}>{log.errorMessage || "—"}</td>
+              <td style={{ color: "#888", fontSize: 13, minWidth: 260 }}>{log.errorMessage || "—"}</td>
+              <td style={{ color: "#888", fontSize: 12, minWidth: 190 }}>
+                {log.shopifyTotal ? (
+                  <div style={{ display: "grid", gap: 2 }}>
+                    <span>Shopify: {log.currency ? `${log.currency} ` : ""}{log.shopifyTotal}</span>
+                    <span>Draft QBO: {log.qboDraftTotal ?? "—"}</span>
+                    <span>Actual QBO: {log.qboActualTotal ?? "—"}</span>
+                    {log.reconciliationDifference && <span>Delta: {log.reconciliationDifference}</span>}
+                  </div>
+                ) : (
+                  "—"
+                )}
+              </td>
               <td style={{ color: "#888", fontSize: 13 }}>
                 {new Date(log.createdAt).toLocaleString()}
               </td>
@@ -67,7 +88,7 @@ export default function SyncLogTable({ logs }: { logs: LogRow[] }) {
                   <a href="/dashboard/products" className="btn btn-secondary" style={{ padding: "4px 12px", fontSize: 13 }}>
                     Map products
                   </a>
-                ) : log.status === "failed" ? (
+                ) : log.status === "failed" || log.status === "queue_failed" ? (
                   <button onClick={() => retry(log.id)} className="btn btn-secondary" style={{ padding: "4px 12px", fontSize: 13 }}>
                     Retry
                   </button>
