@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { createSessionToken, sessionCookieOptions } from "@/lib/session";
 import { normalizeEmail, verifyPassword } from "@/lib/password";
+import { allowAuthAttempt, clientIp } from "@/lib/rate-limit";
 import { z } from "zod";
 
 const schema = z.object({
@@ -16,6 +17,12 @@ export async function POST(req: NextRequest) {
   }
 
   const email = normalizeEmail(parsed.data.email);
+  const identity = `${clientIp(req.headers)}:${email}`;
+  const allowed = await allowAuthAttempt("login", identity, 10, 15 * 60);
+  if (!allowed) {
+    return NextResponse.json({ error: "Too many login attempts. Try again later." }, { status: 429 });
+  }
+
   const user = await db.user.findUnique({ where: { email } });
   const valid = user?.passwordHash
     ? await verifyPassword(parsed.data.password, user.passwordHash)
