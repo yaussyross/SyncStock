@@ -9,12 +9,12 @@ const features = [
   {
     eyebrow: "02 / CONTROL",
     title: "Map products once, then keep moving",
-    body: "Connect Shopify SKUs to QuickBooks items so each order lands in the right place instead of creating accounting cleanup later.",
+    body: "Connect Shopify variants to QuickBooks items so each order lands in the right place instead of creating accounting cleanup later.",
   },
   {
     eyebrow: "03 / TRUST",
     title: "Every sync leaves an audit trail",
-    body: "See what synced, what needs attention, and why. Failed orders stay visible and can be retried after you fix the underlying issue.",
+    body: "See what synced, what needs attention, and why. SyncStock blocks unreconciled orders instead of forcing questionable numbers into the books.",
   },
 ];
 
@@ -35,7 +35,7 @@ const plans = [
     suffix: "/mo",
     description: "For stores with steady volume",
     orders: "Up to 1,000 orders / month",
-    features: ["Everything in Solo", "Higher monthly volume", "Expanded sync history", "Email support"],
+    features: ["Everything in Solo", "Higher monthly volume", "Reconciliation audit trail", "Email support"],
     cta: "Start free",
     featured: true,
   },
@@ -120,7 +120,7 @@ export default function LandingPage() {
                   <span className="badge badge-success">SYNCED</span>
                 </div>
                 <div className="receipt-id mono">SS-4821 · $58.00</div>
-                <div className="reconcile-row"><span>Transaction recorded</span><strong>Example flow</strong></div>
+                <div className="reconcile-row"><span>Transaction recorded</span><strong>Verified total</strong></div>
               </div>
             </div>
           </section>
@@ -168,7 +168,7 @@ export default function LandingPage() {
             <div className="reliability-list">
               <div><span>01</span><p><strong>Paid-order trigger</strong><br />Record revenue when the order is actually paid.</p></div>
               <div><span>02</span><p><strong>Duplicate protection</strong><br />Repeated webhook deliveries should not create repeated receipts.</p></div>
-              <div><span>03</span><p><strong>Visible failures</strong><br />If something cannot sync safely, surface it instead of guessing.</p></div>
+              <div><span>03</span><p><strong>Total reconciliation</strong><br />If the QuickBooks draft does not match Shopify, stop before writing questionable numbers.</p></div>
               <div><span>04</span><p><strong>Safe retries</strong><br />Fix the issue and retry without blindly creating another transaction.</p></div>
             </div>
           </div>
@@ -216,8 +216,8 @@ export default function LandingPage() {
           <div className="faq-grid">
             <div><h3>What does SyncStock sync?</h3><p>The private beta is focused on paid Shopify orders → QuickBooks Online sales receipts. Refunds, payouts, and additional accounting workflows are planned after the core flow is production-safe.</p></div>
             <div><h3>Will it create duplicate receipts?</h3><p>Duplicate prevention is a core product requirement. SyncStock tracks Shopify deliveries and order state, and uses a stable QuickBooks transaction reference to make retries safer.</p></div>
-            <div><h3>Do I need an accountant?</h3><p>SyncStock automates data movement; it does not replace accounting advice. Your accountant or bookkeeper still determines the right accounting treatment for your business.</p></div>
-            <div><h3>Is this ready for my live store?</h3><p>Not yet. SyncStock is in private beta while we harden reconciliation, mappings, retries, billing, and authentication. Use sandbox/test data until the production launch checklist is complete.</p></div>
+            <div><h3>What if my order total cannot be reproduced safely?</h3><p>SyncStock blocks the sync and shows the Shopify total, drafted QuickBooks total, and difference. During private beta, orders requiring unsupported shipping, discount, duty, tip, or other accounting treatment stay out of QuickBooks instead of being forced through.</p></div>
+            <div><h3>Is this ready for my live store?</h3><p>Not yet. SyncStock is in private beta while we validate the complete reconciliation and retry behavior in Shopify development stores and QuickBooks Online sandbox companies. Use sandbox/test data until the production launch checklist is complete.</p></div>
           </div>
         </section>
 
