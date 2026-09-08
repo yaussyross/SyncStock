@@ -30,6 +30,7 @@ model User {
   productMappings   ProductMapping[]
   syncLogs          SyncLog[]
   orderAdjustments  OrderAdjustment[]
+  complianceRequests ComplianceRequest[]
 }
 
 model ShopifyConnection {
@@ -113,6 +114,29 @@ model OrderAdjustment {
   @@index([userId, status])
   @@index([userId, shopifyOrderId])
   @@unique([userId, shopifyEventId, kind])
+}
+
+model ComplianceRequest {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  requestId   String   @unique
+  shopDomain  String
+  kind        String   // customers_data_request | customers_redact | shop_redact
+  orderIds    Json?
+  status      String   @default("completed")
+  response    Json?
+  createdAt   DateTime @default(now())
+  completedAt DateTime?
+
+  @@index([userId, createdAt])
+}
+
+model ShopTombstone {
+  id            String   @id @default(cuid())
+  userId        String
+  shopDomain    String   @unique
+  uninstalledAt DateTime @default(now())
 }
 
 model WebhookDelivery {
