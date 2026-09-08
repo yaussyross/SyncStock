@@ -58,7 +58,8 @@ export async function getQboClientForUser(userId: string): Promise<QuickBooks> {
 
 export function listQboItems(qbo: QuickBooks): Promise<QboCatalogItem[]> {
   return new Promise((resolve, reject) => {
-    qbo.findItems({ Active: true, asc: "Name", limit: 1000 }, (err: any, result: any) => {
+    // node-quickbooks transparently pages in 1,000-row batches when fetchAll is true.
+    qbo.findItems({ Active: true, asc: "Name", fetchAll: true }, (err: any, result: any) => {
       if (err) return reject(err);
 
       const raw = result?.QueryResponse?.Item ?? result?.Item ?? result ?? [];
