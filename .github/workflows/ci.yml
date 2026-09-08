@@ -10,7 +10,7 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       DATABASE_URL: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public
       REDIS_URL: redis://127.0.0.1:6379
@@ -36,13 +36,33 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        shell: bash
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --no-audit --no-fund
+          else
+            npm install --no-audit --no-fund
+          fi
+
+      - name: Validate Prisma schema
+        run: npx prisma validate
 
       - name: Reconciliation smoke tests
         run: npm run test:reconciliation
 
+      - name: Core security and quota smoke tests
+        run: npm run test:core
+
       - name: Production build
         run: npm run build
+
+      - name: Export generated package lock
+        if: hashFiles('package-lock.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-lock
+          path: package-lock.json
+          retention-days: 1
