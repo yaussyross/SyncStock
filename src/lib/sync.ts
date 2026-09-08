@@ -5,6 +5,7 @@ import {
   deleteSalesReceipt,
   findSalesReceiptByDocNumber,
   getSalesReceiptById,
+  ReceiptAdjustmentLine,
 } from "./qbo";
 import { compareMoneyTotals, reconcileShopifyOrder, ShopifyOrderForReconciliation } from "./reconciliation";
 
@@ -44,6 +45,11 @@ function qboErrorMessage(error: any) {
   return error?.Fault?.Error?.[0]?.Message || error?.message || "Unknown QBO API error";
 }
 
+function positiveAmount(value: string) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
 /** Runs one order sync end-to-end with mapping, reconciliation, and retry-safe QBO creation. */
 export async function processOrderSync(userId: string, order: ShopifyOrder) {
   const shopifyOrderId = String(order.id);
@@ -54,7 +60,11 @@ export async function processOrderSync(userId: string, order: ShopifyOrder) {
   // A duplicate BullMQ job must never recreate an already-synced receipt.
   if (log?.status === "success" && log.qboInvoiceId) return;
 
-  const mappings = await db.productMapping.findMany({ where: { userId } });
+  const [mappings, accountingSettings] = await Promise.all([
+    db.productMapping.findMany({ where: { userId } }),
+    db.accountingSettings.findUnique({ where: { userId } }),
+  ]);
+
   const mappingByVariantId = new Map(
     mappings
       .filter((mapping) => !mapping.shopifyVariantId.startsWith("legacy:"))
@@ -97,9 +107,19 @@ export async function processOrderSync(userId: string, order: ShopifyOrder) {
     return;
   }
 
+  const reconciliationOptions = {
+    includeShipping: Boolean(accountingSettings?.shippingQboItemId),
+    // QuickBooks supports a native transaction-level discount line, so discounts
+    // do not require a merchant-selected accounting item.
+    includeDiscounts: true,
+    includeDuties: Boolean(accountingSettings?.dutiesQboItemId),
+    includeAdditionalFees: Boolean(accountingSettings?.additionalFeeQboItemId),
+    includeTips: Boolean(accountingSettings?.tipsQboItemId),
+  };
+
   let preflight;
   try {
-    preflight = reconcileShopifyOrder(order);
+    preflight = reconcileShopifyOrder(order, reconciliationOptions);
   } catch (error: any) {
     await db.syncLog.update({
       where: { userId_shopifyOrderId: { userId, shopifyOrderId } },
@@ -134,6 +154,19 @@ export async function processOrderSync(userId: string, order: ShopifyOrder) {
     });
     return;
   }
+
+  const adjustmentLines: ReceiptAdjustmentLine[] = [];
+  const addAdjustment = (qboItemId: string | null | undefined, amount: string, description: string) => {
+    const numericAmount = positiveAmount(amount);
+    if (qboItemId && numericAmount > 0) {
+      adjustmentLines.push({ qboItemId, amount: numericAmount, description });
+    }
+  };
+
+  addAdjustment(accountingSettings?.shippingQboItemId, preflight.adjustments.shipping, "Shopify shipping");
+  addAdjustment(accountingSettings?.dutiesQboItemId, preflight.adjustments.duties, "Shopify duties");
+  addAdjustment(accountingSettings?.additionalFeeQboItemId, preflight.adjustments.additionalFees, "Shopify additional fees");
+  addAdjustment(accountingSettings?.tipsQboItemId, preflight.adjustments.tips, "Shopify tips");
 
   try {
     const qbo = await getQboClientForUser(userId);
@@ -172,7 +205,12 @@ export async function processOrderSync(userId: string, order: ShopifyOrder) {
         qbo,
         docNumber,
         lineItems,
-        parseFloat(order.current_total_tax ?? order.total_tax ?? "0")
+        parseFloat(order.current_total_tax ?? order.total_tax ?? "0"),
+        {
+          adjustmentLines,
+          discountAmount: positiveAmount(preflight.adjustments.discounts),
+          taxesIncluded: preflight.taxesIncluded,
+        }
       );
       const verified = await receiptWithTotal(qbo, created);
       const comparison = compareMoneyTotals(preflight.expectedTotal, verified.total);
