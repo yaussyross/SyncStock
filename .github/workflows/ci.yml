@@ -1,0 +1,49 @@
+name: SyncStock CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches:
+      - feature/launch-site-reliability
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_URL: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public
+      REDIS_URL: redis://127.0.0.1:6379
+      NEXTAUTH_SECRET: ci-only-nextauth-secret-32-characters
+      APP_URL: http://localhost:3000
+      ENCRYPTION_KEY: ci-only-encryption-key-32-characters
+      SHOPIFY_API_KEY: ci-shopify-key
+      SHOPIFY_API_SECRET: ci-shopify-secret
+      SHOPIFY_SCOPES: read_orders,read_products
+      QBO_CLIENT_ID: ci-qbo-client
+      QBO_CLIENT_SECRET: ci-qbo-secret
+      QBO_ENVIRONMENT: sandbox
+      STRIPE_SECRET_KEY: sk_test_syncstock_ci_only
+      STRIPE_WEBHOOK_SECRET: whsec_syncstock_ci_only
+      STRIPE_PRICE_STARTER: price_ci_starter
+      STRIPE_PRICE_GROWTH: price_ci_growth
+      STRIPE_PRICE_UNLIMITED: price_ci_unlimited
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Reconciliation smoke tests
+        run: npm run test:reconciliation
+
+      - name: Production build
+        run: npm run build
