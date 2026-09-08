@@ -25,11 +25,12 @@ model User {
   quotaPeriodStart     DateTime?
   quotaPeriodEnd       DateTime?
 
-  shopifyConnection ShopifyConnection?
-  qboConnection     QboConnection?
-  productMappings   ProductMapping[]
-  syncLogs          SyncLog[]
-  orderAdjustments  OrderAdjustment[]
+  shopifyConnection  ShopifyConnection?
+  qboConnection      QboConnection?
+  accountingSettings AccountingSettings?
+  productMappings    ProductMapping[]
+  syncLogs           SyncLog[]
+  orderAdjustments   OrderAdjustment[]
   complianceRequests ComplianceRequest[]
 }
 
@@ -56,6 +57,22 @@ model QboConnection {
   refreshToken String   // encrypted, long-lived (~100 days, must refresh before expiry)
   tokenExpiry  DateTime
   installedAt  DateTime @default(now())
+}
+
+model AccountingSettings {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id])
+  shippingQboItemId     String?
+  shippingQboItemName   String?
+  tipsQboItemId         String?
+  tipsQboItemName       String?
+  dutiesQboItemId       String?
+  dutiesQboItemName     String?
+  additionalFeeQboItemId   String?
+  additionalFeeQboItemName String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 }
 
 model ProductMapping {
