@@ -1,7 +1,14 @@
 import { db } from "./db";
-import { getQboClientForUser, createSalesReceipt, findSalesReceiptByDocNumber } from "./qbo";
+import {
+  getQboClientForUser,
+  createSalesReceipt,
+  deleteSalesReceipt,
+  findSalesReceiptByDocNumber,
+  getSalesReceiptById,
+} from "./qbo";
+import { compareMoneyTotals, reconcileShopifyOrder, ShopifyOrderForReconciliation } from "./reconciliation";
 
-interface ShopifyOrder {
+interface ShopifyOrder extends ShopifyOrderForReconciliation {
   id: number | string;
   name: string;
   line_items: {
@@ -11,14 +18,33 @@ interface ShopifyOrder {
     quantity: number;
     price: string;
   }[];
-  total_tax: string;
 }
 
 function quickBooksDocNumber(orderId: string | number) {
   return `SS-${String(orderId)}`.slice(0, 21);
 }
 
-/** Runs one order sync end-to-end with retry-safe QuickBooks creation. */
+async function receiptWithTotal(qbo: any, receipt: any) {
+  let hydrated = receipt;
+  if (hydrated?.TotalAmt == null && hydrated?.Id) {
+    hydrated = await getSalesReceiptById(qbo, String(hydrated.Id));
+  }
+
+  if (hydrated?.TotalAmt == null) {
+    throw new Error("QuickBooks Sales Receipt did not return TotalAmt for reconciliation");
+  }
+
+  return {
+    receipt: hydrated,
+    total: String(hydrated.TotalAmt),
+  };
+}
+
+function qboErrorMessage(error: any) {
+  return error?.Fault?.Error?.[0]?.Message || error?.message || "Unknown QBO API error";
+}
+
+/** Runs one order sync end-to-end with mapping, reconciliation, and retry-safe QBO creation. */
 export async function processOrderSync(userId: string, order: ShopifyOrder) {
   const shopifyOrderId = String(order.id);
   const log = await db.syncLog.findUnique({
@@ -71,26 +97,141 @@ export async function processOrderSync(userId: string, order: ShopifyOrder) {
     return;
   }
 
+  let preflight;
+  try {
+    preflight = reconcileShopifyOrder(order);
+  } catch (error: any) {
+    await db.syncLog.update({
+      where: { userId_shopifyOrderId: { userId, shopifyOrderId } },
+      data: {
+        status: "blocked_reconciliation",
+        currency: order.currency?.trim() || null,
+        errorMessage: `Reconciliation blocked before QuickBooks creation: ${error?.message || "Shopify totals could not be validated"}.`,
+      },
+    });
+    return;
+  }
+
+  await db.syncLog.update({
+    where: { userId_shopifyOrderId: { userId, shopifyOrderId } },
+    data: {
+      currency: preflight.currency === "shop currency" ? null : preflight.currency,
+      shopifyTotal: preflight.expectedTotal,
+      qboDraftTotal: preflight.actualTotal,
+      qboActualTotal: null,
+      reconciliationDifference: preflight.difference,
+    },
+  });
+
+  if (!preflight.matches) {
+    await db.syncLog.update({
+      where: { userId_shopifyOrderId: { userId, shopifyOrderId } },
+      data: {
+        status: "blocked_reconciliation",
+        qboInvoiceId: null,
+        errorMessage: preflight.message,
+      },
+    });
+    return;
+  }
+
   try {
     const qbo = await getQboClientForUser(userId);
     const docNumber = quickBooksDocNumber(order.id);
-
-    // If QBO accepted the receipt but our DB write failed, BullMQ will retry.
-    // Re-querying the stable DocNumber turns that retry into a recovery instead
-    // of a second financial transaction.
     let receipt = await findSalesReceiptByDocNumber(qbo, docNumber);
-    if (!receipt) {
-      receipt = await createSalesReceipt(qbo, docNumber, lineItems, parseFloat(order.total_tax || "0"));
+
+    if (receipt) {
+      // Recovery path: never delete a receipt that existed before this attempt.
+      const verified = await receiptWithTotal(qbo, receipt);
+      const comparison = compareMoneyTotals(preflight.expectedTotal, verified.total);
+
+      if (!comparison.matches) {
+        await db.syncLog.update({
+          where: { userId_shopifyOrderId: { userId, shopifyOrderId } },
+          data: {
+            status: "reconciliation_failed_qbo",
+            qboInvoiceId: String(verified.receipt.Id),
+            qboActualTotal: comparison.actualTotal,
+            reconciliationDifference: comparison.difference,
+            errorMessage: `QuickBooks already contains ${docNumber} with total ${comparison.actualTotal}, but Shopify total is ${comparison.expectedTotal}. SyncStock did not modify or delete the existing QuickBooks transaction. Manual review is required.`,
+          },
+        });
+        return;
+      }
+
+      receipt = verified.receipt;
+      await db.syncLog.update({
+        where: { userId_shopifyOrderId: { userId, shopifyOrderId } },
+        data: {
+          qboActualTotal: comparison.actualTotal,
+          reconciliationDifference: comparison.difference,
+        },
+      });
+    } else {
+      const created = await createSalesReceipt(
+        qbo,
+        docNumber,
+        lineItems,
+        parseFloat(order.current_total_tax ?? order.total_tax ?? "0")
+      );
+      const verified = await receiptWithTotal(qbo, created);
+      const comparison = compareMoneyTotals(preflight.expectedTotal, verified.total);
+
+      if (!comparison.matches) {
+        const createdId = verified.receipt?.Id ? String(verified.receipt.Id) : null;
+
+        try {
+          // This receipt was created by the current attempt and has already failed
+          // reconciliation, so remove it immediately instead of leaving bad books.
+          await deleteSalesReceipt(qbo, verified.receipt);
+          await db.syncLog.update({
+            where: { userId_shopifyOrderId: { userId, shopifyOrderId } },
+            data: {
+              status: "blocked_reconciliation",
+              qboInvoiceId: null,
+              qboActualTotal: comparison.actualTotal,
+              reconciliationDifference: comparison.difference,
+              errorMessage: `QuickBooks recalculated ${docNumber} to ${comparison.actualTotal}, but Shopify total is ${comparison.expectedTotal}. SyncStock rolled back the newly created QuickBooks Sales Receipt and stopped the sync.`,
+            },
+          });
+        } catch (rollbackError: any) {
+          await db.syncLog.update({
+            where: { userId_shopifyOrderId: { userId, shopifyOrderId } },
+            data: {
+              status: "reconciliation_failed_qbo",
+              qboInvoiceId: createdId,
+              qboActualTotal: comparison.actualTotal,
+              reconciliationDifference: comparison.difference,
+              errorMessage: `QuickBooks recalculated ${docNumber} to ${comparison.actualTotal}, but Shopify total is ${comparison.expectedTotal}. Automatic rollback failed: ${qboErrorMessage(rollbackError)}. Do not retry until the QuickBooks transaction is reviewed.`,
+            },
+          });
+        }
+
+        return;
+      }
+
+      receipt = verified.receipt;
+      await db.syncLog.update({
+        where: { userId_shopifyOrderId: { userId, shopifyOrderId } },
+        data: {
+          qboActualTotal: comparison.actualTotal,
+          reconciliationDifference: comparison.difference,
+        },
+      });
     }
 
     await db.syncLog.update({
       where: { userId_shopifyOrderId: { userId, shopifyOrderId } },
-      data: { status: "success", qboInvoiceId: String(receipt.Id), errorMessage: null },
+      data: {
+        status: "success",
+        qboInvoiceId: String(receipt.Id),
+        errorMessage: null,
+      },
     });
 
     await db.user.update({ where: { id: userId }, data: { orderQuotaUsed: { increment: 1 } } });
   } catch (err: any) {
-    const message = err?.Fault?.Error?.[0]?.Message || err?.message || "Unknown QBO API error";
+    const message = qboErrorMessage(err);
 
     await db.syncLog.update({
       where: { userId_shopifyOrderId: { userId, shopifyOrderId } },
