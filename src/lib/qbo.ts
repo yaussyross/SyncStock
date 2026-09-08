@@ -10,6 +10,18 @@ export interface QboCatalogItem {
   type: string | null;
 }
 
+export interface ReceiptAdjustmentLine {
+  qboItemId: string;
+  amount: number;
+  description: string;
+}
+
+export interface SalesReceiptOptions {
+  adjustmentLines?: ReceiptAdjustmentLine[];
+  discountAmount?: number;
+  taxesIncluded?: boolean;
+}
+
 export async function getQboClientForUser(userId: string): Promise<QuickBooks> {
   const conn = await db.qboConnection.findUniqueOrThrow({ where: { userId } });
 
@@ -112,21 +124,48 @@ export function createSalesReceipt(
   qbo: QuickBooks,
   docNumber: string,
   lineItems: { qboItemId: string; quantity: number; unitPrice: number; description: string }[],
-  totalTax: number
+  totalTax: number,
+  options: SalesReceiptOptions = {}
 ): Promise<any> {
-  const payload = {
-    DocNumber: docNumber.slice(0, 21),
-    PrivateNote: `Created by SyncStock (${docNumber})`,
-    Line: lineItems.map((item) => ({
+  const productLines = lineItems.map((item) => ({
+    DetailType: "SalesItemLineDetail",
+    Amount: item.quantity * item.unitPrice,
+    Description: item.description,
+    SalesItemLineDetail: {
+      ItemRef: { value: item.qboItemId },
+      Qty: item.quantity,
+      UnitPrice: item.unitPrice,
+    },
+  }));
+
+  const adjustmentLines = (options.adjustmentLines ?? [])
+    .filter((item) => item.amount !== 0)
+    .map((item) => ({
       DetailType: "SalesItemLineDetail",
-      Amount: item.quantity * item.unitPrice,
+      Amount: item.amount,
       Description: item.description,
       SalesItemLineDetail: {
         ItemRef: { value: item.qboItemId },
-        Qty: item.quantity,
-        UnitPrice: item.unitPrice,
+        Qty: 1,
+        UnitPrice: item.amount,
       },
-    })),
+    }));
+
+  const discountAmount = Math.max(0, options.discountAmount ?? 0);
+  const discountLine = discountAmount > 0
+    ? [{
+        DetailType: "DiscountLineDetail",
+        Amount: discountAmount,
+        Description: "Shopify order discounts",
+        DiscountLineDetail: { PercentBased: false },
+      }]
+    : [];
+
+  const payload = {
+    DocNumber: docNumber.slice(0, 21),
+    PrivateNote: `Created by SyncStock (${docNumber})`,
+    GlobalTaxCalculation: options.taxesIncluded ? "TaxIncluded" : "TaxExcluded",
+    Line: [...productLines, ...adjustmentLines, ...discountLine],
     TxnTaxDetail: totalTax > 0 ? { TotalTax: totalTax } : undefined,
   };
 
