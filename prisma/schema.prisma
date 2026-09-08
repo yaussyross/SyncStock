@@ -1,0 +1,172 @@
+// Prisma schema — Postgres
+// Run: npx prisma migrate dev --name init  (after DATABASE_URL is set in .env)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String?
+  createdAt     DateTime @default(now())
+
+  stripeCustomerId     String?
+  stripeSubscriptionId String?  @unique
+  subscriptionStatus   String   @default("trial")
+  planTier             String   @default("trial") // trial | starter | growth | unlimited
+  orderQuotaUsed       Int      @default(0)
+  quotaResetAt         DateTime @default(now())
+  quotaPeriodStart     DateTime?
+  quotaPeriodEnd       DateTime?
+
+  shopifyConnection  ShopifyConnection?
+  qboConnection      QboConnection?
+  accountingSettings AccountingSettings?
+  productMappings    ProductMapping[]
+  syncLogs           SyncLog[]
+  orderAdjustments   OrderAdjustment[]
+  complianceRequests ComplianceRequest[]
+}
+
+model ShopifyConnection {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id])
+  shopDomain         String   @unique // e.g. my-store.myshopify.com
+  accessToken        String   // encrypted at rest, see lib/crypto.ts
+  scope              String
+  webhookId          String?  // orders/paid webhook subscription id
+  refundWebhookId    String?
+  cancelledWebhookId String?
+  uninstallWebhookId String?
+  installedAt        DateTime @default(now())
+}
+
+model QboConnection {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  realmId      String   // QuickBooks company id
+  accessToken  String   // encrypted, short-lived (~1hr)
+  refreshToken String   // encrypted, long-lived (~100 days, must refresh before expiry)
+  tokenExpiry  DateTime
+  installedAt  DateTime @default(now())
+}
+
+model AccountingSettings {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id])
+  shippingQboItemId     String?
+  shippingQboItemName   String?
+  tipsQboItemId         String?
+  tipsQboItemName       String?
+  dutiesQboItemId       String?
+  dutiesQboItemName     String?
+  additionalFeeQboItemId   String?
+  additionalFeeQboItemName String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model ProductMapping {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id])
+  shopifyVariantId String
+  shopifySku       String?
+  shopifyTitle     String?
+  qboItemId        String
+  qboItemName      String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([userId, shopifyVariantId])
+  @@index([userId, shopifySku])
+}
+
+model SyncLog {
+  id                       String   @id @default(cuid())
+  userId                   String
+  user                     User     @relation(fields: [userId], references: [id])
+  shopifyOrderId           String
+  orderNumber              String?
+  qboInvoiceId             String?
+  status                   String   // pending | success | failed | skipped_no_mapping | blocked_reconciliation | reconciliation_failed_qbo | queue_failed | skipped_quota_exceeded
+  errorMessage             String?
+  currency                 String?
+  shopifyTotal             String?
+  qboDraftTotal            String?
+  qboActualTotal           String?
+  reconciliationDifference String?
+  attempts                 Int      @default(0)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@index([userId, status])
+  @@unique([userId, shopifyOrderId])
+}
+
+model OrderAdjustment {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  shopifyOrderId String
+  orderNumber    String?
+  shopifyEventId String?
+  kind           String   // refund | cancellation
+  status         String   @default("needs_review")
+  amount         String?
+  currency       String?
+  details        Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([userId, status])
+  @@index([userId, shopifyOrderId])
+  @@unique([userId, shopifyEventId, kind])
+}
+
+model ComplianceRequest {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  requestId   String   @unique
+  shopDomain  String
+  kind        String   // customers_data_request | customers_redact | shop_redact
+  orderIds    Json?
+  status      String   @default("completed")
+  response    Json?
+  createdAt   DateTime @default(now())
+  completedAt DateTime?
+
+  @@index([userId, createdAt])
+}
+
+model ShopTombstone {
+  id            String   @id @default(cuid())
+  userId        String
+  shopDomain    String   @unique
+  uninstalledAt DateTime @default(now())
+}
+
+model WebhookDelivery {
+  id          String   @id @default(cuid())
+  deliveryId  String   @unique
+  eventId     String?
+  shopDomain  String
+  topic       String?
+  status      String   @default("received") // received | queued | ignored | failed
+  error       String?
+  createdAt   DateTime @default(now())
+  processedAt DateTime?
+
+  @@index([shopDomain, createdAt])
+  @@index([eventId])
+}
