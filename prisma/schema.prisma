@@ -13,28 +13,37 @@ datasource db {
 model User {
   id            String   @id @default(cuid())
   email         String   @unique
+  passwordHash  String?
   createdAt     DateTime @default(now())
 
-  stripeCustomerId String?
-  planTier         String   @default("trial") // trial | starter | growth | unlimited
-  orderQuotaUsed   Int      @default(0)
-  quotaResetAt     DateTime @default(now())
+  stripeCustomerId     String?
+  stripeSubscriptionId String?  @unique
+  subscriptionStatus   String   @default("trial")
+  planTier             String   @default("trial") // trial | starter | growth | unlimited
+  orderQuotaUsed       Int      @default(0)
+  quotaResetAt         DateTime @default(now())
+  quotaPeriodStart     DateTime?
+  quotaPeriodEnd       DateTime?
 
   shopifyConnection ShopifyConnection?
   qboConnection     QboConnection?
   productMappings   ProductMapping[]
   syncLogs          SyncLog[]
+  orderAdjustments  OrderAdjustment[]
 }
 
 model ShopifyConnection {
-  id           String   @id @default(cuid())
-  userId       String   @unique
-  user         User     @relation(fields: [userId], references: [id])
-  shopDomain   String   @unique // e.g. my-store.myshopify.com
-  accessToken  String   // encrypted at rest, see lib/crypto.ts
-  scope        String
-  webhookId    String?  // Shopify webhook subscription id, for cleanup
-  installedAt  DateTime @default(now())
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id])
+  shopDomain         String   @unique // e.g. my-store.myshopify.com
+  accessToken        String   // encrypted at rest, see lib/crypto.ts
+  scope              String
+  webhookId          String?  // orders/paid webhook subscription id
+  refundWebhookId    String?
+  cancelledWebhookId String?
+  uninstallWebhookId String?
+  installedAt        DateTime @default(now())
 }
 
 model QboConnection {
@@ -84,6 +93,26 @@ model SyncLog {
 
   @@index([userId, status])
   @@unique([userId, shopifyOrderId])
+}
+
+model OrderAdjustment {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  shopifyOrderId String
+  orderNumber    String?
+  shopifyEventId String?
+  kind           String   // refund | cancellation
+  status         String   @default("needs_review")
+  amount         String?
+  currency       String?
+  details        Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([userId, status])
+  @@index([userId, shopifyOrderId])
+  @@unique([userId, shopifyEventId, kind])
 }
 
 model WebhookDelivery {
