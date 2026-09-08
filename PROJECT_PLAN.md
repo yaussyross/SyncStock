@@ -13,8 +13,12 @@ Ship a reliable Shopify → QuickBooks Online micro-SaaS where one paid Shopify 
 - [x] Add webhook delivery/order idempotency and duplicate protection.
 - [x] Make QuickBooks creation retry-safer with a stable transaction reference.
 - [x] Unify Shopify order/catalog reads on the GraphQL Admin API.
-- [ ] Validate Shopify totals against the generated QuickBooks transaction.
-- [ ] Finish sync error classification and retry hardening.
+- [x] Add preflight Shopify → QuickBooks transaction-total reconciliation.
+- [x] Verify QuickBooks `TotalAmt` after creation and block mismatches.
+- [x] Roll back a newly-created mismatched Sales Receipt when safe to do so.
+- [x] Prevent unsafe retry when a pre-existing QuickBooks transaction requires manual review.
+- [ ] Model supported accounting adjustments (shipping, discounts, tips, duties/additional fees) instead of blocking them.
+- [ ] Validate tax behavior across QuickBooks sandbox configurations and tax-inclusive Shopify stores.
 
 ## Phase 2 — Finish merchant workflow
 - [x] Build product mapping UI.
@@ -22,6 +26,7 @@ Ship a reliable Shopify → QuickBooks Online micro-SaaS where one paid Shopify 
 - [x] Support mapping status, SKU suggestions, no-SKU variants, and bulk save.
 - [x] Surface product mapping setup and unmapped orders in the dashboard.
 - [x] Keep manual order retry behind an explicit user action.
+- [x] Surface Shopify, drafted QBO, actual QBO, and reconciliation delta in sync activity.
 - [ ] Add a post-mapping bulk retry action for orders waiting on mappings.
 
 ## Phase 3 — Production hardening
@@ -29,19 +34,32 @@ Ship a reliable Shopify → QuickBooks Online micro-SaaS where one paid Shopify 
 - [ ] Fix billing-period quota tracking.
 - [ ] Add refunds/cancellations handling.
 - [ ] Add app uninstall/data cleanup webhooks.
-- [ ] Add structured logging/monitoring and tests.
+- [ ] Add structured logging/monitoring and broader automated tests.
 - [ ] Review encryption/key management and rotate all previously exposed secrets.
 - [ ] Finish legal/business details and legal review.
+
+## Reconciliation policy
+SyncStock never changes accounting amounts merely to force a match.
+
+For the current private beta:
+1. Build the exact QuickBooks payload from mapped product lines plus Shopify tax.
+2. Compare that draft against Shopify's paid-order total using fixed-point arithmetic and a one-cent tolerance.
+3. If the draft does not reconcile, create **no** QuickBooks transaction and show the merchant why.
+4. If QuickBooks creates a receipt but returns a different `TotalAmt`, immediately attempt to remove only the receipt created by that same attempt.
+5. Never auto-delete a pre-existing receipt found during retry/recovery; mark it for manual review instead.
+
+Orders requiring shipping, discount, duty, tip, additional-fee, tax-inclusive, or other unsupported accounting treatment remain safely blocked until those treatments are explicitly modeled and sandbox-tested.
 
 ## Acceptance test for MVP core
 A paid Shopify test order must:
 - be accepted once even if the webhook is delivered multiple times;
 - map every required line item by Shopify variant ID;
+- pass preflight reconciliation before QuickBooks is called;
 - create exactly one QuickBooks transaction;
-- reconcile to the expected order total;
-- persist Shopify ↔ QuickBooks IDs;
+- reconcile the returned QuickBooks total to the Shopify total;
+- persist Shopify ↔ QuickBooks IDs and reconciliation audit values;
 - expose a useful status/error in the dashboard;
 - retry safely without creating duplicates.
 
 ## Current priority
-The merchant mapping workflow is implemented. Next: exact Shopify ↔ QuickBooks transaction-total reconciliation, including shipping, discounts, taxes, tips/duties where applicable, and rounding safeguards.
+Run the new reconciliation smoke tests and a production build in CI, then validate the complete paid-order flow against Shopify development data + a QuickBooks Online sandbox. After sandbox verification, implement explicit accounting treatment for shipping and discounts before widening the private beta.
