@@ -17,7 +17,11 @@ async function main() {
   const cipherText = encrypt(secret);
   assert.notEqual(cipherText, secret);
   assert.equal(decrypt(cipherText), secret);
-  assert.throws(() => decrypt(`${cipherText.slice(0, -1)}x`));
+  const parts = cipherText.split(":");
+  const tampered = Buffer.from(parts[3], "base64url");
+  tampered[0] ^= 1;
+  parts[3] = tampered.toString("base64url");
+  assert.throws(() => decrypt(parts.join(":")));
 
   const baseUser = {
     planTier: "trial",
@@ -41,6 +45,8 @@ async function main() {
   assert.equal(getQuotaState({ ...paidUser, subscriptionStatus: "past_due" } as any).reason, "subscription_inactive");
   assert.equal(getQuotaState({ ...paidUser, quotaPeriodEnd: past } as any).reason, "billing_period_expired");
   assert.equal(getQuotaState({ ...paidUser, orderQuotaUsed: 200 } as any).reason, "quota_exceeded");
+
+  assert.equal(getQuotaState({ ...paidUser, quotaPeriodEnd: null } as any).reason, "billing_period_expired");
 
   console.log("Core security and quota smoke tests passed.");
 }

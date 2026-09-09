@@ -74,3 +74,14 @@ A paid Shopify test order must:
 
 ## Current priority
 Validate the complete paid-order flow against Shopify development data + a QuickBooks Online sandbox, including tax and rollback behavior. After sandbox verification, implement explicit accounting treatment for shipping and discounts before widening the private beta.
+
+## September 9, 2026 continuation
+
+- Restored initial database migration; CI now starts PostgreSQL/Redis, migrates an empty database, checks schema drift, and tests billing ordering/concurrency. Existing databases require an inspected baseline, not a reset.
+- Fixed paid-period marker updates: only a matching current paid invoice advances quota periods; duplicate invoice deliveries preserve usage.
+- Added retry entitlement checks, an atomic retry claim, queue-failure recovery, and worker execution-time entitlement checks. Simultaneous different orders still need atomic quota reservations before a broad launch.
+- Moved duplicate-order protection ahead of webhook quota handling to preserve successful records.
+- Added a browser-only bookkeeping cost calculator and honest example labels.
+- Restored package-lock.json and ignored dependencies, build output, and local secrets.
+- Code inspection confirms password authentication, lifecycle/compliance handlers, and accounting adjustment configuration exist; older unchecked milestones above must not be interpreted as absent code. Real provider verification remains incomplete.
+- Access, marketing assets, deployment instructions, and launch acceptance are tracked in docs/LAUNCH.md.

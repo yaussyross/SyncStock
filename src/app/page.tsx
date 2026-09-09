@@ -63,6 +63,7 @@ export default function LandingPage() {
             <div className="nav-links">
               <a href="#how-it-works">How it works</a>
               <a href="#pricing">Pricing</a>
+              <a href="/tools/bookkeeping-cost">Free calculator</a>
               <a href="/login">Sign in</a>
               <a href="/signup" className="btn btn-small">Start free</a>
             </div>
@@ -88,8 +89,8 @@ export default function LandingPage() {
 
             <div className="sync-console" aria-label="Example SyncStock order sync">
               <div className="console-topline">
-                <span className="mono">LIVE SYNC</span>
-                <span className="console-live"><span className="status-dot" /> watching paid orders</span>
+                <span className="mono">EXAMPLE SYNC</span>
+                <span className="console-live"><span className="status-dot" /> illustrative order</span>
               </div>
               <div className="order-card">
                 <div className="order-head">
@@ -186,7 +187,7 @@ export default function LandingPage() {
             <div className="pricing-grid">
               {plans.map((plan) => (
                 <article className={`pricing-card${plan.featured ? " featured" : ""}`} key={plan.name}>
-                  {plan.featured && <div className="popular-tag">MOST POPULAR</div>}
+                  {plan.featured && <div className="popular-tag">GROWTH PLAN</div>}
                   <div className="plan-top">
                     <div>
                       <h3>{plan.name}</h3>
