@@ -1,5 +1,5 @@
 // Prisma schema — Postgres
-// Run: npx prisma migrate dev --name init  (after DATABASE_URL and DIRECT_URL are set in .env)
+// Vercel + Supabase integration injects POSTGRES_PRISMA_URL and POSTGRES_URL_NON_POOLING automatically.
 
 generator client {
   provider = "prisma-client-js"
@@ -7,8 +7,8 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
 model User {
