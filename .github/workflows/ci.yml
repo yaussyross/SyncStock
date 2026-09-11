@@ -13,6 +13,7 @@ jobs:
     timeout-minutes: 20
     env:
       DATABASE_URL: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public
+      DIRECT_URL: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public
       REDIS_URL: redis://127.0.0.1:6379
       NEXTAUTH_SECRET: ci-only-nextauth-secret-32-characters
       APP_URL: http://localhost:3000

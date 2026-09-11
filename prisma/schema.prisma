@@ -1,13 +1,14 @@
 // Prisma schema — Postgres
-// Run: npx prisma migrate dev --name init  (after DATABASE_URL is set in .env)
+// Run: npx prisma migrate dev --name init  (after DATABASE_URL and DIRECT_URL are set in .env)
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
