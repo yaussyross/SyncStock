@@ -5,12 +5,31 @@ on:
     branches: [main]
   push:
     branches:
-      - feature/launch-site-reliability
+      - main
+      - fix/paid-launch-foundation
 
 jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: syncstock
+          POSTGRES_PASSWORD: syncstock
+          POSTGRES_DB: syncstock
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U syncstock"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
     env:
       POSTGRES_PRISMA_URL: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public
       POSTGRES_URL_NON_POOLING: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public
@@ -51,11 +70,20 @@ jobs:
       - name: Validate Prisma schema
         run: npx prisma validate
 
+      - name: Migrate an empty database
+        run: npm run prisma:deploy
+
+      - name: Check migrated database matches schema
+        run: npx prisma migrate diff --from-schema-datasource prisma/schema.prisma --to-schema-datamodel prisma/schema.prisma --exit-code
+
       - name: Reconciliation smoke tests
         run: npm run test:reconciliation
 
       - name: Core security and quota smoke tests
         run: npm run test:core
+
+      - name: Billing event ordering and concurrency
+        run: npm run test:billing
 
       - name: Production build
         run: npm run build

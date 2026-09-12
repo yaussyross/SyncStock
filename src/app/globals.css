@@ -296,3 +296,9 @@ footer .footer-links { display: flex; flex-wrap: wrap; }
   .final-cta { align-items: flex-start; flex-direction: column; padding-top: 64px; padding-bottom: 70px; }
   .ledger-row { align-items: flex-start; flex-direction: column; }
 }
+
+.calculator-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 24px; }
+.calculator-fields { display: flex; flex-direction: column; gap: 12px; }
+.calculator-fields input { width: 100%; padding: 12px; color: inherit; background: transparent; border: 1px solid currentColor; border-radius: 6px; font: inherit; }
+.calculator-fields input:focus-visible { outline: 3px solid var(--accent, #c7f36b); outline-offset: 3px; }
+@media (max-width: 760px) { .calculator-grid { grid-template-columns: 1fr; } }
