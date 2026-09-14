@@ -1,3 +1,4 @@
+import { getVercelOidcToken } from "@vercel/oidc";
 import { NextResponse } from "next/server";
 
 const WORKER_URL = "https://worker-production-d9af.up.railway.app";
@@ -5,7 +6,16 @@ const WORKER_URL = "https://worker-production-d9af.up.railway.app";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const oidcToken = process.env.VERCEL_OIDC_TOKEN;
+  let oidcToken: string | null = null;
+  try {
+    oidcToken = await getVercelOidcToken({ project: "sync-stock", team: "raus2" });
+  } catch (error: any) {
+    return NextResponse.json(
+      { ok: false, error: error?.message || "Vercel OIDC token is not available to this deployment" },
+      { status: 503 }
+    );
+  }
+
   if (!oidcToken) {
     return NextResponse.json(
       { ok: false, error: "Vercel OIDC token is not available to this deployment" },
