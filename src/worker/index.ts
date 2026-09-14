@@ -3,12 +3,15 @@ import { createServer } from "node:http";
 import { Worker } from "bullmq";
 import { connection, syncQueue } from "../lib/worker-queue";
 
-const bridgeSecret = process.env.QUEUE_BRIDGE_SECRET;
-const appUrl = process.env.APP_URL?.replace(/\/$/, "");
-const port = Number(process.env.PORT || 3000);
+function requireEnv(name: string) {
+  const value = process.env[name];
+  if (!value) throw new Error(`${name} is required`);
+  return value;
+}
 
-if (!bridgeSecret) throw new Error("QUEUE_BRIDGE_SECRET is required");
-if (!appUrl) throw new Error("APP_URL is required");
+const bridgeSecret = requireEnv("QUEUE_BRIDGE_SECRET");
+const appUrl = requireEnv("APP_URL").replace(/\/$/, "");
+const port = Number(process.env.PORT || 3000);
 
 function authorized(provided: string | undefined) {
   if (!provided) return false;
