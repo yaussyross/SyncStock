@@ -1,3 +1,5 @@
+import { getVercelOidcToken } from "@vercel/oidc";
+
 type EnqueuePayload = {
   userId: string;
   order: any;
@@ -6,9 +8,17 @@ type EnqueuePayload = {
 
 const DEFAULT_BRIDGE_URL = "https://worker-production-d9af.up.railway.app";
 
+async function deploymentIdentityToken() {
+  try {
+    return await getVercelOidcToken({ project: "sync-stock", team: "raus2" });
+  } catch {
+    return null;
+  }
+}
+
 export async function enqueueOrderSync(payload: EnqueuePayload) {
   const bridgeUrl = (process.env.QUEUE_BRIDGE_URL || DEFAULT_BRIDGE_URL).replace(/\/$/, "");
-  const oidcToken = process.env.VERCEL_OIDC_TOKEN;
+  const oidcToken = await deploymentIdentityToken();
   const bridgeSecret = process.env.QUEUE_BRIDGE_SECRET;
 
   if (oidcToken || bridgeSecret) {
@@ -30,7 +40,6 @@ export async function enqueueOrderSync(payload: EnqueuePayload) {
     return;
   }
 
-  // Local-development fallback: use Redis directly when no deployment identity is available.
   if (process.env.REDIS_URL) {
     const { syncQueue } = await import("./queue");
     await syncQueue.add("sync-order", { userId: payload.userId, order: payload.order }, { jobId: payload.jobId });
