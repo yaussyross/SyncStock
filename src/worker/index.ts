@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { createServer } from "node:http";
 import { Worker } from "bullmq";
-import { connection, syncQueue } from "../lib/queue";
+import { connection, syncQueue } from "../lib/worker-queue";
 
 const bridgeSecret = process.env.QUEUE_BRIDGE_SECRET;
 const appUrl = process.env.APP_URL?.replace(/\/$/, "");
