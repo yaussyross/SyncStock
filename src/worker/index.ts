@@ -147,6 +147,11 @@ const server = createServer(async (req, res) => {
     return sendJson(res, 200, { ok: true });
   }
 
+  if (req.method === "POST" && req.url === "/auth-check") {
+    if (!(await requestAuthorized(req))) return sendJson(res, 401, { error: "Unauthorized" });
+    return sendJson(res, 200, { ok: true });
+  }
+
   if (req.method !== "POST" || req.url !== "/enqueue") {
     return sendJson(res, 404, { error: "Not found" });
   }
