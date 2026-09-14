@@ -1,17 +1,15 @@
-import { Queue } from "bullmq";
-import { redis as connection } from "./redis";
+import { enqueueOrderSync } from "./queue-bridge";
 
-// Background job queue: webhook handlers enqueue work here instead of doing
-// the QBO API call inline, so a slow/down QBO API can't cause Shopify to
-// think our webhook endpoint is broken.
-export { connection };
-
-export const syncQueue = new Queue("order-sync", {
-  connection,
-  defaultJobOptions: {
-    attempts: 5,
-    backoff: { type: "exponential", delay: 30_000 },
-    removeOnComplete: 500,
-    removeOnFail: false,
+// Web/API-side queue facade. In production this sends jobs over HTTPS to the
+// Railway bridge so Vercel never needs direct access to the private Redis.
+export const syncQueue = {
+  async add(
+    _name: string,
+    data: { userId: string; order: any },
+    options: { jobId?: string | number }
+  ) {
+    const jobId = String(options?.jobId || `order-${data.userId}-${data.order?.id ?? Date.now()}`);
+    await enqueueOrderSync({ userId: data.userId, order: data.order, jobId });
+    return { id: jobId };
   },
-});
+};
