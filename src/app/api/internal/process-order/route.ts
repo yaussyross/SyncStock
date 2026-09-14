@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { processOrderSync } from "@/lib/sync";
 
 const WORKER_SIGNING_PUBLIC_KEY_PEM = `-----BEGIN PUBLIC KEY-----
-MCowBQYDK2VwAyEAxzF/ZUcRRntIrjOkl29U+hvQ1xJSrlCQnWav39XbEoI=
+MCowBQYDK2VwAyEAG9flPogWlcoP1emNdR4o0KtjvuqQPONcUpYQqydWYag=
 -----END PUBLIC KEY-----`;
 const workerPublicKey = crypto.createPublicKey(WORKER_SIGNING_PUBLIC_KEY_PEM);
 const MAX_SKEW_MS = 5 * 60 * 1000;
