@@ -21,7 +21,8 @@ export default function BillingPage() {
         <div>
           <p className="section-kicker">FOUNDING PRICING</p>
           <h1 style={{ fontSize: 32, marginTop: 8, marginBottom: 8 }}>Choose a plan</h1>
-          <p style={{ color: "var(--paper-dim)", marginBottom: 28 }}>Your first 20 synced orders are free. Paid usage resets only after Stripe confirms each successful billing period.</p>
+          <p style={{ color: "var(--paper-dim)", marginBottom: 12 }}>Your first 20 synced orders are free. Paid usage resets only after Stripe confirms each successful billing period.</p>
+          <p style={{ color: "var(--paper-dim)", marginBottom: 28, fontSize: 13 }}>Beta safety gate: paid checkout unlocks only after Shopify, QuickBooks, and at least one product mapping are ready, so you are not charged for an unusable setup.</p>
         </div>
         <button className="btn btn-secondary" onClick={() => redirectFromApi("/api/stripe/portal")}>Manage existing subscription</button>
       </div>
