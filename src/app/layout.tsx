@@ -1,5 +1,6 @@
 import "./globals.css";
 import "./launch.css";
+import FeedbackLink from "@/components/FeedbackLink";
 
 export const metadata = {
   title: "SyncStock — Shopify orders into clean QuickBooks",
@@ -27,7 +28,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <FeedbackLink />
+      </body>
     </html>
   );
 }
