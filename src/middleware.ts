@@ -44,17 +44,18 @@ async function hasValidShopifyHmac(searchParams: URLSearchParams) {
 export async function middleware(req: NextRequest) {
   const { pathname, searchParams } = req.nextUrl;
 
-  // Shopify custom-distribution install links first land on the configured app URL
-  // with a signed shop/hmac/timestamp query. Continue that trusted handoff into
-  // SyncStock's standalone OAuth authorization-code flow instead of rendering the
-  // marketing homepage.
+  // Shopify custom-distribution links first land on the configured app URL with
+  // shop/host/timestamp metadata. This first hop performs no privileged action;
+  // it only starts SyncStock's own OAuth flow. The shop is strictly validated as
+  // a myshopify.com hostname. The actual OAuth callback remains protected by the
+  // browser-bound state nonce plus Shopify HMAC verification before any access
+  // token is accepted.
   if (pathname === "/") {
     const shop = searchParams.get("shop");
-    const hmac = searchParams.get("hmac");
-    if (!shop || !hmac) return NextResponse.next();
+    if (!shop) return NextResponse.next();
 
-    if (!isShopifyDomain(shop) || !(await hasValidShopifyHmac(searchParams))) {
-      return NextResponse.json({ error: "Invalid Shopify installation request." }, { status: 400 });
+    if (!isShopifyDomain(shop)) {
+      return NextResponse.json({ error: "Invalid Shopify shop domain." }, { status: 400 });
     }
 
     const oauthStart = new URL("/api/auth/shopify", req.url);
@@ -62,9 +63,9 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(oauthStart);
   }
 
-  // Defense in depth for the OAuth callback. The route already validates the
-  // state nonce; middleware additionally validates Shopify's HMAC and makes sure
-  // the returning shop is the same one stored at OAuth start.
+  // Defense in depth for the OAuth callback. The route validates the state nonce;
+  // middleware also validates Shopify's HMAC and requires the returning shop to
+  // match the shop stored when OAuth began.
   if (pathname === "/api/auth/shopify/callback") {
     const shop = searchParams.get("shop");
     const expectedShop = req.cookies.get("shopify_oauth_shop")?.value ?? null;
