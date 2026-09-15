@@ -21,7 +21,7 @@ const features = [
 const plans = [
   {
     name: "Solo",
-    price: "$19",
+    price: "$8",
     suffix: "/mo",
     description: "For owner-operated stores",
     orders: "Up to 200 orders / month",
@@ -30,8 +30,8 @@ const plans = [
     featured: false,
   },
   {
-    name: "Growth",
-    price: "$49",
+    name: "Scale",
+    price: "$29",
     suffix: "/mo",
     description: "For stores with steady volume",
     orders: "Up to 1,000 orders / month",
@@ -40,12 +40,12 @@ const plans = [
     featured: true,
   },
   {
-    name: "Pro",
-    price: "$99",
+    name: "Empire",
+    price: "$49",
     suffix: "/mo",
     description: "For high-volume operators",
     orders: "Unlimited orders",
-    features: ["Everything in Growth", "Unlimited order volume", "Advanced controls as released", "Email support"],
+    features: ["Everything in Scale", "Unlimited order volume", "Advanced controls as released", "Email support"],
     cta: "Start free",
     featured: false,
   },
