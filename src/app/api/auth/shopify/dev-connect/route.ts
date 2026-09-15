@@ -81,26 +81,40 @@ async function registerWebhooks(shop: string, token: string, desired: DesiredWeb
 }
 
 // Temporary private-beta bridge for the SyncStock-owned Shopify dev store.
-// Shopify's client-credentials grant is valid only when app and store are in the same Dev Dashboard organization.
-// Remove this route after the beta store has completed end-to-end validation; merchant installs continue to use OAuth.
+// Use a merchant-org Dev Dashboard app via SHOPIFY_DEV_CLIENT_ID/SHOPIFY_DEV_CLIENT_SECRET.
+// The partner-distributed SyncStock app keeps SHOPIFY_API_KEY/SHOPIFY_API_SECRET for merchant OAuth.
 export async function GET(_req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.redirect(`${process.env.APP_URL}/login?error=session_expired`);
+
+  const clientId = process.env.SHOPIFY_DEV_CLIENT_ID;
+  const clientSecret = process.env.SHOPIFY_DEV_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
+    console.error("[shopify dev-connect] missing dedicated dev-store credentials");
+    return NextResponse.redirect(`${process.env.APP_URL}/dashboard?shopify_dev_error=missing_dev_credentials`);
+  }
 
   const tokenRes = await fetch(`https://${DEV_SHOP}/admin/oauth/access_token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       grant_type: "client_credentials",
-      client_id: process.env.SHOPIFY_API_KEY || "",
-      client_secret: process.env.SHOPIFY_API_SECRET || "",
+      client_id: clientId,
+      client_secret: clientSecret,
     }),
     cache: "no-store",
   });
 
-  const tokenJson = await tokenRes.json().catch(() => ({}));
+  const raw = await tokenRes.text();
+  let tokenJson: any = {};
+  try {
+    tokenJson = raw ? JSON.parse(raw) : {};
+  } catch {
+    tokenJson = {};
+  }
   if (!tokenRes.ok || !tokenJson.access_token) {
-    console.error("[shopify dev-connect] token exchange failed", tokenRes.status, tokenJson?.error || tokenJson?.error_description);
+    const safeError = tokenJson?.error || tokenJson?.error_description || raw.slice(0, 240) || "token_exchange_failed";
+    console.error("[shopify dev-connect] token exchange failed", tokenRes.status, safeError);
     const params = new URLSearchParams({ shopify_dev_error: tokenJson?.error || "token_exchange_failed" });
     return NextResponse.redirect(`${process.env.APP_URL}/dashboard?${params.toString()}`);
   }
