@@ -1,5 +1,6 @@
 import "./globals.css";
 import "./launch.css";
+import "./fab.css";
 import FeedbackLink from "@/components/FeedbackLink";
 
 export const metadata = {
