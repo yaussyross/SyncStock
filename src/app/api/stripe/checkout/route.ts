@@ -21,6 +21,22 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Do not charge founding-beta customers before the product is actually usable
+  // for their account. A connected Shopify store, connected QuickBooks company,
+  // and at least one mapping prove onboarding has reached a meaningful state.
+  const [shopifyConnection, qboConnection, mappingCount] = await Promise.all([
+    db.shopifyConnection.findUnique({ where: { userId: user.id }, select: { id: true, webhookId: true } }),
+    db.qboConnection.findUnique({ where: { userId: user.id }, select: { id: true } }),
+    db.productMapping.count({ where: { userId: user.id } }),
+  ]);
+
+  if (!shopifyConnection || !shopifyConnection.webhookId || !qboConnection || mappingCount < 1) {
+    return NextResponse.json(
+      { error: "Finish Shopify, QuickBooks, and at least one product mapping before choosing a paid plan. Your 20-order beta trial remains free." },
+      { status: 409 }
+    );
+  }
+
   let customerId = user.stripeCustomerId;
   if (!customerId) {
     const customer = await stripe.customers.create({
