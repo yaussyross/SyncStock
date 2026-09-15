@@ -17,7 +17,15 @@ async function main() {
   const cipherText = encrypt(secret);
   assert.notEqual(cipherText, secret);
   assert.equal(decrypt(cipherText), secret);
-  assert.throws(() => decrypt(`${cipherText.slice(0, -1)}x`));
+
+  // Flip an actual authentication-tag bit instead of replacing the final
+  // base64url character. Some final base64url characters can differ only in
+  // unused padding bits and still decode to identical bytes.
+  const [version, ivEncoded, tagEncoded, payloadEncoded] = cipherText.split(":");
+  const tamperedTag = Buffer.from(tagEncoded, "base64url");
+  tamperedTag[0] ^= 0x01;
+  const tamperedCipherText = [version, ivEncoded, tamperedTag.toString("base64url"), payloadEncoded].join(":");
+  assert.throws(() => decrypt(tamperedCipherText));
 
   const baseUser = {
     planTier: "trial",
