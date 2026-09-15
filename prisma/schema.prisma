@@ -33,6 +33,7 @@ model User {
   syncLogs           SyncLog[]
   orderAdjustments   OrderAdjustment[]
   complianceRequests ComplianceRequest[]
+  feedback           Feedback[]
 }
 
 model ShopifyConnection {
@@ -170,4 +171,19 @@ model WebhookDelivery {
 
   @@index([shopDomain, createdAt])
   @@index([eventId])
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category  String   @default("feedback")
+  rating    Int?
+  message   String
+  page      String?
+  status    String   @default("new")
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
 }
