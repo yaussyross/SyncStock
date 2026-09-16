@@ -36,7 +36,7 @@ The internal Stripe plan keys remain `starter`, `growth`, and `unlimited` so exi
 ## Development
 
 ```bash
-npm install
+npm ci
 npx prisma generate
 npm run dev
 ```
@@ -61,4 +61,4 @@ Copy `.env.example` to `.env` and provide your own credentials. Never commit rea
 
 ## Production status
 
-**Private beta / not ready for live accounting data yet.** Remaining launch blockers include product-mapping UX, full transaction-total reconciliation (discounts, shipping, tips, duties, etc.), refunds/cancellations, monthly quota reset logic, hardened authentication, monitoring, and end-to-end sandbox testing.
+**Private beta / not ready for live accounting data yet.** Password authentication, product mapping, adjustment settings, refund/cancellation review, and billing-period enforcement exist in code. Launch still requires real Shopify/QuickBooks sandbox validation, deployment and worker verification, checkout/portal tests, concurrency hardening, monitoring, and completed business/support details. See [the launch record](docs/LAUNCH.md).

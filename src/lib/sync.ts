@@ -1,3 +1,4 @@
+import { getQuotaState } from "./quota";
 import { db } from "./db";
 import {
   getQboClientForUser,
@@ -59,6 +60,15 @@ export async function processOrderSync(userId: string, order: ShopifyOrder) {
 
   // A duplicate BullMQ job must never recreate an already-synced receipt.
   if (log?.status === "success" && log.qboInvoiceId) return;
+
+  // Jobs can wait past cancellation or period expiry. Recheck at execution time.
+  const user = await db.user.findUnique({ where: { id: userId } });
+  if (!user || !getQuotaState(user).allowed) {
+    if (log) await db.syncLog.update({ where: { id: log.id }, data: {
+      status: "skipped_quota_exceeded", errorMessage: "Sync paused: subscription or order allowance is unavailable.",
+    } });
+    return;
+  }
 
   const [mappings, accountingSettings] = await Promise.all([
     db.productMapping.findMany({ where: { userId } }),

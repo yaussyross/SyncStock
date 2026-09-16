@@ -22,7 +22,7 @@ export function getQuotaState(user: User, now = new Date()): QuotaState {
     return { allowed: false, limit, reason: "subscription_inactive" };
   }
 
-  if (user.quotaPeriodEnd && now.getTime() >= user.quotaPeriodEnd.getTime()) {
+  if (!user.quotaPeriodEnd || now.getTime() >= user.quotaPeriodEnd.getTime()) {
     // Usage only resets after Stripe confirms the next invoice was paid.
     return { allowed: false, limit, reason: "billing_period_expired" };
   }

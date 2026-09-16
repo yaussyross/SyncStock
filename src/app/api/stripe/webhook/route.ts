@@ -1,44 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { db } from "@/lib/db";
-import { isSubscriptionActive, planForPrice } from "@/lib/plans";
+import { planForPrice } from "@/lib/plans";
+
+import { applySubscription } from "@/lib/stripe-subscription";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-function periodDates(sub: Stripe.Subscription) {
-  const raw = sub as any;
-  const start = Number(raw.current_period_start ?? raw.items?.data?.[0]?.current_period_start ?? 0);
-  const end = Number(raw.current_period_end ?? raw.items?.data?.[0]?.current_period_end ?? 0);
-  return {
-    start: start ? new Date(start * 1000) : null,
-    end: end ? new Date(end * 1000) : null,
-  };
-}
 
-async function applySubscription(sub: Stripe.Subscription, resetForPaidPeriod: boolean) {
-  const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
-  const priceId = sub.items.data[0]?.price?.id;
-  const planTier = planForPrice(priceId);
-  const { start, end } = periodDates(sub);
-
-  const user = await db.user.findFirst({ where: { stripeCustomerId: customerId } });
-  if (!user) return;
-
-  const periodChanged = !!start && (!user.quotaPeriodStart || user.quotaPeriodStart.getTime() !== start.getTime());
-  const firstPaidActivation = user.planTier === "trial" && planTier !== "trial" && isSubscriptionActive(sub.status);
-  const shouldReset = isSubscriptionActive(sub.status) && (firstPaidActivation || (resetForPaidPeriod && periodChanged));
-
-  await db.user.update({
-    where: { id: user.id },
-    data: {
-      stripeSubscriptionId: sub.id,
-      subscriptionStatus: sub.status,
-      planTier,
-      quotaPeriodStart: start,
-      quotaPeriodEnd: end,
-      ...(shouldReset ? { orderQuotaUsed: 0, quotaResetAt: start ?? new Date() } : {}),
-    },
-  });
+function invoiceSubscriptionId(invoice: Stripe.Invoice): string | undefined {
+  const raw = invoice as any;
+  const subscription = raw.subscription ?? raw.parent?.subscription_details?.subscription;
+  return typeof subscription === "string" ? subscription : subscription?.id;
 }
 
 export async function POST(req: NextRequest) {
@@ -59,28 +32,24 @@ export async function POST(req: NextRequest) {
       const eventSub = event.data.object as Stripe.Subscription;
       // Stripe does not guarantee webhook ordering. Retrieve current state before provisioning.
       const current = await stripe.subscriptions.retrieve(eventSub.id);
-      await applySubscription(current, false);
+      await applySubscription(current);
       break;
     }
     case "invoice.paid": {
       const invoice = event.data.object as Stripe.Invoice;
-      const subscriptionId = typeof (invoice as any).subscription === "string"
-        ? (invoice as any).subscription
-        : (invoice as any).subscription?.id;
+      const subscriptionId = invoiceSubscriptionId(invoice);
       if (subscriptionId) {
         const current = await stripe.subscriptions.retrieve(subscriptionId);
-        await applySubscription(current, true);
+        await applySubscription(current, invoice.id);
       }
       break;
     }
     case "invoice.payment_failed": {
       const invoice = event.data.object as Stripe.Invoice;
-      const subscriptionId = typeof (invoice as any).subscription === "string"
-        ? (invoice as any).subscription
-        : (invoice as any).subscription?.id;
+      const subscriptionId = invoiceSubscriptionId(invoice);
       if (subscriptionId) {
         const current = await stripe.subscriptions.retrieve(subscriptionId);
-        await applySubscription(current, false);
+        await applySubscription(current);
       }
       break;
     }
@@ -88,7 +57,7 @@ export async function POST(req: NextRequest) {
       const sub = event.data.object as Stripe.Subscription;
       const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
       await db.user.updateMany({
-        where: { stripeCustomerId: customerId },
+        where: { stripeCustomerId: customerId, stripeSubscriptionId: sub.id },
         data: {
           stripeSubscriptionId: sub.id,
           subscriptionStatus: "canceled",
