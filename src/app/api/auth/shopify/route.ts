@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 
+const oauthCookieOptions = {
+  httpOnly: true,
+  sameSite: "lax" as const,
+  secure: process.env.NODE_ENV === "production",
+  maxAge: 600,
+  path: "/",
+};
+
 // Step 1 of Shopify OAuth: redirect merchant to Shopify's permission screen.
 // Triggered when user enters their shop domain on the "Connect Shopify" page
 // (web) or the Connect Shopify screen (mobile app).
@@ -49,10 +57,13 @@ export async function GET(req: NextRequest) {
     `&state=${state}`;
 
   const res = NextResponse.redirect(installUrl);
-  res.cookies.set("shopify_oauth_state", state, { httpOnly: true, maxAge: 600 });
-  res.cookies.set("shopify_oauth_shop", shop, { httpOnly: true, maxAge: 600 });
+  // Shopify returns through a cross-site top-level navigation. Explicit Lax,
+  // Secure cookies match Shopify's standalone OAuth guidance and keep the
+  // browser-bound state/shop values available for callback validation.
+  res.cookies.set("shopify_oauth_state", state, oauthCookieOptions);
+  res.cookies.set("shopify_oauth_shop", shop, oauthCookieOptions);
   if (mobileUserId) {
-    res.cookies.set("shopify_oauth_mobile_user", mobileUserId, { httpOnly: true, maxAge: 600 });
+    res.cookies.set("shopify_oauth_mobile_user", mobileUserId, oauthCookieOptions);
   }
   return res;
 }
