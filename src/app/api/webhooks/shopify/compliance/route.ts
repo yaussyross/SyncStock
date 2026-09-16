@@ -1,19 +1,8 @@
+import { verifyShopifyWebhook } from "@/lib/shopify-signatures";
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
-function validHmac(rawBody: string, provided: string | null) {
-  const secret = process.env.SHOPIFY_API_SECRET;
-  if (!secret || !provided) return false;
-  const expected = crypto.createHmac("sha256", secret).update(rawBody, "utf8").digest();
-  let received: Buffer;
-  try {
-    received = Buffer.from(provided, "base64");
-  } catch {
-    return false;
-  }
-  return received.length === expected.length && crypto.timingSafeEqual(received, expected);
-}
 
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
@@ -21,7 +10,7 @@ export async function POST(req: NextRequest) {
   const deliveryId = req.headers.get("x-shopify-webhook-id") || crypto.randomUUID();
   const shopDomain = req.headers.get("x-shopify-shop-domain");
 
-  if (!validHmac(rawBody, req.headers.get("x-shopify-hmac-sha256"))) {
+  if (!await verifyShopifyWebhook(rawBody, req.headers.get("x-shopify-hmac-sha256"))) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
   if (!topic || !shopDomain) return NextResponse.json({ error: "Missing Shopify metadata" }, { status: 400 });

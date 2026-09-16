@@ -1,3 +1,4 @@
+import { verifyShopifyWebhook } from "@/lib/shopify-signatures";
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { Prisma } from "@prisma/client";
@@ -5,21 +6,6 @@ import { db } from "@/lib/db";
 import { syncQueue } from "@/lib/queue";
 import { getQuotaState } from "@/lib/quota";
 
-function verifyShopifyHmac(rawBody: string, providedHmac: string | null) {
-  const secret = process.env.SHOPIFY_API_SECRET;
-  if (!secret || !providedHmac) return false;
-
-  const expected = crypto.createHmac("sha256", secret).update(rawBody, "utf8").digest();
-  let received: Buffer;
-
-  try {
-    received = Buffer.from(providedHmac, "base64");
-  } catch {
-    return false;
-  }
-
-  return received.length === expected.length && crypto.timingSafeEqual(received, expected);
-}
 
 function isUniqueConstraintError(error: unknown) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
@@ -39,7 +25,7 @@ export async function POST(req: NextRequest) {
   const eventId = req.headers.get("x-shopify-event-id");
   const topic = req.headers.get("x-shopify-topic");
 
-  if (!verifyShopifyHmac(rawBody, hmacHeader)) {
+  if (!await verifyShopifyWebhook(rawBody, hmacHeader)) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
