@@ -1,0 +1,1 @@
+ALTER TABLE "ProductMapping" ALTER COLUMN "updatedAt" DROP DEFAULT;

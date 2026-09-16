@@ -182,7 +182,7 @@ model Feedback {
   message   String
   page      String?
   status    String   @default("new")
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
 
   @@index([userId, createdAt])
   @@index([status, createdAt])

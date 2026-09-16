@@ -104,6 +104,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true });
   }
 
+  const existingLog = await db.syncLog.findUnique({
+    where: { userId_shopifyOrderId: { userId: user.id, shopifyOrderId: String(order.id) } },
+  });
+
+  if (existingLog && existingLog.status !== "queue_failed") {
+    await db.webhookDelivery.update({
+      where: { deliveryId },
+      data: { status: "ignored", processedAt: new Date() },
+    });
+    return NextResponse.json({ received: true, duplicate: true, orderStatus: existingLog.status });
+  }
+
+
   const quota = getQuotaState(user);
   if (!quota.allowed) {
     const message = quotaMessage(quota.reason);
@@ -125,17 +138,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true, skipped: quota.reason });
   }
 
-  const existingLog = await db.syncLog.findUnique({
-    where: { userId_shopifyOrderId: { userId: user.id, shopifyOrderId: String(order.id) } },
-  });
-
-  if (existingLog && existingLog.status !== "queue_failed") {
-    await db.webhookDelivery.update({
-      where: { deliveryId },
-      data: { status: "ignored", processedAt: new Date() },
-    });
-    return NextResponse.json({ received: true, duplicate: true, orderStatus: existingLog.status });
-  }
 
   if (existingLog) {
     await db.syncLog.update({
