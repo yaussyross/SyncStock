@@ -23,6 +23,9 @@ export async function POST(req: NextRequest) {
   }
 
   const email = normalizeEmail(parsed.data.email);
+  if (process.env.SYNCSTOCK_SANDBOX === "true" && (!process.env.SANDBOX_OWNER_EMAIL || email !== normalizeEmail(process.env.SANDBOX_OWNER_EMAIL))) {
+    return NextResponse.json({ error: "This temporary sandbox is limited to its owner." }, { status: 403 });
+  }
   const passwordHash = await hashPassword(parsed.data.password);
 
   let user;

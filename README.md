@@ -17,9 +17,9 @@ SyncStock is a reliability-first Shopify → QuickBooks Online micro-SaaS. The p
 
 ## Founding pricing
 
-- **Solo — $19/mo:** up to 200 orders/month
-- **Growth — $49/mo:** up to 1,000 orders/month
-- **Pro — $99/mo:** unlimited orders + priority support
+- **Solo — $8/mo:** up to 200 orders/month
+- **Scale — $29/mo:** up to 1,000 orders/month
+- **Empire — $49/mo:** unlimited orders + priority support
 - Trial: first 20 synced orders, no card required
 
 The internal Stripe plan keys remain `starter`, `growth`, and `unlimited` so existing environment variable names do not need to change.

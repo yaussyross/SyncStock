@@ -93,6 +93,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Invalid or expired OAuth state." }, { status: 400 });
   }
 
+  if (process.env.SYNCSTOCK_SANDBOX === "true" && (!process.env.SANDBOX_SHOP_DOMAIN || shop !== process.env.SANDBOX_SHOP_DOMAIN)) {
+    return NextResponse.json({ error: "Development-store mismatch." }, { status: 403 });
+  }
   const isMobile = !!mobileUserId;
   const user = isMobile
     ? await db.user.findUnique({ where: { id: mobileUserId } })

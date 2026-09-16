@@ -5,7 +5,16 @@ import { processOrderSync } from "@/lib/sync";
 const WORKER_SIGNING_PUBLIC_KEY_PEM = `-----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEAG9flPogWlcoP1emNdR4o0KtjvuqQPONcUpYQqydWYag=
 -----END PUBLIC KEY-----`;
-const workerPublicKey = crypto.createPublicKey(WORKER_SIGNING_PUBLIC_KEY_PEM);
+// A sandbox must use its own key; never silently trust the production worker.
+function workerKey() {
+  const configured = process.env.WORKER_SIGNING_PUBLIC_KEY_B64;
+  if (process.env.SYNCSTOCK_SANDBOX === "true" && !configured) {
+    throw new Error("Sandbox requires WORKER_SIGNING_PUBLIC_KEY_B64");
+  }
+  return crypto.createPublicKey(configured
+    ? Buffer.from(configured, "base64").toString("utf8")
+    : WORKER_SIGNING_PUBLIC_KEY_PEM);
+}
 const MAX_SKEW_MS = 5 * 60 * 1000;
 
 function workerAuthorized(rawBody: string, timestampHeader: string | null, signatureHeader: string | null) {
@@ -27,12 +36,15 @@ function workerAuthorized(rawBody: string, timestampHeader: string | null, signa
   return crypto.verify(
     null,
     Buffer.from(`${timestampHeader}.${rawBody}`, "utf8"),
-    workerPublicKey,
+    workerKey(),
     signature
   );
 }
 
 export async function POST(req: NextRequest) {
+  if (process.env.SYNCSTOCK_SANDBOX === "true" && process.env.QBO_ENVIRONMENT !== "sandbox") {
+    return NextResponse.json({ error: "Sandbox accounting configuration is invalid" }, { status: 503 });
+  }
   const rawBody = await req.text();
 
   if (

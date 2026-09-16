@@ -7,6 +7,14 @@ import jwt from "jsonwebtoken";
 // (web) or the Connect Shopify screen (mobile app).
 export async function GET(req: NextRequest) {
   const shop = req.nextUrl.searchParams.get("shop");
+  if (process.env.SYNCSTOCK_SANDBOX === "true") {
+    if (!process.env.SHOPIFY_API_KEY || !process.env.SHOPIFY_API_SECRET) {
+      return NextResponse.json({ error: "Sandbox Shopify credentials still need to be configured." }, { status: 503 });
+    }
+    if (!process.env.SANDBOX_SHOP_DOMAIN || shop !== process.env.SANDBOX_SHOP_DOMAIN) {
+      return NextResponse.json({ error: "Only the approved development store can connect to this sandbox." }, { status: 403 });
+    }
+  }
   const isMobile = req.nextUrl.searchParams.get("mobile") === "1";
   const mobileToken = req.nextUrl.searchParams.get("token");
 
