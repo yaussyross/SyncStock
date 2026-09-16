@@ -1,4 +1,4 @@
-import { verifyShopifySignature } from "./lib/shopify-signatures";
+import { buildShopifyOAuthMessage, verifyShopifySignature } from "./lib/shopify-signatures";
 import { NextRequest, NextResponse } from "next/server";
 
 function isShopifyDomain(shop: string | null) {
@@ -18,14 +18,7 @@ async function hasValidShopifyHmac(searchParams: URLSearchParams) {
   const provided = searchParams.get("hmac");
   const signature = provided ? hexToBytes(provided) : null;
   if (!signature) return false;
-
-  const message = Array.from(searchParams.entries())
-    .filter(([key]) => key !== "hmac")
-    .sort(([left], [right]) => left.localeCompare(right))
-    .map(([key, value]) => `${key}=${value}`)
-    .join("&");
-
-  return verifyShopifySignature(message, signature);
+  return verifyShopifySignature(buildShopifyOAuthMessage(searchParams), signature);
 }
 
 export async function middleware(req: NextRequest) {
