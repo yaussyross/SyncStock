@@ -55,6 +55,8 @@ try {
   await run('runuser', ['-u', 'postgres', '--', '/usr/lib/postgresql/15/bin/initdb', '-D', '/tmp/syncstock-pg', '--auth-local=trust', '--auth-host=scram-sha-256', '--pwfile=/tmp/syncstock-pg-password']);
   await run('runuser', ['-u', 'postgres', '--', '/usr/lib/postgresql/15/bin/pg_ctl', '-D', '/tmp/syncstock-pg', '-o', '-h 127.0.0.1 -p 5432 -c shared_buffers=32MB -c max_connections=30', '-w', 'start']);
   await run('runuser', ['-u', 'postgres', '--', 'createdb', 'syncstock']);
+  // Match the non-login Supabase roles used by the existing CI migration fixture.
+  await run('runuser', ['-u', 'postgres', '--', 'psql', '-v', 'ON_ERROR_STOP=1', '-d', 'syncstock', '-c', 'CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN;']);
   const redisPassword = secret();
   await run('redis-server', ['--bind', '127.0.0.1', '--port', '6379', '--requirepass', redisPassword, '--save', '', '--appendonly', 'no', '--maxmemory', '64mb', '--maxmemory-policy', 'noeviction'], process.env, true);
   const { publicKey, privateKey } = generateKeyPairSync('ed25519');
@@ -87,3 +89,4 @@ try {
   console.error(error.message);
   shutdown(1);
 }
+
