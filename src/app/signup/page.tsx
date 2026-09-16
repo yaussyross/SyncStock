@@ -14,21 +14,35 @@ export default function SignupPage() {
     setLoading(true);
     setError("");
 
-    const res = await fetch("/api/auth/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15_000);
 
-    if (res.ok) {
-      router.push("/dashboard");
-      router.refresh();
-      return;
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+        signal: controller.signal,
+      });
+
+      if (res.ok) {
+        router.push("/dashboard");
+        router.refresh();
+        return;
+      }
+
+      const body = await res.json().catch(() => ({}));
+      setError(body.error || "Could not create your account.");
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        setError("Account creation timed out. Please try again.");
+      } else {
+        setError("Could not reach SyncStock. Please check your connection and try again.");
+      }
+    } finally {
+      window.clearTimeout(timeout);
+      setLoading(false);
     }
-
-    const body = await res.json().catch(() => ({}));
-    setError(body.error || "Could not create your account.");
-    setLoading(false);
   }
 
   return (

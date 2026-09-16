@@ -1,13 +1,14 @@
 // Prisma schema — Postgres
-// Run: npx prisma migrate dev --name init  (after DATABASE_URL is set in .env)
+// Vercel + Supabase integration injects POSTGRES_PRISMA_URL and POSTGRES_URL_NON_POOLING automatically.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
 model User {
@@ -32,6 +33,7 @@ model User {
   syncLogs           SyncLog[]
   orderAdjustments   OrderAdjustment[]
   complianceRequests ComplianceRequest[]
+  feedback           Feedback[]
 }
 
 model ShopifyConnection {
@@ -169,4 +171,19 @@ model WebhookDelivery {
 
   @@index([shopDomain, createdAt])
   @@index([eventId])
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category  String   @default("feedback")
+  rating    Int?
+  message   String
+  page      String?
+  status    String   @default("new")
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
 }

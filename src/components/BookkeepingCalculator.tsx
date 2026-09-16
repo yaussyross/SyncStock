@@ -17,7 +17,7 @@ export default function BookkeepingCalculator() {
     rate >= 0 && rate <= 10000 && share >= 0 && share <= 100;
   const hours = count * time / 60;
   const savedHours = hours * share / 100;
-  const plan = count <= 200 ? { name: "Solo", price: 19 } : count <= 1000 ? { name: "Growth", price: 49 } : { name: "Pro", price: 99 };
+  const plan = count <= 200 ? { name: "Solo", price: 8 } : count <= 1000 ? { name: "Scale", price: 29 } : { name: "Empire", price: 49 };
   const value = savedHours * rate;
   const money = (amount: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(amount);
 

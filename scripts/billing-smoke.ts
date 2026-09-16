@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { PLAN_PRICE_IDS } from "../src/lib/plans";
 import { db } from "../src/lib/db";
 import { applySubscription } from "../src/lib/stripe-subscription";
 
@@ -16,7 +17,7 @@ async function main() {
     id: `sub_${customer}`, customer, status: "active", latest_invoice: "in_current",
     current_period_start: start.getTime() / 1000,
     current_period_end: end.getTime() / 1000,
-    items: { data: [{ price: { id: process.env.STRIPE_PRICE_STARTER } }] },
+    items: { data: [{ price: { id: PLAN_PRICE_IDS.starter } }] },
   } as any;
   try {
     await applySubscription(sub);
@@ -29,6 +30,7 @@ async function main() {
     await Promise.all([applySubscription(sub, "in_current"), applySubscription(sub, "in_current")]);
     row = await db.user.findUniqueOrThrow({ where: { id: user.id } });
     assert.equal(row.orderQuotaUsed, 0);
+    assert.equal(row.planTier, "starter", "paid invoice must retain the catalog plan");
     assert.equal(row.quotaPeriodEnd?.getTime(), end.getTime());
     await db.user.update({ where: { id: user.id }, data: { orderQuotaUsed: 7 } });
     await applySubscription(sub, "in_current");

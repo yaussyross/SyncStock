@@ -1,8 +1,21 @@
 import "./globals.css";
+import "./launch.css";
+import "./fab.css";
+import FeedbackLink from "@/components/FeedbackLink";
 
 export const metadata = {
-  title: "SyncStock — Shopify to QuickBooks, automatically",
-  description: "Automatic order sync from Shopify to QuickBooks Online. No manual entry, no bloat.",
+  title: "SyncStock — Shopify orders into clean QuickBooks",
+  description: "Founding beta for Shopify merchants who want paid orders mapped, checked, and recorded in QuickBooks Online without silent accounting errors.",
+  openGraph: {
+    title: "SyncStock — Shopify orders into clean QuickBooks",
+    description: "Focused Shopify → QuickBooks automation with mapping, reconciliation checks, retry safety, and visible sync history.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SyncStock — Shopify orders into clean QuickBooks",
+    description: "Focused Shopify → QuickBooks automation for merchants who want less manual entry and more control.",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -16,7 +29,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <FeedbackLink />
+      </body>
     </html>
   );
 }

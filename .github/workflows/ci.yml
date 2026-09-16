@@ -7,6 +7,7 @@ on:
     branches:
       - main
       - fix/paid-launch-foundation
+      - feature/launch-site-reliability
 
 jobs:
   verify:
@@ -31,7 +32,8 @@ jobs:
         ports:
           - 6379:6379
     env:
-      DATABASE_URL: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public
+      POSTGRES_PRISMA_URL: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public
+      POSTGRES_URL_NON_POOLING: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public
       REDIS_URL: redis://127.0.0.1:6379
       NEXTAUTH_SECRET: ci-only-nextauth-secret-32-characters
       APP_URL: http://localhost:3000
@@ -68,6 +70,15 @@ jobs:
 
       - name: Validate Prisma schema
         run: npx prisma validate
+
+      - name: Create Supabase roles for migration checks
+        env:
+          PGPASSWORD: syncstock
+        run: |
+          psql -h 127.0.0.1 -U syncstock -d syncstock -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE ROLE anon NOLOGIN;
+          CREATE ROLE authenticated NOLOGIN;
+          SQL
 
       - name: Migrate an empty database
         run: npm run prisma:deploy

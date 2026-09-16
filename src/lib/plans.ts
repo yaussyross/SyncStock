@@ -8,23 +8,29 @@ export const PLAN_LIMITS: Record<string, number> = {
 export const PLAN_LABELS: Record<string, string> = {
   trial: "Trial",
   starter: "Solo",
-  growth: "Growth",
-  unlimited: "Pro",
+  growth: "Scale",
+  unlimited: "Empire",
+};
+
+// Public live Stripe price IDs for the connected SyncStock account.
+// Keeping the launch catalog mapping in source prevents stale deployment
+// environment variables from silently pointing checkout at nonexistent prices.
+export const PLAN_PRICE_IDS: Record<string, string> = {
+  starter: "price_1UDqtYDnfYoetMiVTKb5hyOK",
+  growth: "price_1UDqueDnfYoetMiVg1wryzYZ",
+  unlimited: "price_1UDquyDnfYoetMiVcRAa2lX2",
 };
 
 export function planForPrice(priceId?: string | null): string {
   if (!priceId) return "trial";
-  if (priceId === process.env.STRIPE_PRICE_STARTER) return "starter";
-  if (priceId === process.env.STRIPE_PRICE_GROWTH) return "growth";
-  if (priceId === process.env.STRIPE_PRICE_UNLIMITED) return "unlimited";
+  if (priceId === PLAN_PRICE_IDS.starter) return "starter";
+  if (priceId === PLAN_PRICE_IDS.growth) return "growth";
+  if (priceId === PLAN_PRICE_IDS.unlimited) return "unlimited";
   return "trial";
 }
 
 export function priceForPlan(plan: string): string | null {
-  if (plan === "starter") return process.env.STRIPE_PRICE_STARTER || null;
-  if (plan === "growth") return process.env.STRIPE_PRICE_GROWTH || null;
-  if (plan === "unlimited") return process.env.STRIPE_PRICE_UNLIMITED || null;
-  return null;
+  return PLAN_PRICE_IDS[plan] || null;
 }
 
 export function isSubscriptionActive(status?: string | null) {
