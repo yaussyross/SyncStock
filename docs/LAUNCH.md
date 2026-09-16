@@ -1,6 +1,31 @@
 # SyncStock paid launch — September 9, 2026
 
-## Verified commercial state
+## Verification update — September 16, 2026
+
+This section supersedes the September 9 access/deployment observations below. Historical pricing and outreach copy below must not be reused without updating it to the current catalog.
+
+### Observed
+
+- PR #2 commit `2c5c944be6d92c7ea4f447e2ac627d5d2cf125ae` is mergeable and its fresh CI passed migrations, schema drift, reconciliation, core/quota, billing concurrency, and production build.
+- Connected Vercel access to `raus2/sync-stock` now works. Its PR deployment `dpl_BdSusTZKxXDfudz477R26qniQt5s` is READY and is a preview, not production.
+- Production `https://sync-stock-six.vercel.app/api/health/queue` returned HTTP 200 with `{"ok":true,"queueBridge":"authenticated"}`.
+- Railway worker `https://worker-production-d9af.up.railway.app/health` returned HTTP 200. Railway reports one replica, `npm run worker`, and latest successful deployed commit `cf721c708fc1621860ec0d6c546e6bafbc930d96` from main.
+- The PR preview queue probe returned HTTP 503 with `workerStatus:401`. The worker explicitly accepts only production Vercel identities. A healthy production queue is not evidence that the PR preview can process an order.
+- The connected Supabase project named `shopify-qbo-sync` contains zero ShopifyConnection, QboConnection, ProductMapping, and SyncLog records. The deployed web app's database target still needs confirmation; Vercel project metadata alone does not establish that link.
+- The separate Shopify connector reports a trial store, not a verified development store. Connector access is not a saved OAuth connection inside SyncStock.
+- No order was submitted, no customer was charged, and no QuickBooks transaction was written.
+
+### Concrete next verification slice
+
+Prepare an isolated sandbox web-and-worker pair running this PR commit. It needs its own Redis queue, test database, signing keys, provider sandbox credentials, and matching callback URLs. Set the worker APP_URL to that exact sandbox web deployment and configure a narrowly scoped identity rule for that sandbox deployment. Do not broaden the production worker's identity policy or point a preview at the production queue to make a check green.
+
+Owner-controlled setup still needed: sign in to SyncStock, connect a confirmed Shopify development store and Intuit sandbox company through the app's OAuth flow, and map one test Shopify variant to one sandbox QBO item. Confirm QBO_ENVIRONMENT=sandbox and the actual database target before any test write. Keep paid checkout disabled.
+
+Use one USD development-store order: quantity 1, unit price $10.00, no shipping, discounts, or tax. Capture the order ID and webhook delivery ID. Pass only when the signed paid-order webhook is accepted, the isolated queue job completes, and QBO contains exactly one Sales Receipt with the expected item, quantity, currency, amount, and transaction date. Check SyncLog status and receipt ID and verify quota increases once.
+
+Replay the identical signed webhook, then a new delivery ID for the same order. Verify QBO receipt count remains exactly one and quota remains unchanged. Check receipt count directly rather than relying on a lookup that returns only the first match. Record the tested web/worker commit, order ID, both delivery IDs, receipt ID, totals, quota before/after, and job outcomes. A healthcheck alone does not pass this slice.
+
+## Historical commercial state — September 9
 
 - Canonical repository: https://github.com/yaussyross/SyncStock
 - Existing Vercel project: https://vercel.com/raus2/sync-stock
