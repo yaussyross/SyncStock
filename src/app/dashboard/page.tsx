@@ -1,14 +1,23 @@
 import { getCurrentUser } from "@/lib/session";
 import { db } from "@/lib/db";
 import { PLAN_LABELS, PLAN_LIMITS, isSubscriptionActive } from "@/lib/plans";
+import { refreshShopifyBillingForUser } from "@/lib/shopify-billing";
 import { redirect } from "next/navigation";
 import ConnectPanel from "@/components/ConnectPanel";
 import SyncLogTable from "@/components/SyncLogTable";
 import LogoutButton from "@/components/LogoutButton";
 
 export default async function DashboardPage({ searchParams }: { searchParams: { webhook_error?: string; lifecycle_warning?: string; billing?: string } }) {
-  const user = await getCurrentUser();
+  let user = await getCurrentUser();
   if (!user) redirect("/login");
+
+  try {
+    await refreshShopifyBillingForUser(user.id);
+    const refreshed = await db.user.findUnique({ where: { id: user.id } });
+    if (refreshed) user = refreshed;
+  } catch (error) {
+    console.error("[billing] Could not refresh Shopify billing state", error);
+  }
 
   const [shopifyConn, qboConn, logs, mappingCount, adjustments] = await Promise.all([
     db.shopifyConnection.findUnique({ where: { userId: user.id } }),
@@ -44,8 +53,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
 
       {searchParams.billing === "success" && (
         <div className="card" style={{ borderColor: "rgba(131, 208, 147, 0.35)" }}>
-          <strong>Billing checkout completed.</strong>
-          <p style={{ marginTop: 6, fontSize: 14, color: "var(--paper-dim)" }}>Stripe is confirming the subscription. Your plan updates automatically from signed Stripe webhooks.</p>
+          <strong>Shopify billing approval completed.</strong>
+          <p style={{ marginTop: 6, fontSize: 14, color: "var(--paper-dim)" }}>SyncStock checks the active Shopify app subscription and updates your plan automatically.</p>
         </div>
       )}
 
@@ -66,7 +75,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
       {!billingHealthy && (
         <div className="card" style={{ background: "#2a1712", border: "1px solid #713f2e" }}>
           <strong>⚠ Sync is paused because billing is {user.subscriptionStatus}.</strong>
-          <p style={{ marginTop: 6, fontSize: 14 }}>Update your payment method or subscription in Billing before new paid orders can sync.</p>
+          <p style={{ marginTop: 6, fontSize: 14 }}>Open Billing to review the merchant's Shopify app plan before new paid orders can sync.</p>
         </div>
       )}
 
