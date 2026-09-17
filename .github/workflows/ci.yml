@@ -102,6 +102,9 @@ jobs:
       - name: Shopify embedded ID token validation
         run: npm run test:shopify-auth
 
+      - name: Shopify API error payload normalization
+        run: npm run test:shopify-errors
+
       - name: Production build
         run: npm run build
 

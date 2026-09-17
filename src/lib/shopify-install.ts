@@ -11,6 +11,27 @@ type DesiredWebhook = {
   field: "webhookId" | "refundWebhookId" | "cancelledWebhookId" | "uninstallWebhookId";
 };
 
+function shopifyErrorMessage(payload: any, status: number) {
+  const errors = payload?.errors;
+  if (Array.isArray(errors)) {
+    const messages = errors
+      .map((error: any) => typeof error === "string" ? error : error?.message)
+      .filter(Boolean);
+    if (messages.length) return messages.join("; ");
+  }
+  if (typeof errors === "string" && errors.trim()) return errors.trim();
+  if (errors && typeof errors === "object") {
+    const messages = Object.entries(errors).flatMap(([field, value]) => {
+      if (Array.isArray(value)) return value.map((item) => `${field}: ${String(item)}`);
+      if (value != null) return [`${field}: ${String(value)}`];
+      return [];
+    });
+    if (messages.length) return messages.join("; ");
+  }
+  if (typeof payload?.error === "string" && payload.error.trim()) return payload.error.trim();
+  return `Shopify returned ${status}`;
+}
+
 async function graphql(shop: string, token: string, query: string, variables: Record<string, unknown> = {}) {
   const response = await fetch(`https://${shop}/admin/api/${SHOPIFY_API_VERSION}/graphql.json`, {
     method: "POST",
@@ -22,9 +43,11 @@ async function graphql(shop: string, token: string, query: string, variables: Re
     cache: "no-store",
   });
   const payload = await response.json().catch(() => null) as any;
-  if (!response.ok || payload?.errors?.length) {
-    const message = payload?.errors?.map((error: any) => error.message).filter(Boolean).join("; ") || `Shopify returned ${response.status}`;
-    throw new Error(message);
+  const hasErrors = Array.isArray(payload?.errors)
+    ? payload.errors.length > 0
+    : Boolean(payload?.errors);
+  if (!response.ok || hasErrors) {
+    throw new Error(shopifyErrorMessage(payload, response.status));
   }
   return payload?.data;
 }
@@ -48,9 +71,10 @@ async function exchangeIdToken(shop: string, idToken: string) {
     cache: "no-store",
   });
 
-  const payload = await response.json().catch(() => null) as null | { access_token?: string; scope?: string };
+  const payload = await response.json().catch(() => null) as null | { access_token?: string; scope?: string; errors?: unknown; error?: string };
   if (!response.ok || !payload?.access_token) {
-    throw new Error(response.status === 400 ? "Shopify ID token is no longer valid" : "Shopify token exchange failed");
+    const message = shopifyErrorMessage(payload, response.status);
+    throw new Error(response.status === 400 && message === `Shopify returned ${response.status}` ? "Shopify ID token is no longer valid" : message);
   }
   return { accessToken: payload.access_token, scope: payload.scope ?? "" };
 }

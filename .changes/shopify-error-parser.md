@@ -1,0 +1,1 @@
+Fix embedded Shopify bootstrap so Admin API error payloads can be arrays, strings, or objects without throwing a secondary `.map is not a function` exception. Adds smoke coverage for the supported error shapes.

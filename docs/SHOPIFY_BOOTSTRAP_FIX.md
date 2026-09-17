@@ -1,0 +1,1 @@
+On 2026-09-17 the first public-app install reached the embedded SyncStock UI but bootstrap failed while formatting a Shopify Admin API error because the response `errors` field was not an array. The parser now accepts array, string, object, and singular error shapes so the original Shopify error is preserved instead of being replaced by a JavaScript `.map` exception.
