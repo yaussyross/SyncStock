@@ -8,6 +8,7 @@ on:
       - main
       - fix/paid-launch-foundation
       - feature/launch-site-reliability
+      - fix/shopify-public-billing
 
 jobs:
   verify:
@@ -94,6 +95,9 @@ jobs:
 
       - name: Billing event ordering and concurrency
         run: npm run test:billing
+
+      - name: Shopify App Pricing catalog mapping
+        run: npm run test:shopify-billing
 
       - name: Production build
         run: npm run build

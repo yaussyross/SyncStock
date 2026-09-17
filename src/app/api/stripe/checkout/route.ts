@@ -4,9 +4,14 @@ import { getCurrentUser } from "@/lib/session";
 import { db } from "@/lib/db";
 import { isSubscriptionActive, priceForPlan } from "@/lib/plans";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
 export async function POST(req: NextRequest) {
+  if (process.env.BILLING_PROVIDER !== "stripe_legacy") {
+    return NextResponse.json(
+      { error: "New SyncStock subscriptions are billed through Shopify. Open Billing and choose a Shopify plan." },
+      { status: 410 }
+    );
+  }
+
   if (process.env.SYNCSTOCK_SANDBOX === "true") {
     return NextResponse.json({ error: "Paid checkout is disabled in the sandbox." }, { status: 403 });
   }
@@ -19,14 +24,11 @@ export async function POST(req: NextRequest) {
 
   if (user.stripeSubscriptionId && isSubscriptionActive(user.subscriptionStatus)) {
     return NextResponse.json(
-      { error: "You already have an active subscription. Use Manage billing to change or cancel it." },
+      { error: "You already have an active legacy subscription. Use Manage billing to change or cancel it." },
       { status: 409 }
     );
   }
 
-  // Do not charge founding-beta customers before the product is actually usable
-  // for their account. A connected Shopify store, connected QuickBooks company,
-  // and at least one mapping prove onboarding has reached a meaningful state.
   const [shopifyConnection, qboConnection, mappingCount] = await Promise.all([
     db.shopifyConnection.findUnique({ where: { userId: user.id }, select: { id: true, webhookId: true } }),
     db.qboConnection.findUnique({ where: { userId: user.id }, select: { id: true } }),
@@ -39,6 +41,11 @@ export async function POST(req: NextRequest) {
       { status: 409 }
     );
   }
+
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return NextResponse.json({ error: "Legacy Stripe billing is not configured." }, { status: 503 });
+  }
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
   let customerId = user.stripeCustomerId;
   if (!customerId) {
