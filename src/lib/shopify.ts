@@ -35,6 +35,16 @@ async function shopifyGraphql<T>(
   return json.data;
 }
 
+export async function fetchShopifyShopId(shopDomain: string, encryptedAccessToken: string) {
+  const data = await shopifyGraphql<{ shop: { id: string } }>(
+    shopDomain,
+    encryptedAccessToken,
+    `query SyncStockShopId { shop { id } }`
+  );
+  if (!data.shop?.id) throw new Error("Shopify Admin API returned no shop ID");
+  return data.shop.id;
+}
+
 export interface ShopifyCatalogVariant {
   id: string;
   legacyResourceId: string;
