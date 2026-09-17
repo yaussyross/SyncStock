@@ -99,6 +99,9 @@ jobs:
       - name: Shopify App Pricing catalog mapping
         run: npm run test:shopify-billing
 
+      - name: Shopify embedded ID token validation
+        run: npm run test:shopify-auth
+
       - name: Production build
         run: npm run build
 
