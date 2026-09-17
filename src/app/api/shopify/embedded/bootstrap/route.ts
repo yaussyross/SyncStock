@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     const message = error?.message || "Could not initialize SyncStock for this Shopify store";
     const status = /token|origin|audience|expired|valid/i.test(message) ? 401 : 502;
+    console.error("[shopify embedded bootstrap]", { status, message });
     if (status === 401) {
       return NextResponse.json(
         { error: message },
