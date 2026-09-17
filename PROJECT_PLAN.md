@@ -85,3 +85,18 @@ Validate the complete paid-order flow against Shopify development data + a Quick
 - Restored package-lock.json and ignored dependencies, build output, and local secrets.
 - Code inspection confirms password authentication, lifecycle/compliance handlers, and accounting adjustment configuration exist; older unchecked milestones above must not be interpreted as absent code. Real provider verification remains incomplete.
 - Access, marketing assets, deployment instructions, and launch acceptance are tracked in docs/LAUNCH.md.
+
+## September 16 — first customer readiness work
+
+- Owner rule: all outgoing money requires explicit permission; earlier spend approvals are revoked.
+- Confirmed main PR #2 merged; current live Solo pricing is $8/month (Scale $29, Empire $49).
+- Production queue authentication returned HTTP 200. This is not an order-sync acceptance result.
+- Owner screenshots confirm Shopify TEST dev store and QuickBooks Sandbox Company US bd50 access.
+- Connected database last observed with zero provider connections, mappings and sync logs; deployed database identity subsequently verified by matching a unique internal feedback note from the live UI in that database.
+- Prepared on fix/isolated-sandbox-readiness: explicit sandbox bridge/key configuration, matching queue health probe, rejection of production queue fallback on previews, and sandbox checkout disabled.
+- Local checks do not establish provider integration, deployment success or a customer sale.
+- Next gate: owner session in SyncStock and verified deployment configuration; deploy isolated resources only after cost approval. See docs/SANDBOX_HANDOFF.md.
+
+- Verified live app login and feedback submission, plus exact SS-DB-20260916-1908 note in shopify-qbo-sync. This establishes the live database path without exposing secrets.
+- Local production build, TypeScript, core security/quota, reconciliation and sandbox configuration checks pass using dummy build credentials.
+- Metricool reports two Sept 16 videos published on both Facebook and TikTok, and two additional evening posts pending. These are not verified customer conversions.

@@ -24,6 +24,9 @@ export async function GET(req: NextRequest) {
       : NextResponse.redirect(`${process.env.APP_URL}/login?error=session_expired`);
   }
 
+  if (process.env.SYNCSTOCK_SANDBOX === "true" && (process.env.QBO_ENVIRONMENT !== "sandbox" || !process.env.SANDBOX_QBO_REALM_ID || req.nextUrl.searchParams.get("realmId") !== process.env.SANDBOX_QBO_REALM_ID)) {
+    return NextResponse.json({ error: "Only the approved QuickBooks sandbox company can connect." }, { status: 403 });
+  }
   const oauthClient = new OAuthClient({
     clientId: process.env.QBO_CLIENT_ID!,
     clientSecret: process.env.QBO_CLIENT_SECRET!,

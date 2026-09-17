@@ -7,6 +7,9 @@ import { isSubscriptionActive, priceForPlan } from "@/lib/plans";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(req: NextRequest) {
+  if (process.env.SYNCSTOCK_SANDBOX === "true") {
+    return NextResponse.json({ error: "Paid checkout is disabled in the sandbox." }, { status: 403 });
+  }
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 

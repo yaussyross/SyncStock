@@ -15,6 +15,13 @@ const signingPrivateKey = crypto.createPrivateKey(
   Buffer.from(requireEnv("WORKER_SIGNING_PRIVATE_KEY_B64"), "base64").toString("utf8")
 );
 const bridgeSecret = process.env.QUEUE_BRIDGE_SECRET;
+const sandbox = process.env.SYNCSTOCK_SANDBOX === "true";
+if (sandbox) {
+  requireEnv("QUEUE_BRIDGE_SECRET");
+  if (["sync-stock-six.vercel.app", "sync-stock-raus2.vercel.app", "sync-stock-git-main-raus2.vercel.app"].includes(new URL(appUrl).hostname)) {
+    throw new Error("Sandbox worker cannot target the production app");
+  }
+}
 const port = Number(process.env.PORT || 3000);
 
 const VERCEL_OWNER = "raus2";
@@ -34,6 +41,8 @@ function sharedSecretAuthorized(provided: string | undefined) {
 }
 
 async function vercelOidcAuthorized(token: string | undefined) {
+  // Isolated sandbox workers accept only their own shared secret.
+  if (sandbox) return false;
   if (!token) return false;
 
   try {

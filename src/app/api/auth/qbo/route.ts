@@ -4,6 +4,9 @@ import crypto from "crypto";
 import jwt from "jsonwebtoken";
 
 export async function GET(req: NextRequest) {
+  if (process.env.SYNCSTOCK_SANDBOX === "true" && (process.env.QBO_ENVIRONMENT !== "sandbox" || !process.env.QBO_CLIENT_ID || !process.env.QBO_CLIENT_SECRET)) {
+    return NextResponse.json({ error: "Sandbox QuickBooks development credentials still need to be configured." }, { status: 503 });
+  }
   const isMobile = req.nextUrl.searchParams.get("mobile") === "1";
   const mobileToken = req.nextUrl.searchParams.get("token");
 

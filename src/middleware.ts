@@ -1,3 +1,4 @@
+import { buildShopifyOAuthMessage, verifyShopifySignature } from "./lib/shopify-signatures";
 import { NextRequest, NextResponse } from "next/server";
 
 function isShopifyDomain(shop: string | null) {
@@ -14,31 +15,10 @@ function hexToBytes(hex: string) {
 }
 
 async function hasValidShopifyHmac(searchParams: URLSearchParams) {
-  const secret = process.env.SHOPIFY_API_SECRET;
   const provided = searchParams.get("hmac");
   const signature = provided ? hexToBytes(provided) : null;
-  if (!secret || !signature) return false;
-
-  const message = Array.from(searchParams.entries())
-    .filter(([key]) => key !== "hmac")
-    .sort(([left], [right]) => left.localeCompare(right))
-    .map(([key, value]) => `${key}=${value}`)
-    .join("&");
-
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["verify"]
-  );
-
-  return crypto.subtle.verify(
-    "HMAC",
-    key,
-    signature,
-    new TextEncoder().encode(message)
-  );
+  if (!signature) return false;
+  return verifyShopifySignature(buildShopifyOAuthMessage(searchParams), signature);
 }
 
 export async function middleware(req: NextRequest) {
@@ -70,13 +50,15 @@ export async function middleware(req: NextRequest) {
     const shop = searchParams.get("shop");
     const expectedShop = req.cookies.get("shopify_oauth_shop")?.value ?? null;
 
-    if (
-      !isShopifyDomain(shop) ||
-      !expectedShop ||
-      shop !== expectedShop ||
-      !(await hasValidShopifyHmac(searchParams))
-    ) {
-      return NextResponse.json({ error: "Invalid Shopify OAuth callback." }, { status: 400 });
+    const reason = !isShopifyDomain(shop) ? "invalid_shop"
+      : !expectedShop ? "missing_connection_cookie"
+      : shop !== expectedShop ? "shop_mismatch"
+      : !(process.env.SHOPIFY_API_SECRET || process.env.SHOPIFY_API_SECRET_PREVIOUS) ? "missing_signing_secret"
+      : !(await hasValidShopifyHmac(searchParams)) ? "signature_mismatch" : null;
+    if (reason) {
+      // No callback parameters, cookie values, or credentials enter logs.
+      console.warn("[shopify oauth] Callback rejected:", reason);
+      return NextResponse.json({ error: "Invalid Shopify OAuth callback.", reason }, { status: 400 });
     }
   }
 
