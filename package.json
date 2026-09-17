@@ -14,6 +14,7 @@
     "test:core": "tsx scripts/core-smoke.ts",
     "test:shopify-billing": "tsx scripts/shopify-billing-smoke.ts",
     "test:shopify-auth": "tsx scripts/shopify-id-token-smoke.ts",
+    "test:shopify-errors": "tsx scripts/shopify-error-parser-smoke.ts",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
