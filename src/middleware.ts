@@ -25,11 +25,8 @@ export async function middleware(req: NextRequest) {
   const { pathname, searchParams } = req.nextUrl;
 
   // Shopify custom-distribution links first land on the configured app URL with
-  // shop/host/timestamp metadata. This first hop performs no privileged action;
-  // it only starts SyncStock's own OAuth flow. The shop is strictly validated as
-  // a myshopify.com hostname. The actual OAuth callback remains protected by the
-  // browser-bound state nonce plus Shopify HMAC verification before any access
-  // token is accepted.
+  // shop/host/timestamp metadata. Keep this compatibility path for the isolated
+  // development app; the public production app uses /shopify/app + App Bridge.
   if (pathname === "/") {
     const shop = searchParams.get("shop");
     if (!shop) return NextResponse.next();
@@ -43,9 +40,23 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(oauthStart);
   }
 
-  // Defense in depth for the OAuth callback. The route validates the state nonce;
-  // middleware also validates Shopify's HMAC and requires the returning shop to
-  // match the shop stored when OAuth began.
+  // App Store embedded UI: Shopify requires frame-ancestors to include the
+  // authenticated shop plus admin.shopify.com. Initial App Home requests carry
+  // the shop query parameter; protected API data is still gated by an ID token.
+  if (pathname.startsWith("/shopify/app")) {
+    const shop = searchParams.get("shop");
+    if (shop && !isShopifyDomain(shop)) {
+      return NextResponse.json({ error: "Invalid Shopify shop domain." }, { status: 400 });
+    }
+    const ancestors = ["https://admin.shopify.com"];
+    if (shop) ancestors.unshift(`https://${shop}`);
+    const res = NextResponse.next();
+    res.headers.set("Content-Security-Policy", `frame-ancestors ${ancestors.join(" ")};`);
+    return res;
+  }
+
+  // Defense in depth for the legacy OAuth callback. The route validates the
+  // state nonce; middleware also validates Shopify's HMAC and returning shop.
   if (pathname === "/api/auth/shopify/callback") {
     const shop = searchParams.get("shop");
     const expectedShop = req.cookies.get("shopify_oauth_shop")?.value ?? null;
@@ -56,7 +67,6 @@ export async function middleware(req: NextRequest) {
       : !(process.env.SHOPIFY_API_SECRET || process.env.SHOPIFY_API_SECRET_PREVIOUS) ? "missing_signing_secret"
       : !(await hasValidShopifyHmac(searchParams)) ? "signature_mismatch" : null;
     if (reason) {
-      // No callback parameters, cookie values, or credentials enter logs.
       console.warn("[shopify oauth] Callback rejected:", reason);
       return NextResponse.json({ error: "Invalid Shopify OAuth callback.", reason }, { status: 400 });
     }
@@ -66,5 +76,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/api/auth/shopify/callback"],
+  matcher: ["/", "/shopify/app/:path*", "/api/auth/shopify/callback"],
 };
