@@ -1,97 +1,89 @@
-# SyncStock paid launch — September 9, 2026
+# SyncStock launch record
 
-## Verification update — September 16, 2026
+Last verified: **September 17, 2026**
 
-This section supersedes the September 9 access/deployment observations below. Historical pricing and outreach copy below must not be reused without updating it to the current catalog.
+Canonical repository: https://github.com/yaussyross/SyncStock
+Production app: https://sync-stock-six.vercel.app
+Founding pricing: **Solo $8/month**, **Scale $29/month**, **Empire $49/month**. New accounts receive 20 synced orders free with no card required.
 
-### Observed
+## Verified current state
 
-- PR #2 commit `2c5c944be6d92c7ea4f447e2ac627d5d2cf125ae` is mergeable and its fresh CI passed migrations, schema drift, reconciliation, core/quota, billing concurrency, and production build.
-- Connected Vercel access to `raus2/sync-stock` now works. Its PR deployment `dpl_BdSusTZKxXDfudz477R26qniQt5s` is READY and is a preview, not production.
-- Production `https://sync-stock-six.vercel.app/api/health/queue` returned HTTP 200 with `{"ok":true,"queueBridge":"authenticated"}`.
-- Railway worker `https://worker-production-d9af.up.railway.app/health` returned HTTP 200. Railway reports one replica, `npm run worker`, and latest successful deployed commit `cf721c708fc1621860ec0d6c546e6bafbc930d96` from main.
-- The PR preview queue probe returned HTTP 503 with `workerStatus:401`. The worker explicitly accepts only production Vercel identities. A healthy production queue is not evidence that the PR preview can process an order.
-- The connected Supabase project named `shopify-qbo-sync` contains zero ShopifyConnection, QboConnection, ProductMapping, and SyncLog records. The deployed web app's database target still needs confirmation; Vercel project metadata alone does not establish that link.
-- The separate Shopify connector reports a trial store, not a verified development store. Connector access is not a saved OAuth connection inside SyncStock.
-- No order was submitted, no customer was charged, and no QuickBooks transaction was written.
+- PR #9, `Prepare isolated, expiring sandbox for first order verification`, was merged into `main` as commit `178bfae7e7c68dcff65379ad5903e5e43fce6a24`.
+- CI on that exact `main` commit passed Prisma validation/migrations, schema drift, reconciliation tests, core security/quota tests, billing event ordering/concurrency, and the production build.
+- The correct Vercel project is `raus2/sync-stock`. Its production deployment for `178bfae7` is READY and serves `https://sync-stock-six.vercel.app`.
+- The production landing page and signup page return HTTP 200. Vercel reported no runtime error clusters in the checked post-release window.
+- The production queue probe at `/api/health/queue` returns HTTP 200 with an authenticated queue bridge.
+- Railway production has persistent Redis and worker services. The worker health/bridge path is operational. The worker service is sourced from `yaussyross/SyncStock` branch `main`; its currently deployed production behavior remains compatible with the release. PR #9's worker delta only adds sandbox-isolation guards.
+- Supabase project `shopify-qbo-sync` is `ACTIVE_HEALTHY`; the current Supabase security-advisor check returned no lints.
+- The connected live Stripe account is named `SyncStock`. Source-controlled plan mappings point to the live SyncStock price IDs for Solo, Scale, and Empire.
+- Production QuickBooks OAuth is configured far enough to generate an Intuit authorization redirect whose callback is `https://sync-stock-six.vercel.app/api/auth/qbo/callback`.
+- Metricool has active organic publishing connections for the launch brand. Facebook and TikTok launch content has published; the remaining September 17 Facebook posts were corrected to reflect the verified sandbox acceptance. No paid advertising spend was authorized or committed.
 
-### Concrete next verification slice
+## Verified isolated provider acceptance — September 16, 2026
 
-Prepare an isolated sandbox web-and-worker pair running this PR commit. It needs its own Redis queue, test database, signing keys, provider sandbox credentials, and matching callback URLs. Set the worker APP_URL to that exact sandbox web deployment and configure a narrowly scoped identity rule for that sandbox deployment. Do not broaden the production worker's identity policy or point a preview at the production queue to make a check green.
+The disposable sandbox was isolated from production data and queues. It used its own PostgreSQL, Redis, signing configuration, Shopify development store, and QuickBooks sandbox company.
 
-Owner-controlled setup still needed: sign in to SyncStock, connect a confirmed Shopify development store and Intuit sandbox company through the app's OAuth flow, and map one test Shopify variant to one sandbox QBO item. Confirm QBO_ENVIRONMENT=sandbox and the actual database target before any test write. Keep paid checkout disabled.
+Acceptance record:
 
-Use one USD development-store order: quantity 1, unit price $10.00, no shipping, discounts, or tax. Capture the order ID and webhook delivery ID. Pass only when the signed paid-order webhook is accepted, the isolated queue job completes, and QBO contains exactly one Sales Receipt with the expected item, quantity, currency, amount, and transaction date. Check SyncLog status and receipt ID and verify quota increases once.
+- Shopify development store OAuth connected successfully for `test-wc9egg3y.myshopify.com`.
+- QuickBooks sandbox OAuth connected successfully.
+- One normal `$10.00` Shopify test product was mapped to a QuickBooks item.
+- Shopify test order **#1004** was marked paid with quantity 1, no tax, no discount, and no shipping.
+- Shopify delivered the paid-order webhook and SyncStock returned HTTP 200.
+- The worker processed order #1004 successfully.
+- Reconciliation recorded Shopify `USD 10.00`, Draft QBO `10.00`, Actual QBO `10.00`, Delta `0.00`.
+- Trial usage incremented exactly once from `0/20` to `1/20`.
+- Retrying an already-successful order is rejected with HTTP 409, and the worker short-circuits a successful SyncLog with an existing QuickBooks transaction ID.
+- No real customer order, customer accounting company, or customer charge was used.
+- Temporary credential diagnostics used during Shopify OAuth debugging were removed before merge.
 
-Replay the identical signed webhook, then a new delivery ID for the same order. Verify QBO receipt count remains exactly one and quota remains unchanged. Check receipt count directly rather than relying on a lookup that returns only the first match. Record the tested web/worker commit, order ID, both delivery IDs, receipt ID, totals, quota before/after, and job outcomes. A healthcheck alone does not pass this slice.
+This completes the original one-order end-to-end sandbox acceptance gate. Do not reopen it as an unresolved blocker unless new evidence shows a regression.
 
-## Historical commercial state — September 9
+## Remaining launch gates
 
-- Canonical repository: https://github.com/yaussyross/SyncStock
-- Existing Vercel project: https://vercel.com/raus2/sync-stock
-- Vercel connector returns zero teams and 403 Forbidden for this project. Deployment, environment variables, domain health, and database state cannot be verified in this session.
-- The connected live Stripe account FORGED contains active USD monthly prices: Solo $19 (200 orders), Growth $49 (1,000 orders), Pro $99 (unlimited). Price IDs are in `.env.example`.
-- Catalog configuration does not prove checkout, fulfillment, payouts, or a sale. No sale was generated or verified in this session.
-- The separately proposed ten micro-products have one-time $8 Stripe prices; the recovered brief calls for $8/year. Resolve the mismatch before advertising automatic annual renewal. No catalog mutations were made.
-- No connected email or social publishing channel is available in this session. No outreach messages or advertisements were sent.
+These are the items that are **not yet verified** and must not be described as complete.
 
-## First customer
+### 1. Shopify multi-store distribution approval
 
-Target one owner-operated Shopify store already using QuickBooks Online, roughly 50–200 paid orders/month, whose bookkeeper specifically wants individual sales receipts. Qualify single-currency and supported tax behavior in the sandbox before taking the live store. Avoid presenting SyncStock as payout reconciliation, inventory synchronization, or complete bookkeeping. Refunds/cancellations currently enter a manual review queue.
+The production OAuth code accepts merchant `.myshopify.com` domains, but the production app's Shopify distribution/review state has not been observed from the connected tools. Before onboarding unrelated merchant stores, verify in the Shopify developer dashboard that the production SyncStock app uses an appropriate multi-store/public distribution path and that any required review is approved. Do not incur a Shopify registration/review fee without owner approval.
 
-The initial offer is 20 sandbox test orders at no charge, then Solo at $19/month once live sync is validated and deliverable. There is no card requirement for the free account. A paid sale today requires access restoration, passing the real integration checks, and a willing customer; it is not a promised outcome.
+Developer dashboard: https://dev.shopify.com/dashboard
 
-Position on visible exceptions, variant mapping, and a focused workflow. Do not claim to be the cheapest: CRM Perks also lists a $19/month plan, and established products offer free tiers. MyWorks lists $24/month for 100 orders; these products have different capabilities. Sources checked September 9, 2026:
-- https://apps.shopify.com/quickbooks-integration-2
-- https://apps.shopify.com/quickbooks-sync-by-myworks
-- https://apps.shopify.com/qbconnector
+### 2. Production signup + live Stripe checkout/portal smoke
 
-## Acquisition asset shipped in this change
+The public signup page is live, and checkout code is intentionally gated so a merchant cannot start paid checkout until Shopify, QuickBooks, and at least one product mapping are connected. CI covers billing ordering/concurrency, but a real production browser session has not yet been used in this verification pass to create a disposable account and exercise checkout/portal without completing an unauthorized charge.
 
-`/tools/bookkeeping-cost` estimates manual entry hours from user-supplied order volume and minutes per order, applies an assumed automation percentage, and compares the value of saved time with the plan price. Inputs remain in the browser. It explicitly distinguishes time value from cash savings and labels all default inputs as illustrations. Publish the route only on the verified production domain before sharing it.
+Never charge a customer or create paid ad spend as a test. Use an authorized owner/test merchant and stop before any real payment unless the owner explicitly approves the transaction.
 
-## Outreach copy prepared for the current beta
+### 3. Broader beta accounting cases
 
-Merchant message:
+The narrow paid-order acceptance passed. Before representing the product as broadly production-proven, exercise the supported shipping/discount/tax combinations, unmapped-product handling, QuickBooks failure/rollback, expired OAuth, uninstall, and refund/cancellation review behavior. Unsupported accounting cases should remain blocked or visibly queued for review rather than silently written.
 
-> Still entering Shopify orders into QuickBooks one at a time? I'm building SyncStock around individual paid-order receipts, product mapping, and visible exception handling. It's in sandbox beta, so I'm looking for merchants willing to test the workflow before connecting live books. The planned Solo tier is $19/month for 200 orders. Would a short sandbox walkthrough be useful?
+### 4. Business/support details
 
-Bookkeeper partnership message:
+Terms, privacy, feedback, and a support contact route are present on the production site. Confirm the final operating/legal business identity and that the support mailbox is actually monitored before broad paid acquisition.
 
-> I'm building SyncStock for small Shopify merchants whose QuickBooks workflow calls for individual sales receipts. It maps variants and stops orders when totals do not reconcile. We're still validating the sandbox flow; refunds and payout reconciliation are not automated. Would you review the workflow and tell me whether it fits any of your smaller clients? No client credentials or customer data needed for the first conversation.
+## First-customer operating target
 
-Public beta post:
+Prioritize an owner-operated Shopify store already using QuickBooks Online, roughly 50–200 paid orders per month, whose bookkeeping workflow genuinely calls for individual sales receipts. Qualify the workflow before taking live books. Do not market SyncStock as payout reconciliation, inventory synchronization, or complete bookkeeping.
 
-> Your store took the order. You shouldn't have to type it again. SyncStock is in sandbox beta for Shopify → QuickBooks paid-order receipts. Product mapping, visible exceptions, and a free bookkeeping-time calculator. Planned pricing starts at $19/month. Looking for a few merchants and ecommerce bookkeepers to test the workflow before live launch.
+Current founding offer:
 
-Do not replace “sandbox beta” with live availability until the acceptance record below is complete. Add the actual verified URL when publishing. Do not fabricate testimonials, users, savings, or scarcity.
+- First 20 synced orders: free, no card required.
+- Solo: **$8/month** for up to 200 orders/month.
+- Scale: **$29/month** for up to 1,000 orders/month.
+- Empire: **$49/month** for unlimited orders.
 
-## Targeted distribution queue
+Merchant outreach copy:
 
-These are potential expert-feedback/partnership channels, not verified buyers or warm leads. Use their designated partnership/general business channel, not a client-service booking under a false pretext. No individual recipient has been resolved or contacted.
+> Still entering Shopify orders into QuickBooks one at a time? SyncStock is a founding beta focused on individual paid-order receipts, explicit product mapping, reconciliation checks, and duplicate-safe retries. The core Shopify → QuickBooks sandbox flow has passed end to end. You can start with 20 synced orders free, then Solo is $8/month for up to 200 orders. Would you be open to a short beta walkthrough?
 
-| Channel | Verified relevance | First action |
-|---|---|---|
-| bookskeep | Shopify bookkeeping and QBO service page | Ask whether a narrow small-store workflow merits an expert review |
-| LedgerGurus | Shopify accounting; homepage focuses on larger brands | Seek technical feedback/referrals; deprioritize as a direct $19 buyer |
-| Existing merchant relationships | None supplied in this session | Prioritize any real warm Shopify/QBO introduction over cold volume |
-| Owner's social audience | Publishing account not available | Share a real calculator demonstration and a clear beta invitation |
+Bookkeeper outreach copy:
 
-Sources: https://www.bookskeep.com/services/shopify-accounting-bookkeeping/ ; https://ledgergurus.com/ecommerce-accounting-services/shopify-accounting-services/ ; https://ledgergurus.com/
+> SyncStock is a focused Shopify → QuickBooks founding beta for small merchants whose workflow calls for individual sales receipts. It maps variants, checks totals before writing, and keeps retry state visible. The core sandbox flow has passed end to end; refunds/cancellations remain review-driven and payout reconciliation is not the product. Would you review the workflow for fit with any smaller Shopify clients?
 
-Once the link works, aim for 10 individually qualified conversations, 3 completed sandbox demonstrations, and 1 paid conversion after readiness. These are operating targets, not forecasts. Record date, source, workflow fit, reply, demo completion, purchase, and reason for declining. No paid advertising spend is committed.
+Do not fabricate users, revenue, testimonials, savings, scarcity, or production capabilities that have not been verified.
 
-## Deployment and launch acceptance
+## Paid acquisition rule
 
-1. Restore Vercel access to the `raus2` team and `sync-stock` project. Verify its actual production URL and environment names without exposing values.
-2. Provision/verify PostgreSQL and Redis. Back up any existing database. For an empty database run `npm run prisma:deploy`. If original tables already exist, compare them against `20260908190000_initial_schema` and baseline that migration only after confirming an exact match. Never reset a live database. Do not mark migrations applied merely to skip SQL errors.
-3. Deploy a persistent worker service running `npm run worker`, with the same database, Redis, and OAuth settings as the web app. Vercel's web deployment alone does not run the BullMQ consumer. Confirm the worker is consuming jobs.
-4. Configure Shopify development app and Intuit sandbox callback URLs. Connect both through OAuth using owner-controlled test accounts. Verify the approved Shopify distribution and billing path before a public app launch.
-5. Run a paid development-store order through webhook → queue → worker → mapped QBO Sales Receipt. Verify amounts, currency, item and tax treatment, transaction date, and exactly one receipt after duplicate delivery and retry.
-6. Exercise shipping/discount/tax-inclusive examples, unmapped products, QBO failure and rollback, refund/cancellation review, expired OAuth, and uninstall. Passing mathematical reconciliation alone is insufficient.
-7. Verify Stripe in a test account: signup, checkout, subscription provisioning from signed invoice.paid, renewal ordering, duplicate invoice delivery, cancellation, and portal. Confirm the live business/payout onboarding separately. Never test by charging a customer without their action.
-8. Complete actual support contact and business/legal details, then verify production signup, billing, and monitoring. Only then invite a customer to pay for live sync.
-
-## Expansion decision
-
-The recovered micro-SaaS brief's first product is Listing Loud: browser-based real-estate listing graphics for $8/year. Finish one usable sample plus verified payment entitlement and recovery before taking money. Do not claim that a Stripe product object is a finished application. Keep the real-estate audience and branding separate from the Shopify accounting funnel. The new free calculator is a related SyncStock acquisition tool, not a paid Listing Loud replacement.
+No paid-ad budget is approved by default. Organic publishing and zero-cost outreach may continue. Any ad campaign activation, boost, registration fee, or other cash outflow requires explicit owner approval before execution.
