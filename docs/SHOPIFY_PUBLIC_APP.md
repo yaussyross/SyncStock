@@ -4,7 +4,7 @@ The production Shopify app is a **public, embedded** App Store app. The isolated
 
 ## Dev Dashboard version
 
-- App URL: `https://sync-stock-six.vercel.app/shopify/app`
+- App URL: `https://sync-stock-six.vercel.app/app` (canonical App Home; `/shopify/app` remains a compatibility route)
 - Embed app in Shopify admin: **enabled**
 - Redirect URL: `https://sync-stock-six.vercel.app/api/auth/shopify/callback` (legacy standalone OAuth compatibility; embedded App Home uses ID-token exchange)
 - Webhooks API version: `2026-07`

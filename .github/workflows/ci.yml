@@ -105,6 +105,9 @@ jobs:
       - name: Shopify API error payload normalization
         run: npm run test:shopify-errors
 
+      - name: Embedded mapping removal regression
+        run: npx tsx scripts/mapping-selection-smoke.ts
+
       - name: Production build
         run: npm run build
 
