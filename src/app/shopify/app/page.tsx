@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { clearedMappingIds } from "@/lib/mapping-selection";
 
 type EmbeddedStatus = {
   shopify: { connected: boolean; domain: string | null; webhookReady: boolean; lifecycleReady: boolean };
@@ -48,6 +49,7 @@ export default function ShopifyAppHome() {
   const [qboItems, setQboItems] = useState<QboItem[]>([]);
   const [selections, setSelections] = useState<Record<string, string>>({});
   const [catalogLoaded, setCatalogLoaded] = useState(false);
+  const [savedVariantIds, setSavedVariantIds] = useState<string[]>([]);
 
   async function refreshStatus() {
     const next = await shopifyFetch("/api/shopify/embedded/status");
@@ -99,6 +101,7 @@ export default function ShopifyAppHome() {
       setVariants(loadedVariants);
       setQboItems((qboCatalog.items ?? []) as QboItem[]);
       setSelections(Object.fromEntries(loadedMappings.map((mapping) => [mapping.shopifyVariantId, mapping.qboItemId])));
+      setSavedVariantIds(loadedMappings.map((mapping) => mapping.shopifyVariantId));
       setCatalogLoaded(true);
     } catch (err: any) {
       setError(err?.message || "Could not load product catalogs.");
@@ -124,10 +127,11 @@ export default function ShopifyAppHome() {
             qboItemName: qboItem!.name,
           };
         });
-      await shopifyFetch("/api/mappings", {
+      const saved = await shopifyFetch("/api/mappings", {
         method: "POST",
-        body: JSON.stringify({ mappings, removeVariantIds: [] }),
+        body: JSON.stringify({ mappings, removeVariantIds }),
       });
+      setSavedVariantIds((saved.mappings as Mapping[]).map((mapping) => mapping.shopifyVariantId));
       await refreshStatus();
     } catch (err: any) {
       setError(err?.message || "Could not save product mappings.");
@@ -149,6 +153,9 @@ export default function ShopifyAppHome() {
   }
 
   const selectedCount = useMemo(() => Object.values(selections).filter(Boolean).length, [selections]);
+  const removeVariantIds = useMemo(() => clearedMappingIds(
+    variants.map((variant) => variant.legacyResourceId), savedVariantIds, selections,
+  ), [variants, savedVariantIds, selections]);
 
   return (
     <main className="container" style={{ paddingTop: 32, paddingBottom: 64, maxWidth: 1080 }}>
@@ -196,7 +203,7 @@ export default function ShopifyAppHome() {
                   <h2 style={{ fontSize: 19 }}>Product mappings</h2>
                   <p style={{ color: "var(--paper-dim)", fontSize: 13, marginTop: 4 }}>Choose the QuickBooks item that corresponds to each Shopify variant you want SyncStock to process.</p>
                 </div>
-                <button className="btn" onClick={saveMappings} disabled={Boolean(busy) || selectedCount === 0}>Save {selectedCount || ""} mappings</button>
+                <button className="btn" onClick={saveMappings} disabled={Boolean(busy) || (selectedCount === 0 && removeVariantIds.length === 0)}>Save mappings</button>
               </div>
               <div style={{ overflowX: "auto", marginTop: 16 }}>
                 <table style={{ minWidth: 760 }}>

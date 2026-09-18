@@ -1,12 +1,25 @@
 # SyncStock launch record
 
-Last verified: **September 17, 2026**
+Last checked: **September 18, 2026**
 
 Canonical repository: https://github.com/yaussyross/SyncStock
 Production app: https://sync-stock-six.vercel.app
 Founding pricing: **Solo $8/month**, **Scale $29/month**, **Empire $49/month**. New accounts receive 20 synced orders free with no card required.
 
-## Verified current state
+## September 18 takeover checkpoint
+
+- Canonical production deployment `dpl_1VhNL2duMQCCbfDzoPZyY6TbBPNi` is READY at commit `a550e8a66bfe65427382de37368861f5b37dc12c`. Landing page and authenticated queue probe returned HTTP 200. The runtime-error query returned no clusters; historical runtime log retention is limited, so this does not prove absence of earlier errors.
+- PR #2 was already merged on September 16. The duplicate Vercel project `sync-stock-s5j9` has a failed deployment; it is not the project serving the canonical production URL.
+- New merchants use Shopify App Pricing. The older Stripe checkout gate below is superseded for new public-app merchants; Stripe remains legacy billing only. Public-app approval, embedded production onboarding and Shopify plan activation/return still need direct verification.
+- The Shopify developer dashboard redirected this browser to a Cloudflare human-verification screen. No approval, credential configuration, or billing activation was claimed or changed.
+- No GitHub workflow runs were returned for `a550e8a`; do not carry forward earlier CI success as proof for this commit.
+- Metricool verified three Facebook posts published September 18 and a fourth pending at 18:05 America/Chicago. Existing brand `6904340` still connects personal TikTok `rausssy`, Facebook `1223731030831532`, and unrelated Instagram `pawtywalksatx`.
+- Ross is creating dedicated SyncStock TikTok and Facebook profiles. The daily social task now requires Ross-identified dedicated profile URLs and verified Metricool connections before scheduling new posts. Existing scheduled posts were not altered.
+- Code review found that the embedded mapping editor submitted no removals and disabled saving when all selections were cleared. The fix sends only cleared, previously saved variants in the loaded catalog; it preserves mappings outside that catalog and permits removing the final mapping.
+
+Immediate owner action: complete the Shopify human-verification/login handoff so public-app distribution and billing can be inspected; provide the new dedicated social profile URLs after creating them. Do not send credentials in chat.
+
+## Earlier verified state (September 17)
 
 - PR #9, `Prepare isolated, expiring sandbox for first order verification`, was merged into `main` as commit `178bfae7e7c68dcff65379ad5903e5e43fce6a24`.
 - CI on that exact `main` commit passed Prisma validation/migrations, schema drift, reconciliation tests, core security/quota tests, billing event ordering/concurrency, and the production build.
@@ -49,9 +62,9 @@ The production OAuth code accepts merchant `.myshopify.com` domains, but the pro
 
 Developer dashboard: https://dev.shopify.com/dashboard
 
-### 2. Production signup + live Stripe checkout/portal smoke
+### 2. Production onboarding + Shopify App Pricing smoke
 
-The public signup page is live, and checkout code is intentionally gated so a merchant cannot start paid checkout until Shopify, QuickBooks, and at least one product mapping are connected. CI covers billing ordering/concurrency, but a real production browser session has not yet been used in this verification pass to create a disposable account and exercise checkout/portal without completing an unauthorized charge.
+Verify the embedded public-app installation, QuickBooks connection, product mapping, hosted Shopify plan selection, return to the app, and confirmed subscription entitlement. Shopify Partner billing configuration and the monthly plan catalog must be verified. Use Shopify-supported no-charge development-store testing where available; do not claim that legacy Stripe tests prove the new Shopify billing flow.
 
 Never charge a customer or create paid ad spend as a test. Use an authorized owner/test merchant and stop before any real payment unless the owner explicitly approves the transaction.
 
