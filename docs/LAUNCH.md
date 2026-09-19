@@ -1,10 +1,22 @@
 # SyncStock launch record
 
-Last checked: **September 18, 2026**
+Last checked: **September 19, 2026**
 
 Canonical repository: https://github.com/yaussyross/SyncStock
 Production app: https://sync-stock-six.vercel.app
 Founding pricing: **Solo $8/month**, **Scale $29/month**, **Empire $49/month**. New accounts receive 20 synced orders free with no card required.
+
+## September 19 control checkpoint
+
+- Current `main` is `7d298d047f6882d8940ed4516d6e1029dcf8bc73` (PR #17). GitHub Actions `verify` completed successfully on that exact commit.
+- Canonical Vercel project `raus2/sync-stock` deployed that exact commit to production as `dpl_3Y4qv2B3YokJdnSS97bsJruALYmu` with state READY. Vercel reported no production runtime-error clusters in the checked last-24-hour window.
+- The obsolete duplicate Vercel project `sync-stock-s5j9` still reports a failed deployment status on the same commit. This makes GitHub's combined legacy status appear failed, but it is not the project serving SyncStock production and must not be treated as a product/runtime failure.
+- Railway Redis and the persistent worker both report successful production deployments. The worker currently runs commit `cf721c708fc1621860ec0d6c546e6bafbc930d96`; direct comparison of `src/worker/index.ts` to current `main` shows the later worker-only changes are sandbox-isolation guards, so the current production worker behavior remains compatible.
+- The expired `sandbox-24h` service has restart policy NEVER and reported zero CPU and zero memory usage across the checked 24-hour window. It is not carrying production traffic.
+- Supabase project `shopify-qbo-sync` is ACTIVE_HEALTHY. The current security-advisor result contains no lints. Six unused-index notices are informational performance findings and are not launch blockers.
+- PR #12 is stale/diverged (one commit ahead, five behind). Its still-useful Shopify App Pricing configuration details are being folded into the current launch record instead of merging the stale branch.
+
+Owner action status: no repeated generic Shopify screenshot is requested. Ross has already supplied production-app/distribution context in the project history. Escalate only the exact next owner-controlled Shopify action or credential entry that cannot be completed through connected tools, and stop before any fee or other cash outflow.
 
 ## September 18 takeover checkpoint
 
@@ -17,7 +29,7 @@ Founding pricing: **Solo $8/month**, **Scale $29/month**, **Empire $49/month**. 
 - Ross is creating dedicated SyncStock TikTok and Facebook profiles. The daily social task now requires Ross-identified dedicated profile URLs and verified Metricool connections before scheduling new posts. Existing scheduled posts were not altered.
 - Code review found that the embedded mapping editor submitted no removals and disabled saving when all selections were cleared. The fix sends only cleared, previously saved variants in the loaded catalog; it preserves mappings outside that catalog and permits removing the final mapping.
 
-Immediate owner action: complete the Shopify human-verification/login handoff so public-app distribution and billing can be inspected; provide the new dedicated social profile URLs after creating them. Do not send credentials in chat.
+Historical note: the generic Shopify human-verification handoff was already surfaced to Ross. Do not ask for the same production/distribution screenshot again; request only a specific unresolved Shopify action when required. Dedicated SyncStock social profile URLs remain separate from the product launch gate. Do not send credentials in normal chat.
 
 ## Earlier verified state (September 17)
 
@@ -64,7 +76,7 @@ Developer dashboard: https://dev.shopify.com/dashboard
 
 ### 2. Production onboarding + Shopify App Pricing smoke
 
-Verify the embedded public-app installation, QuickBooks connection, product mapping, hosted Shopify plan selection, return to the app, and confirmed subscription entitlement. Shopify Partner billing configuration and the monthly plan catalog must be verified. Use Shopify-supported no-charge development-store testing where available; do not claim that legacy Stripe tests prove the new Shopify billing flow.
+Verify the embedded public-app installation, QuickBooks connection, product mapping, hosted Shopify plan selection, return to the app, and confirmed subscription entitlement. Shopify Partner billing configuration and the monthly plan catalog must be verified. The deployed billing code expects these production Partner/App Pricing values: `SHOPIFY_APP_HANDLE`, `SHOPIFY_APP_GID`, `SHOPIFY_PARTNER_ORG_ID`, and `SHOPIFY_PARTNER_API_ACCESS_TOKEN`. The Partner API client must have the permission required to read/manage the production app's billing state. Do not set `BILLING_PROVIDER=stripe_legacy` for new public-app billing. Use Shopify-supported no-charge development-store testing where available; do not claim that legacy Stripe tests prove the new Shopify billing flow.
 
 Never charge a customer or create paid ad spend as a test. Use an authorized owner/test merchant and stop before any real payment unless the owner explicitly approves the transaction.
 
