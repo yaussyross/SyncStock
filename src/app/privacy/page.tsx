@@ -4,20 +4,45 @@ export default function PrivacyPage() {
   return (
     <main className="container legal-doc">
       <h1>Privacy Policy</h1>
-      <p className="updated">Last updated: [DATE — fill in before publishing]</p>
-      <p>This Privacy Policy explains what information SyncStock ("we," "us," "our") collects, how we use it, and the commitment we make about it.</p>
-      <h2>Our commitment</h2>
-      <p><strong>We do not sell, rent, or share your business data or your customers' data with third parties for their marketing or advertising purposes.</strong> Data you connect through SyncStock — Shopify order details, QuickBooks account information — is used solely to provide the sync service to you, and for nothing else.</p>
-      <h2>What we collect</h2>
-      <ul><li>Account information: your email address.</li><li>Shopify order details needed to create the matching QuickBooks record.</li><li>QuickBooks company ID and OAuth tokens needed to post records on your behalf.</li><li>Billing information handled directly by Stripe; we do not store card details.</li><li>Basic usage and error data needed to operate and improve the Service.</li></ul>
-      <h2>How we use it</h2><p>To authenticate you, sync orders into QuickBooks, enforce plan quotas, bill you, and provide customer support.</p>
-      <h2>How we protect it</h2><p>Connected-account access tokens are encrypted at rest. Internal access to production data is limited to what is needed to operate and support the Service.</p>
-      <h2>Third parties</h2><p>We use infrastructure providers and Stripe to operate the Service. They process data only as needed to provide those services under their own security and confidentiality obligations.</p>
-      <h2>Data retention</h2><p>We retain operational data while your account is active and for a limited period afterward for support and legal purposes. You may request deletion.</p>
-      <h2>Your choices</h2><p>You can disconnect Shopify or QuickBooks and may request a copy or deletion of your data by contacting support.</p>
-      <h2>Children's privacy</h2><p>The Service is intended for business use and is not directed to children.</p>
-      <h2>Changes</h2><p>If we make material changes, we will notify active users before they take effect.</p>
-      <h2>Contact</h2><p>Questions about this policy or your data: support@syncstock.app</p>
+      <p className="updated">Last updated: September 19, 2026</p>
+      <p>This Privacy Policy explains how SyncStock ("we," "us," "our") handles information when you use the SyncStock Shopify-to-QuickBooks service.</p>
+
+      <h2>Information we process</h2>
+      <ul>
+        <li>Shopify store and app identifiers needed to authenticate the installation and operate the integration.</li>
+        <li>Shopify order and product information needed to map and create supported QuickBooks records.</li>
+        <li>QuickBooks company identifiers and OAuth credentials needed to connect to QuickBooks Online and create records you authorize.</li>
+        <li>Account or support contact information you provide to us.</li>
+        <li>Subscription status and plan information needed to enforce plan limits. New paid subscriptions are billed through Shopify; SyncStock does not store full payment-card details.</li>
+        <li>Operational logs, sync status, error details, and feedback needed to secure, support, and improve the service.</li>
+      </ul>
+
+      <h2>How we use information</h2>
+      <p>We use information to authenticate connected stores, map products, process supported paid orders, create authorized QuickBooks records, reconcile sync results, prevent duplicate processing, enforce plan limits, respond to support requests, and maintain the security and reliability of the service.</p>
+
+      <h2>Customer data</h2>
+      <p>SyncStock processes Shopify order data only as needed to provide the integration. We do not sell customer or merchant data, and we do not use connected-store data for third-party advertising.</p>
+
+      <h2>Service providers</h2>
+      <p>We use service providers to host and operate SyncStock, including Shopify, Intuit QuickBooks, Vercel, Railway, and Supabase. They may process information on our behalf as required to provide their services. Legacy subscriptions created before the move to Shopify-hosted billing may continue to be processed by Stripe until they are migrated or cancelled.</p>
+
+      <h2>Security</h2>
+      <p>Connected-account access tokens are encrypted at rest. We use authenticated internal service connections and limit production-data access to what is needed to operate and support SyncStock. No internet service can guarantee absolute security.</p>
+
+      <h2>Retention and deletion</h2>
+      <p>We retain operational records for as long as needed to provide the service, resolve support and accounting-sync issues, meet legal obligations, and protect the service. When Shopify sends mandatory customer or shop redaction requests, SyncStock processes those requests through its compliance webhook and deletes covered Shopify-derived records. Uninstalling the app removes the Shopify access connection and product mappings; additional records are removed when applicable redaction requests are received.</p>
+
+      <h2>Your choices</h2>
+      <p>You can uninstall SyncStock from Shopify, disconnect QuickBooks, and contact us to request access to or deletion of information associated with your SyncStock account, subject to legal and operational retention requirements.</p>
+
+      <h2>Children</h2>
+      <p>SyncStock is intended for business users and is not directed to children.</p>
+
+      <h2>Changes</h2>
+      <p>We may update this policy as the service changes. The current version and its effective date will remain available on this page.</p>
+
+      <h2>Contact</h2>
+      <p>Privacy or data questions: support@syncstock.app</p>
     </main>
   );
 }
