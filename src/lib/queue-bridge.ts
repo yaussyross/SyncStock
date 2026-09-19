@@ -3,7 +3,7 @@ import { bridgeConfig } from "./bridge-config";
 
 type EnqueuePayload = {
   userId: string;
-  order: any;
+  syncLogId: string;
   jobId: string;
 };
 
@@ -46,7 +46,7 @@ export async function enqueueOrderSync(payload: EnqueuePayload) {
 
   if (process.env.REDIS_URL) {
     const { syncQueue } = await import("./queue");
-    await syncQueue.add("sync-order", { userId: payload.userId, order: payload.order }, { jobId: payload.jobId });
+    await syncQueue.add("sync-order", { userId: payload.userId, syncLogId: payload.syncLogId }, { jobId: payload.jobId });
     return;
   }
 
