@@ -47,8 +47,8 @@ export default function BookkeepingCalculator() {
           </div>
           <p className="pricing-note">This estimates time value, not cash savings or guaranteed performance. Setup, exception review, refunds, and other bookkeeping work still take time. Tax and other software costs are excluded.</p>
         </> : <p role="alert">Enter valid nonnegative values within the displayed limits. Orders must be a whole number and the percentage must be 0–100.</p>}
-        <a className="btn" href="/signup?source=bookkeeping-calculator">Explore the free sandbox beta</a>
-        <p className="pricing-note">SyncStock is being tested with sandbox data. Live accounting sync is not yet available.</p>
+        <a className="btn" href="/signup?source=bookkeeping-calculator">Explore the founding beta</a>
+        <p className="pricing-note">The core Shopify → QuickBooks sandbox path has passed end to end. Public-app onboarding and Shopify billing are still being verified before broad release.</p>
       </div>
     </div>
   );
