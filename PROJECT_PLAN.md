@@ -31,9 +31,10 @@ Ship a reliable public embedded Shopify app where one supported paid Shopify ord
 
 ### 1. Shopify-controlled configuration
 - [ ] Verify production public-app distribution/review state.
+- [ ] Request/verify protected customer data access required by the public app's `read_orders` use. Current order reads intentionally avoid direct customer name, address, phone, and email fields; request only the minimum level Shopify requires for the order data SyncStock actually processes.
 - [ ] Configure/verify Shopify App Pricing for Solo $8/mo, Scale $29/mo, Empire $49/mo.
-- [ ] Verify production Partner/App Pricing identifiers and Partner API permission.
-- [ ] Run an authorized no-charge/test merchant flow: install → embedded App Home → QuickBooks connect → mapping → Shopify-hosted plan selection → paid test order → QuickBooks reconciliation.
+- [ ] Verify production Partner/App Pricing identifiers and Partner API permission (`Manage apps` is required for Active Subscription reads).
+- [ ] Run an authorized no-charge development-store flow: install → embedded App Home → QuickBooks connect → mapping → Shopify-hosted plan selection → paid test order → QuickBooks reconciliation.
 - [ ] Submit/complete Shopify App Store review only after the automated checks and billing flow pass.
 
 ### 2. Broader accounting acceptance
