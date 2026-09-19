@@ -8,6 +8,17 @@ Founding pricing: **Solo $8/month**, **Scale $29/month**, **Empire $49/month**. 
 
 ## September 19 App Store submission checkpoint
 
+### September 19 live embedded onboarding update
+
+- The production public app now opens successfully inside the TEST Shopify admin after the expiring-offline-token migration. Embedded bootstrap and status endpoints returned HTTP 200 with no runtime-error clusters in the checked window.
+- The TEST store now has a stored rotating Shopify refresh token and all four expected webhook registrations: paid order, refund, cancellation, and uninstall.
+- QuickBooks sandbox OAuth is connected again from the embedded app. The Intuit development redirect list now includes the canonical callback `https://sync-stock-six.vercel.app/api/auth/qbo/callback`.
+- One production TEST-store product mapping is saved: Shopify SKU `SYNCSTOCK-TEST-10` (`SyncStock Test Product`) → QuickBooks item `Services` (ID 1).
+- Current TEST-store state: one QuickBooks connection, one mapping, zero sync logs. No real customer order or customer books were used.
+- Two real 1600×900 App Store screenshots are prepared from the live embedded app: dashboard/status and product mapping. A third useful screenshot should come from a successful paid-order sync result rather than an empty-state or fabricated screen.
+- Remaining merchant-flow gates are Shopify-hosted plan selection/entitlement and a paid TEST-store order reconciled into QuickBooks sandbox. Do not use a real customer charge for this acceptance step.
+
+
 - Canonical `main` is `64abbf8e954982aa9b1ac2c975c43f83cec82d6f` (PR #25), which adds Shopify expiring offline access-token support and encrypted refresh-token rotation for the public app.
 - GitHub Actions `verify` passed on the PR head before merge. Canonical Vercel production deployment `dpl_3cKhkwCq88ySy8hkfiKjxaxs4VkU` is READY and serves the `sync-stock-six.vercel.app` alias. No production runtime-error clusters were found in the checked post-release window.
 - The production Supabase schema now includes encrypted refresh-token storage metadata (`refreshToken`, `accessTokenExpiresAt`, `refreshTokenExpiresAt`).
@@ -15,7 +26,7 @@ Founding pricing: **Solo $8/month**, **Scale $29/month**, **Empire $49/month**. 
 - Shopify submission prerequisites completed: app icon, emergency developer contact, English listing language, minimum protected-customer-data declaration, and 9/9 data-protection questionnaire answers.
 - Listing work in progress: public app name `SyncStock`, primary category Store management → Finances → Accounting, English language, introduction/details/features, and 1600×900 feature media are prepared/entered. Required real desktop screenshots are still outstanding.
 - Opening the production app inside the TEST Shopify admin exposed Shopify's new expiring-offline-token requirement. That code blocker is now fixed in PR #25 and deployed. The next merchant-session verification is to reopen/refresh the embedded app so App Bridge can issue a fresh ID token and SyncStock can store the new expiring offline token pair.
-- Current production data for the TEST store has no active QuickBooks connection, no product mappings, and no sync logs yet. After embedded bootstrap succeeds, the production no-charge acceptance sequence is QuickBooks sandbox connection → one product mapping → Shopify-hosted test plan selection where supported → paid test order → QuickBooks reconciliation.
+- Current production data for the TEST store now has an active QuickBooks sandbox connection and one saved product mapping, with no sync logs yet. The remaining no-charge acceptance sequence is Shopify-hosted test plan selection where supported → paid TEST-store order → QuickBooks reconciliation.
 - Dedicated SyncStock social profiles are not yet connected in Metricool. Existing Metricool brand `6904340` still points to personal TikTok `rausssy`, Facebook `1223731030831532`, and unrelated Instagram `pawtywalksatx`; do not publish new SyncStock campaign content to those by default.
 - No paid advertising is authorized. The Shopify App Store registration fee was paid by the owner through Shopify; any further fee, ad spend, boost, or other outgoing cash still requires explicit approval.
 
