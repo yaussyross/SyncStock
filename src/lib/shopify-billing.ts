@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { fetchShopifyShopId } from "./shopify";
+import { ensureFreshShopifyConnection, fetchShopifyShopId } from "./shopify";
 
 const PARTNER_API_VERSION = "2026-07";
 
@@ -110,11 +110,18 @@ export async function refreshShopifyBillingForUser(userId: string) {
   const config = requiredPartnerConfig();
   if (!config) return { configured: false as const, source: "shopify" as const };
 
-  const [user, connection] = await Promise.all([
-    db.user.findUnique({ where: { id: userId } }),
-    db.shopifyConnection.findUnique({ where: { userId } }),
-  ]);
-  if (!user || !connection) return { configured: true as const, source: "shopify" as const, active: false as const };
+  const user = await db.user.findUnique({ where: { id: userId } });
+  if (!user) return { configured: true as const, source: "shopify" as const, active: false as const };
+
+  let connection;
+  try {
+    connection = await ensureFreshShopifyConnection(userId);
+  } catch (error: any) {
+    if (error?.message === "Shopify connection not found") {
+      return { configured: true as const, source: "shopify" as const, active: false as const };
+    }
+    throw error;
+  }
 
   // Preserve any legacy Stripe subscription until it is explicitly migrated/cancelled.
   if (user.stripeSubscriptionId && (user.subscriptionStatus === "active" || user.subscriptionStatus === "trialing")) {
