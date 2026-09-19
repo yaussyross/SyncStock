@@ -6,6 +6,19 @@ Canonical repository: https://github.com/yaussyross/SyncStock
 Production app: https://sync-stock-six.vercel.app
 Founding pricing: **Solo $8/month**, **Scale $29/month**, **Empire $49/month**. New accounts receive 20 synced orders free with no card required.
 
+## September 19 App Store submission checkpoint
+
+- Canonical `main` is `64abbf8e954982aa9b1ac2c975c43f83cec82d6f` (PR #25), which adds Shopify expiring offline access-token support and encrypted refresh-token rotation for the public app.
+- GitHub Actions `verify` passed on the PR head before merge. Canonical Vercel production deployment `dpl_3cKhkwCq88ySy8hkfiKjxaxs4VkU` is READY and serves the `sync-stock-six.vercel.app` alias. No production runtime-error clusters were found in the checked post-release window.
+- The production Supabase schema now includes encrypted refresh-token storage metadata (`refreshToken`, `accessTokenExpiresAt`, `refreshTokenExpiresAt`).
+- Shopify App Store developer registration is complete. The production public app remains in Draft.
+- Shopify submission prerequisites completed: app icon, emergency developer contact, English listing language, minimum protected-customer-data declaration, and 9/9 data-protection questionnaire answers.
+- Listing work in progress: public app name `SyncStock`, primary category Store management → Finances → Accounting, English language, introduction/details/features, and 1600×900 feature media are prepared/entered. Required real desktop screenshots are still outstanding.
+- Opening the production app inside the TEST Shopify admin exposed Shopify's new expiring-offline-token requirement. That code blocker is now fixed in PR #25 and deployed. The next merchant-session verification is to reopen/refresh the embedded app so App Bridge can issue a fresh ID token and SyncStock can store the new expiring offline token pair.
+- Current production data for the TEST store has no active QuickBooks connection, no product mappings, and no sync logs yet. After embedded bootstrap succeeds, the production no-charge acceptance sequence is QuickBooks sandbox connection → one product mapping → Shopify-hosted test plan selection where supported → paid test order → QuickBooks reconciliation.
+- Dedicated SyncStock social profiles are not yet connected in Metricool. Existing Metricool brand `6904340` still points to personal TikTok `rausssy`, Facebook `1223731030831532`, and unrelated Instagram `pawtywalksatx`; do not publish new SyncStock campaign content to those by default.
+- No paid advertising is authorized. The Shopify App Store registration fee was paid by the owner through Shopify; any further fee, ad spend, boost, or other outgoing cash still requires explicit approval.
+
 ## September 19 control checkpoint
 
 - Current `main` is `7d298d047f6882d8940ed4516d6e1029dcf8bc73` (PR #17). GitHub Actions `verify` completed successfully on that exact commit.
@@ -68,9 +81,9 @@ This completes the original one-order end-to-end sandbox acceptance gate. Do not
 
 These are the items that are **not yet verified** and must not be described as complete.
 
-### 1. Shopify multi-store distribution approval
+### 1. Shopify App Store submission
 
-The production OAuth code accepts merchant `.myshopify.com` domains, but the production app's Shopify distribution/review state has not been observed from the connected tools. Before onboarding unrelated merchant stores, verify in the Shopify developer dashboard that the production SyncStock app uses an appropriate multi-store/public distribution path and that any required review is approved. Do not incur a Shopify registration/review fee without owner approval.
+The production public app is registered and currently in Draft. App icon, emergency contact, English primary language, protected-customer-data declaration, and initial listing content are in progress/complete. Finish the real app screenshots, automated checks, capability selection, pricing configuration, review instructions, and remaining listing fields before submission. Do not describe the app as App Store approved until Shopify approves it.
 
 Developer dashboard: https://dev.shopify.com/dashboard
 
