@@ -28,6 +28,9 @@ Ship a reliable public embedded Shopify app where one supported paid Shopify ord
 - [x] Embedded App Home separated from the public dark marketing theme and restyled for a familiar Shopify-admin surface.
 - [x] Public-app protected customer data declaration completed at the minimum required level without requesting customer name, email, phone, or address fields.
 - [x] Shopify public-app authentication upgraded to expiring offline access tokens with encrypted refresh-token rotation support.
+- [x] Live embedded TEST-store re-authentication verified after the expiring-token migration.
+- [x] QuickBooks sandbox OAuth reconnected from the embedded public app after registering the canonical Vercel callback.
+- [x] Production TEST-store product mapping saved for `SYNCSTOCK-TEST-10` → QuickBooks `Services`.
 
 ## Remaining public-launch gates
 
@@ -39,7 +42,7 @@ Ship a reliable public embedded Shopify app where one supported paid Shopify ord
 - [ ] Select the app capabilities required by Shopify review and complete the final App Store requirements self-review.
 - [ ] Configure/verify Shopify App Pricing for Solo $8/mo, Scale $29/mo, Empire $49/mo.
 - [ ] Verify production Partner/App Pricing identifiers and Partner API permission.
-- [ ] Run an authorized no-charge development-store flow: embedded App Home → QuickBooks connect → mapping → Shopify-hosted plan selection → paid test order → QuickBooks reconciliation.
+- [ ] Run an authorized no-charge development-store flow: embedded App Home → QuickBooks connect → mapping → Shopify-hosted plan selection → paid test order → QuickBooks reconciliation. Embedded App Home, QuickBooks connection, and one product mapping are now verified; plan selection and paid-order reconciliation remain.
 - [ ] Submit for Shopify App Store review only after the automated checks and billing flow pass.
 
 ### 2. Broader accounting acceptance
@@ -47,7 +50,7 @@ Ship a reliable public embedded Shopify app where one supported paid Shopify ord
 - [ ] Tax-inclusive Shopify cases and relevant QuickBooks tax configurations.
 - [ ] Unmapped-product behavior and post-mapping retry.
 - [ ] QuickBooks failure / rollback behavior.
-- [x] Shopify expiring offline-token acquisition and refresh path implemented; live embedded re-authentication still needs merchant-session verification.
+- [x] Shopify expiring offline-token acquisition, refresh path, and live embedded re-authentication verified.
 - [ ] Expired QuickBooks OAuth recovery.
 - [ ] Uninstall cleanup.
 - [ ] Refund/cancellation review workflow.
