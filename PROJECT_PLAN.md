@@ -47,7 +47,7 @@ Ship a reliable public embedded Shopify app where one supported paid Shopify ord
 - [ ] Tax-inclusive Shopify cases and relevant QuickBooks tax configurations.
 - [ ] Unmapped-product behavior and post-mapping retry.
 - [ ] QuickBooks failure / rollback behavior.
-- [x] Shopify expiring offline-token acquisition and refresh path implemented; live embedded re-authentication still needs merchant-session verification.
+- [x] Shopify expiring offline-token acquisition and refresh path implemented and live embedded re-authentication verified in the TEST development store.
 - [ ] Expired QuickBooks OAuth recovery.
 - [ ] Uninstall cleanup.
 - [ ] Refund/cancellation review workflow.
