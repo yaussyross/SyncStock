@@ -26,22 +26,29 @@ Ship a reliable public embedded Shopify app where one supported paid Shopify ord
 - [x] CI covers database migration, reconciliation, security/quota, billing ordering, Shopify billing mapping, Shopify auth, API error normalization, mapping removal, and production build.
 - [x] Public Terms/Privacy and Shopify embedded config updated for the current architecture.
 - [x] Embedded App Home separated from the public dark marketing theme and restyled for a familiar Shopify-admin surface.
+- [x] Public-app protected customer data declaration completed at the minimum required level without requesting customer name, email, phone, or address fields.
+- [x] Shopify public-app authentication upgraded to expiring offline access tokens with encrypted refresh-token rotation support.
 
 ## Remaining public-launch gates
 
 ### 1. Shopify-controlled configuration
-- [ ] Verify production public-app distribution/review state.
+- [x] Shopify App Store developer registration completed; production public app is in Draft submission state.
+- [x] App icon, emergency developer contact, English primary listing language, and protected customer data declaration completed.
+- [ ] Finish App Store listing content and required real app screenshots.
+- [ ] Run Shopify automated submission checks after listing/configuration is complete.
+- [ ] Select the app capabilities required by Shopify review and complete the final App Store requirements self-review.
 - [ ] Configure/verify Shopify App Pricing for Solo $8/mo, Scale $29/mo, Empire $49/mo.
 - [ ] Verify production Partner/App Pricing identifiers and Partner API permission.
-- [ ] Run an authorized no-charge/test merchant flow: install → embedded App Home → QuickBooks connect → mapping → Shopify-hosted plan selection → paid test order → QuickBooks reconciliation.
-- [ ] Submit/complete Shopify App Store review only after the automated checks and billing flow pass.
+- [ ] Run an authorized no-charge development-store flow: embedded App Home → QuickBooks connect → mapping → Shopify-hosted plan selection → paid test order → QuickBooks reconciliation.
+- [ ] Submit for Shopify App Store review only after the automated checks and billing flow pass.
 
 ### 2. Broader accounting acceptance
 - [ ] Shipping / discount / tax combinations.
 - [ ] Tax-inclusive Shopify cases and relevant QuickBooks tax configurations.
 - [ ] Unmapped-product behavior and post-mapping retry.
 - [ ] QuickBooks failure / rollback behavior.
-- [ ] Expired OAuth recovery.
+- [x] Shopify expiring offline-token acquisition and refresh path implemented; live embedded re-authentication still needs merchant-session verification.
+- [ ] Expired QuickBooks OAuth recovery.
 - [ ] Uninstall cleanup.
 - [ ] Refund/cancellation review workflow.
 
