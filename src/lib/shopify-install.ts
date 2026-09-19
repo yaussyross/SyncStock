@@ -67,16 +67,39 @@ async function exchangeIdToken(shop: string, idToken: string) {
       subject_token: idToken,
       subject_token_type: "urn:ietf:params:oauth:token-type:id_token",
       requested_token_type: "urn:shopify:params:oauth:token-type:offline-access-token",
+      expiring: "1",
     }),
     cache: "no-store",
   });
 
-  const payload = await response.json().catch(() => null) as null | { access_token?: string; scope?: string; errors?: unknown; error?: string };
-  if (!response.ok || !payload?.access_token) {
+  const payload = await response.json().catch(() => null) as null | {
+    access_token?: string;
+    scope?: string;
+    expires_in?: number;
+    refresh_token?: string;
+    refresh_token_expires_in?: number;
+    errors?: unknown;
+    error?: string;
+  };
+  if (
+    !response.ok ||
+    !payload?.access_token ||
+    !payload.refresh_token ||
+    !payload.expires_in
+  ) {
     const message = shopifyErrorMessage(payload, response.status);
     throw new Error(response.status === 400 && message === `Shopify returned ${response.status}` ? "Shopify ID token is no longer valid" : message);
   }
-  return { accessToken: payload.access_token, scope: payload.scope ?? "" };
+  const now = Date.now();
+  return {
+    accessToken: payload.access_token,
+    refreshToken: payload.refresh_token,
+    accessTokenExpiresAt: new Date(now + payload.expires_in * 1000),
+    refreshTokenExpiresAt: payload.refresh_token_expires_in
+      ? new Date(now + payload.refresh_token_expires_in * 1000)
+      : null,
+    scope: payload.scope ?? "",
+  };
 }
 
 async function ensureWebhooks(shop: string, accessToken: string) {
@@ -135,7 +158,13 @@ function syntheticShopEmail(shop: string) {
 
 export async function bootstrapEmbeddedShopifyInstall(idToken: string) {
   const shopDomain = shopDomainFromIdToken(idToken);
-  const { accessToken, scope } = await exchangeIdToken(shopDomain, idToken);
+  const {
+    accessToken,
+    refreshToken,
+    accessTokenExpiresAt,
+    refreshTokenExpiresAt,
+    scope,
+  } = await exchangeIdToken(shopDomain, idToken);
 
   const existingConnection = await db.shopifyConnection.findUnique({ where: { shopDomain } });
   let userId = existingConnection?.userId;
@@ -152,8 +181,23 @@ export async function bootstrapEmbeddedShopifyInstall(idToken: string) {
 
   await db.shopifyConnection.upsert({
     where: { userId },
-    update: { shopDomain, accessToken: encrypt(accessToken), scope },
-    create: { userId, shopDomain, accessToken: encrypt(accessToken), scope },
+    update: {
+      shopDomain,
+      accessToken: encrypt(accessToken),
+      refreshToken: encrypt(refreshToken),
+      accessTokenExpiresAt,
+      refreshTokenExpiresAt,
+      scope,
+    },
+    create: {
+      userId,
+      shopDomain,
+      accessToken: encrypt(accessToken),
+      refreshToken: encrypt(refreshToken),
+      accessTokenExpiresAt,
+      refreshTokenExpiresAt,
+      scope,
+    },
   });
 
   const ids = await ensureWebhooks(shopDomain, accessToken);
