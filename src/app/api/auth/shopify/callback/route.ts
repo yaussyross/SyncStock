@@ -114,6 +114,7 @@ export async function GET(req: NextRequest) {
       client_id: process.env.SHOPIFY_API_KEY,
       client_secret: process.env.SHOPIFY_API_SECRET,
       code,
+      expiring: 1,
     }),
   });
 
@@ -121,13 +122,42 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Failed to exchange Shopify OAuth code." }, { status: 502 });
   }
 
-  const { access_token, scope } = await tokenRes.json();
-  if (!access_token) return NextResponse.json({ error: "Shopify returned no access token." }, { status: 502 });
+  const {
+    access_token,
+    scope,
+    expires_in,
+    refresh_token,
+    refresh_token_expires_in,
+  } = await tokenRes.json();
+  if (!access_token || !refresh_token || !expires_in) {
+    return NextResponse.json({ error: "Shopify returned an incomplete expiring offline token." }, { status: 502 });
+  }
+
+  const now = Date.now();
+  const accessTokenExpiresAt = new Date(now + Number(expires_in) * 1000);
+  const refreshTokenExpiresAt = refresh_token_expires_in
+    ? new Date(now + Number(refresh_token_expires_in) * 1000)
+    : null;
 
   await db.shopifyConnection.upsert({
     where: { userId: user.id },
-    update: { shopDomain: shop, accessToken: encrypt(access_token), scope: scope ?? "" },
-    create: { userId: user.id, shopDomain: shop, accessToken: encrypt(access_token), scope: scope ?? "" },
+    update: {
+      shopDomain: shop,
+      accessToken: encrypt(access_token),
+      refreshToken: encrypt(refresh_token),
+      accessTokenExpiresAt,
+      refreshTokenExpiresAt,
+      scope: scope ?? "",
+    },
+    create: {
+      userId: user.id,
+      shopDomain: shop,
+      accessToken: encrypt(access_token),
+      refreshToken: encrypt(refresh_token),
+      accessTokenExpiresAt,
+      refreshTokenExpiresAt,
+      scope: scope ?? "",
+    },
   });
 
   const desired: DesiredWebhook[] = [

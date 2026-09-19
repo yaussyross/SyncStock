@@ -1,10 +1,77 @@
-import { decrypt } from "./crypto";
+import { decrypt, encrypt } from "./crypto";
+import { db } from "./db";
 
 const SHOPIFY_API_VERSION = "2026-07";
 
 interface ShopifyGraphqlResponse<T> {
   data?: T;
   errors?: { message: string }[];
+}
+
+type ShopifyOfflineTokenResponse = {
+  access_token?: string;
+  scope?: string;
+  expires_in?: number;
+  refresh_token?: string;
+  refresh_token_expires_in?: number;
+  error?: string;
+  error_description?: string;
+};
+
+const SHOPIFY_TOKEN_REFRESH_SKEW_MS = 5 * 60 * 1000;
+
+export async function ensureFreshShopifyConnection(userId: string) {
+  let connection = await db.shopifyConnection.findUnique({ where: { userId } });
+  if (!connection) throw new Error("Shopify connection not found");
+
+  const expiresAt = connection.accessTokenExpiresAt?.getTime() ?? null;
+  if (!expiresAt || expiresAt > Date.now() + SHOPIFY_TOKEN_REFRESH_SKEW_MS) return connection;
+
+  if (!connection.refreshToken) {
+    throw new Error("Shopify access expired. Reopen SyncStock from Shopify Admin to reconnect.");
+  }
+  if (connection.refreshTokenExpiresAt && connection.refreshTokenExpiresAt.getTime() <= Date.now()) {
+    throw new Error("Shopify refresh token expired. Reopen SyncStock from Shopify Admin to reconnect.");
+  }
+
+  const clientId = process.env.SHOPIFY_API_KEY;
+  const clientSecret = process.env.SHOPIFY_API_SECRET;
+  if (!clientId || !clientSecret) throw new Error("Shopify app credentials are not configured");
+
+  const response = await fetch(`https://${connection.shopDomain}/admin/oauth/access_token`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "Accept": "application/json",
+    },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      grant_type: "refresh_token",
+      refresh_token: decrypt(connection.refreshToken),
+    }),
+    cache: "no-store",
+  });
+  const payload = await response.json().catch(() => null) as ShopifyOfflineTokenResponse | null;
+  if (!response.ok || !payload?.access_token || !payload.refresh_token || !payload.expires_in) {
+    const detail = payload?.error_description || payload?.error || `Shopify returned ${response.status}`;
+    throw new Error(`Could not refresh Shopify access: ${detail}`);
+  }
+
+  const now = Date.now();
+  connection = await db.shopifyConnection.update({
+    where: { id: connection.id },
+    data: {
+      accessToken: encrypt(payload.access_token),
+      refreshToken: encrypt(payload.refresh_token),
+      accessTokenExpiresAt: new Date(now + payload.expires_in * 1000),
+      refreshTokenExpiresAt: payload.refresh_token_expires_in
+        ? new Date(now + payload.refresh_token_expires_in * 1000)
+        : connection.refreshTokenExpiresAt,
+      scope: payload.scope ?? connection.scope,
+    },
+  });
+  return connection;
 }
 
 async function shopifyGraphql<T>(

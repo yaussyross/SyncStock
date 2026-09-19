@@ -3,7 +3,7 @@ import { getCurrentUser } from "@/lib/session";
 import { getQuotaState } from "@/lib/quota";
 import { db } from "@/lib/db";
 import { syncQueue } from "@/lib/queue";
-import { fetchShopifyOrderForRetry } from "@/lib/shopify";
+import { ensureFreshShopifyConnection, fetchShopifyOrderForRetry } from "@/lib/shopify";
 
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
@@ -32,11 +32,9 @@ export async function POST(req: NextRequest) {
   const retryable = ["failed", "queue_failed", "skipped_no_mapping", "blocked_reconciliation", "skipped_quota_exceeded"];
   if (!retryable.includes(log.status)) return NextResponse.json({ error: "This order is already queued or requires review." }, { status: 409 });
 
-  const connection = await db.shopifyConnection.findUnique({ where: { userId: user.id } });
-  if (!connection) return NextResponse.json({ error: "Shopify not connected" }, { status: 400 });
-
   let order;
   try {
+    const connection = await ensureFreshShopifyConnection(user.id);
     order = await fetchShopifyOrderForRetry(connection.shopDomain, connection.accessToken, log.shopifyOrderId);
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || "Could not re-fetch order from Shopify" }, { status: 502 });

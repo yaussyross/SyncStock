@@ -41,8 +41,11 @@ model ShopifyConnection {
   userId             String   @unique
   user               User     @relation(fields: [userId], references: [id])
   shopDomain         String   @unique // e.g. my-store.myshopify.com
-  accessToken        String   // encrypted at rest, see lib/crypto.ts
-  scope              String
+  accessToken           String    // encrypted at rest, see lib/crypto.ts
+  refreshToken          String?   // encrypted rotating refresh token for expiring offline access
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String
   webhookId          String?  // orders/paid webhook subscription id
   refundWebhookId    String?
   cancelledWebhookId String?
