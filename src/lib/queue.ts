@@ -5,11 +5,11 @@ import { enqueueOrderSync } from "./queue-bridge";
 export const syncQueue = {
   async add(
     _name: string,
-    data: { userId: string; order: any },
+    data: { userId: string; syncLogId: string },
     options: { jobId?: string | number }
   ) {
-    const jobId = String(options?.jobId || `order-${data.userId}-${data.order?.id ?? Date.now()}`);
-    await enqueueOrderSync({ userId: data.userId, order: data.order, jobId });
+    const jobId = String(options?.jobId || `sync-${data.userId}-${data.syncLogId}`);
+    await enqueueOrderSync({ userId: data.userId, syncLogId: data.syncLogId, jobId });
     return { id: jobId };
   },
 };
