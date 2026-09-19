@@ -1,11 +1,11 @@
-# Copy to shopify.app.toml when the production domain and Shopify app client ID are finalized.
-# Do not commit secrets. Shopify client_id is public app metadata, but keep environment-specific
-# configuration deliberate rather than guessing it in this repository.
+# Copy to shopify.app.toml when the production Shopify app client ID is finalized.
+# Do not commit secrets. Shopify client_id and app URLs are public app metadata, but keep
+# environment-specific configuration deliberate rather than guessing it in this repository.
 
 name = "SyncStock"
 client_id = "REPLACE_WITH_SHOPIFY_CLIENT_ID"
-application_url = "https://REPLACE_WITH_PRODUCTION_DOMAIN"
-embedded = false
+application_url = "https://REPLACE_WITH_PRODUCTION_DOMAIN/app"
+embedded = true
 
 [access_scopes]
 scopes = "read_orders,read_products"
