@@ -158,15 +158,15 @@ export default function ShopifyAppHome() {
   ), [variants, savedVariantIds, selections]);
 
   return (
-    <main className="container" style={{ paddingTop: 32, paddingBottom: 64, maxWidth: 1080 }}>
+    <main className="embedded-app-shell"><div className="embedded-app">
       <div style={{ marginBottom: 22 }}>
         <div className="section-kicker">SYNCSTOCK · SHOPIFY APP</div>
         <h1 style={{ fontSize: 28, marginTop: 6 }}>Shopify orders in. Clean QuickBooks out.</h1>
-        <p style={{ color: "var(--paper-dim)", marginTop: 8 }}>Connect QuickBooks, map your products, then let SyncStock reconcile paid orders before they reach your books.</p>
+        <p style={{ color: "#6d7175", marginTop: 8 }}>Connect QuickBooks, map your products, then let SyncStock reconcile paid orders before they reach your books.</p>
       </div>
 
       {busy && <div className="card" style={{ marginBottom: 16 }}><strong>{busy}</strong></div>}
-      {error && <div className="card" style={{ marginBottom: 16, borderColor: "#713f2e", background: "#2a1712" }}><strong>Action needed</strong><p style={{ marginTop: 6 }}>{error}</p></div>}
+      {error && <div className="card" style={{ marginBottom: 16, borderColor: "#d72c0d", background: "#fff4f4", color: "#5c1f15" }}><strong>Action needed</strong><p style={{ marginTop: 6 }}>{error}</p></div>}
 
       {status && (
         <>
@@ -186,7 +186,7 @@ export default function ShopifyAppHome() {
             <div className="card">
               <div className="section-kicker">PLAN</div>
               <strong style={{ display: "block", marginTop: 8 }}>{status.plan.label}</strong>
-              <div style={{ color: "var(--paper-dim)", marginTop: 4 }}>{status.plan.used} / {status.plan.limit ?? "∞"} orders this period</div>
+              <div style={{ color: "#6d7175", marginTop: 4 }}>{status.plan.used} / {status.plan.limit ?? "∞"} orders this period</div>
               {status.quickbooks.connected && status.mappings.count > 0 && <button className="btn btn-small" style={{ marginTop: 12 }} onClick={openBilling}>Manage Shopify plan</button>}
             </div>
             <div className="card">
@@ -201,7 +201,7 @@ export default function ShopifyAppHome() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                 <div>
                   <h2 style={{ fontSize: 19 }}>Product mappings</h2>
-                  <p style={{ color: "var(--paper-dim)", fontSize: 13, marginTop: 4 }}>Choose the QuickBooks item that corresponds to each Shopify variant you want SyncStock to process.</p>
+                  <p style={{ color: "#6d7175", fontSize: 13, marginTop: 4 }}>Choose the QuickBooks item that corresponds to each Shopify variant you want SyncStock to process.</p>
                 </div>
                 <button className="btn" onClick={saveMappings} disabled={Boolean(busy) || (selectedCount === 0 && removeVariantIds.length === 0)}>Save mappings</button>
               </div>
@@ -233,10 +233,10 @@ export default function ShopifyAppHome() {
           <div className="card">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
               <h2 style={{ fontSize: 19 }}>Recent sync activity</h2>
-              <span style={{ color: "var(--paper-dim)", fontSize: 13 }}>{status.adjustmentsNeedingReview} refund/cancellation events need review</span>
+              <span style={{ color: "#6d7175", fontSize: 13 }}>{status.adjustmentsNeedingReview} refund/cancellation events need review</span>
             </div>
             {status.logs.length === 0 ? (
-              <p style={{ color: "var(--paper-dim)", marginTop: 12 }}>No paid orders have been synced yet.</p>
+              <p style={{ color: "#6d7175", marginTop: 12 }}>No paid orders have been synced yet.</p>
             ) : (
               <div style={{ overflowX: "auto", marginTop: 12 }}>
                 <table style={{ minWidth: 680 }}>
@@ -248,6 +248,6 @@ export default function ShopifyAppHome() {
           </div>
         </>
       )}
-    </main>
+    </div></main>
   );
 }
