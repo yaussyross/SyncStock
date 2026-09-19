@@ -1,1 +1,0 @@
-This branch prepares SyncStock for Shopify public embedded distribution. It is intentionally isolated until CI and the production public-app credentials are verified. Do not point the public Shopify app at this branch's preview URL for merchant installs; use the production domain only after merge and credential cutover.

@@ -4,34 +4,36 @@ SyncStock is a reliability-first Shopify → QuickBooks Online micro-SaaS. The f
 
 ## Product
 
-- Shopify OAuth connection
+- Public embedded Shopify app with App Bridge / Shopify ID-token authentication
 - QuickBooks Online OAuth connection
 - Paid-order webhook ingestion
 - HMAC verification + webhook delivery deduplication
 - BullMQ background sync worker
 - Stable QuickBooks Sales Receipt document IDs for retry recovery
-- Product mapping data model
-- Sync log + manual retry
-- Stripe subscription checkout
+- Explicit Shopify variant → QuickBooks item mapping
+- Reconciliation checks, sync history, and manual retry
+- Shopify-hosted App Pricing for new merchant subscriptions
+- Legacy Stripe compatibility only for previously-created subscriptions
 - Public marketing/pricing site
 
 ## Founding pricing
 
 - **Solo — $8/mo:** up to 200 orders/month
 - **Scale — $29/mo:** up to 1,000 orders/month
-- **Empire — $49/mo:** unlimited orders + priority support
+- **Empire — $49/mo:** unlimited orders
 - Trial: first 20 synced orders, no card required
 
-The internal Stripe plan keys remain `starter`, `growth`, and `unlimited` so existing environment variable names do not need to change.
+New public-app merchants are billed through Shopify. The legacy Stripe plan keys remain in the codebase only for backward compatibility and migration safety.
 
 ## Stack
 
 - Next.js 14
-- Prisma + PostgreSQL
-- BullMQ + Redis
-- Stripe
-- Shopify GraphQL Admin API
+- Prisma + PostgreSQL / Supabase
+- BullMQ + Redis / Railway
+- Shopify GraphQL Admin API + App Bridge
+- Shopify App Pricing
 - QuickBooks Online
+- Vercel
 
 ## Development
 
@@ -61,6 +63,8 @@ Copy `.env.example` to `.env` and provide your own credentials. Never commit rea
 
 ## Production status
 
-**Founding beta / core integration path verified in isolation.** On September 16, 2026, a paid Shopify development-store order completed the isolated Shopify → queue → worker → QuickBooks sandbox flow with an exact `$10.00` reconciliation, one quota increment, and duplicate protection. The hardened release is merged to `main`, CI is green, the production Vercel deployment is live, the production queue bridge is authenticated, and Supabase is healthy.
+**Founding beta / core integration path verified in isolation.** On September 16, 2026, a paid Shopify development-store order completed the isolated Shopify → queue → worker → QuickBooks sandbox flow with an exact `$10.00` reconciliation, one quota increment, and duplicate protection.
 
-Before unrestricted live-accounting onboarding, still verify the Shopify production app's multi-store distribution approval, manually exercise the production signup/checkout/portal path with an authorized test merchant, and complete remaining beta edge-case checks such as shipping/discount/tax combinations, expired OAuth, uninstall, and refund/cancellation review. See [the launch record](docs/LAUNCH.md).
+As of September 19, the canonical production Vercel project is live, the persistent Railway worker and Redis are healthy, Supabase is healthy, Shopify embedded App Home and mapping flows are merged, and the public legal/config surfaces have been updated for Shopify-hosted billing.
+
+The remaining public-launch gate is Shopify-controlled production configuration and review: verify the production public-app/App Pricing configuration with an authorized test merchant, then complete broader beta accounting cases such as shipping/discount/tax combinations, expired OAuth, uninstall, and refund/cancellation review. See [the launch record](docs/LAUNCH.md).
