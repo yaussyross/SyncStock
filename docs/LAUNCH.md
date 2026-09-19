@@ -74,17 +74,21 @@ The production OAuth code accepts merchant `.myshopify.com` domains, but the pro
 
 Developer dashboard: https://dev.shopify.com/dashboard
 
-### 2. Production onboarding + Shopify App Pricing smoke
+### 2. Protected customer data access
+
+The public app requests `read_orders`. Current SyncStock order reads use order identifiers, totals, taxes, discounts, shipping/tip/duty/additional-fee amounts, line-item titles/SKUs/quantities/prices, and variant IDs; they do not request customer name, address, phone, or email fields. Shopify's public-app protected-customer-data process still requires the app to declare and obtain the minimum access level needed for the customer/order data it processes. Verify this under the production app's API access settings before App Store submission; do not request fields SyncStock does not use.
+
+### 3. Production onboarding + Shopify App Pricing smoke
 
 Verify the embedded public-app installation, QuickBooks connection, product mapping, hosted Shopify plan selection, return to the app, and confirmed subscription entitlement. Shopify Partner billing configuration and the monthly plan catalog must be verified. The deployed billing code expects these production Partner/App Pricing values: `SHOPIFY_APP_HANDLE`, `SHOPIFY_APP_GID`, `SHOPIFY_PARTNER_ORG_ID`, and `SHOPIFY_PARTNER_API_ACCESS_TOKEN`. The Partner API client must have the permission required to read/manage the production app's billing state. Do not set `BILLING_PROVIDER=stripe_legacy` for new public-app billing. Use Shopify-supported no-charge development-store testing where available; do not claim that legacy Stripe tests prove the new Shopify billing flow.
 
 Never charge a customer or create paid ad spend as a test. Use an authorized owner/test merchant and stop before any real payment unless the owner explicitly approves the transaction.
 
-### 3. Broader beta accounting cases
+### 4. Broader beta accounting cases
 
 The narrow paid-order acceptance passed. Before representing the product as broadly production-proven, exercise the supported shipping/discount/tax combinations, unmapped-product handling, QuickBooks failure/rollback, expired OAuth, uninstall, and refund/cancellation review behavior. Unsupported accounting cases should remain blocked or visibly queued for review rather than silently written.
 
-### 4. Business/support details
+### 5. Business/support details
 
 Terms, privacy, feedback, and a support contact route are present on the production site. Confirm the final operating/legal business identity and that the support mailbox is actually monitored before broad paid acquisition.
 
