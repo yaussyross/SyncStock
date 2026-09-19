@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
 import { db } from "@/lib/db";
-import { fetchShopifyVariants } from "@/lib/shopify";
+import { ensureFreshShopifyConnection, fetchShopifyVariants } from "@/lib/shopify";
 
 export const dynamic = "force-dynamic";
 
@@ -9,12 +9,8 @@ export async function GET(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
-  const connection = await db.shopifyConnection.findUnique({ where: { userId: user.id } });
-  if (!connection) {
-    return NextResponse.json({ error: "Connect Shopify before mapping products" }, { status: 409 });
-  }
-
   try {
+    const connection = await ensureFreshShopifyConnection(user.id);
     const page = await fetchShopifyVariants(
       connection.shopDomain,
       connection.accessToken,
