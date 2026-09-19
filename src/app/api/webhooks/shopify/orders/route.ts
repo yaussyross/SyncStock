@@ -13,7 +13,7 @@ function isUniqueConstraintError(error: unknown) {
 
 function quotaMessage(reason: ReturnType<typeof getQuotaState>["reason"]) {
   if (reason === "subscription_inactive") return "Your SyncStock subscription is not active. Update billing before retrying.";
-  if (reason === "billing_period_expired") return "Sync is paused until Stripe confirms the next paid billing period.";
+  if (reason === "billing_period_expired") return "Sync is paused until the next paid billing period is confirmed.";
   return "Your SyncStock order quota for this billing period has been reached.";
 }
 
@@ -151,10 +151,14 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const queuedLog = await db.syncLog.findUniqueOrThrow({
+      where: { userId_shopifyOrderId: { userId: user.id, shopifyOrderId: String(order.id) } },
+      select: { id: true },
+    });
     await syncQueue.add(
       "sync-order",
-      { userId: user.id, order },
-      { jobId: `order-${user.id}-${order.id}` }
+      { userId: user.id, syncLogId: queuedLog.id },
+      { jobId: `sync-${queuedLog.id}` }
     );
 
     await db.webhookDelivery.update({

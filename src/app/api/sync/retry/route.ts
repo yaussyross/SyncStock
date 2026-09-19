@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
   if (!claim.count) return NextResponse.json({ error: "This order is already queued or requires review." }, { status: 409 });
 
   try {
-    await syncQueue.add("sync-order", { userId: user.id, order }, { jobId: `retry-${log.id}-${Date.now()}` });
+    await syncQueue.add("sync-order", { userId: user.id, syncLogId: log.id }, { jobId: `retry-${log.id}-${Date.now()}` });
   } catch {
     await db.syncLog.updateMany({
       where: { id: log.id, status: "pending" },

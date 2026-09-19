@@ -1,6 +1,8 @@
 import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { processOrderSync } from "@/lib/sync";
+import { db } from "@/lib/db";
+import { fetchShopifyOrderForRetry } from "@/lib/shopify";
 
 const WORKER_SIGNING_PUBLIC_KEY_PEM = `-----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEAG9flPogWlcoP1emNdR4o0KtjvuqQPONcUpYQqydWYag=
@@ -57,7 +59,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { userId, order } = (() => {
+  const { userId, syncLogId } = (() => {
     try {
       return JSON.parse(rawBody);
     } catch {
@@ -65,10 +67,29 @@ export async function POST(req: NextRequest) {
     }
   })();
 
-  if (!userId || !order?.id) {
+  if (!userId || !syncLogId) {
     return NextResponse.json({ error: "Invalid job payload" }, { status: 400 });
   }
 
+  const log = await db.syncLog.findFirst({
+    where: { id: String(syncLogId), userId: String(userId) },
+    select: { shopifyOrderId: true },
+  });
+  if (!log) return NextResponse.json({ error: "Sync log not found" }, { status: 404 });
+
+  const connection = await db.shopifyConnection.findUnique({
+    where: { userId: String(userId) },
+    select: { shopDomain: true, accessToken: true },
+  });
+  if (!connection) {
+    return NextResponse.json({ error: "Shopify connection not found" }, { status: 409 });
+  }
+
+  const order = await fetchShopifyOrderForRetry(
+    connection.shopDomain,
+    connection.accessToken,
+    log.shopifyOrderId
+  );
   await processOrderSync(String(userId), order);
   return NextResponse.json({ processed: true });
 }
