@@ -115,10 +115,10 @@ function signWorkerRequest(body: string, timestamp: string) {
 const worker = new Worker(
   "order-sync",
   async (job) => {
-    const { userId, order } = job.data;
-    console.log(`[sync] Processing order ${order?.name ?? order?.id} for user ${userId}`);
+    const { userId, syncLogId } = job.data;
+    console.log(`[sync] Processing sync log ${syncLogId} for user ${userId}`);
 
-    const body = JSON.stringify({ userId, order });
+    const body = JSON.stringify({ userId, syncLogId });
     const timestamp = Date.now().toString();
     const signature = signWorkerRequest(body, timestamp);
 
@@ -168,12 +168,16 @@ const server = createServer(async (req, res) => {
   if (!(await requestAuthorized(req))) return sendJson(res, 401, { error: "Unauthorized" });
 
   try {
-    const { userId, order, jobId } = await readJson(req);
-    if (!userId || !order?.id || !jobId) {
+    const { userId, syncLogId, jobId } = await readJson(req);
+    if (!userId || !syncLogId || !jobId) {
       return sendJson(res, 400, { error: "Invalid job payload" });
     }
 
-    await syncQueue.add("sync-order", { userId: String(userId), order }, { jobId: String(jobId) });
+    await syncQueue.add(
+      "sync-order",
+      { userId: String(userId), syncLogId: String(syncLogId) },
+      { jobId: String(jobId) }
+    );
     return sendJson(res, 202, { queued: true, jobId: String(jobId) });
   } catch (error: any) {
     const message = error?.message || "Could not enqueue job";
