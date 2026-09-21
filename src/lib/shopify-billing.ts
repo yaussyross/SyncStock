@@ -2,7 +2,7 @@ import { db } from "./db";
 import { ensureFreshShopifyConnection, fetchShopifyShopId } from "./shopify";
 
 const PARTNER_API_VERSION = "2026-07";
-const DEFAULT_SHOPIFY_APP_HANDLE = "syncstock-production";
+const DEFAULT_SHOPIFY_APP_HANDLE = "syncstock-productionn";
 const DEFAULT_SHOPIFY_PARTNER_ORG_ID = "511473";
 const DEFAULT_SHOPIFY_APP_GID = "gid://shopify/App/424848261121";
 
@@ -37,7 +37,11 @@ function requiredPartnerConfig() {
 }
 
 export function shopifyPricingUrl(shopDomain: string) {
-  const appHandle = process.env.SHOPIFY_APP_HANDLE?.trim() || DEFAULT_SHOPIFY_APP_HANDLE;
+  const configuredHandle = process.env.SHOPIFY_APP_HANDLE?.trim();
+  const appHandle =
+    !configuredHandle || configuredHandle === "syncstock-production"
+      ? DEFAULT_SHOPIFY_APP_HANDLE
+      : configuredHandle;
   if (!shopDomain.endsWith(".myshopify.com")) throw new Error("Invalid Shopify shop domain");
   const storeHandle = shopDomain.slice(0, -".myshopify.com".length);
   if (!storeHandle) throw new Error("Invalid Shopify shop domain");
