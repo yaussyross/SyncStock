@@ -5,7 +5,7 @@ import FeedbackLink from "@/components/FeedbackLink";
 
 export const metadata = {
   title: "SyncStock — Shopify orders into clean QuickBooks",
-  description: "Founding beta for Shopify merchants who want paid orders mapped, checked, and recorded in QuickBooks Online without silent accounting errors.",
+  description: "Sync paid Shopify orders to QuickBooks Online with explicit product mapping, reconciliation checks, duplicate protection, and visible sync history.",
   openGraph: {
     title: "SyncStock — Shopify orders into clean QuickBooks",
     description: "Focused Shopify → QuickBooks automation with mapping, reconciliation checks, retry safety, and visible sync history.",
