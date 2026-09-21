@@ -38,7 +38,7 @@ const previousHandle = process.env.SHOPIFY_APP_HANDLE;
 delete process.env.SHOPIFY_APP_HANDLE;
 assert.equal(
   shopifyPricingUrl("test-wc9egg3y.myshopify.com"),
-  "https://admin.shopify.com/store/test-wc9egg3y/charges/syncstock-production/pricing_plans",
+  "https://admin.shopify.com/store/test-wc9egg3y/charges/syncstock-productionn/pricing_plans",
   "canonical public-app handle should work without a deployment env override"
 );
 process.env.SHOPIFY_APP_HANDLE = "syncstock-override";
@@ -46,6 +46,16 @@ assert.equal(
   shopifyPricingUrl("test-wc9egg3y.myshopify.com"),
   "https://admin.shopify.com/store/test-wc9egg3y/charges/syncstock-override/pricing_plans",
   "deployment env override should still be honored"
+);
+if (previousHandle === undefined) delete process.env.SHOPIFY_APP_HANDLE;
+else process.env.SHOPIFY_APP_HANDLE = previousHandle;
+
+
+process.env.SHOPIFY_APP_HANDLE = "syncstock-production";
+assert.equal(
+  shopifyPricingUrl("test-wc9egg3y.myshopify.com"),
+  "https://admin.shopify.com/store/test-wc9egg3y/charges/syncstock-productionn/pricing_plans",
+  "stale pre-verification handle should normalize to the verified canonical handle"
 );
 if (previousHandle === undefined) delete process.env.SHOPIFY_APP_HANDLE;
 else process.env.SHOPIFY_APP_HANDLE = previousHandle;
