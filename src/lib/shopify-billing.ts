@@ -2,7 +2,7 @@ import { db } from "./db";
 import { ensureFreshShopifyConnection, fetchShopifyShopId } from "./shopify";
 
 const PARTNER_API_VERSION = "2026-07";
-const DEFAULT_SHOPIFY_APP_HANDLE = "syncstock-production";
+const DEFAULT_SHOPIFY_APP_HANDLE = "syncstock-productionn";
 const DEFAULT_SHOPIFY_PARTNER_ORG_ID = "511473";
 const DEFAULT_SHOPIFY_APP_GID = "gid://shopify/App/424848261121";
 
