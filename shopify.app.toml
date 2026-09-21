@@ -3,7 +3,7 @@
 
 name = "SyncStock Production"
 client_id = "6ad1f2ea53500a6202c9a046f6be56df"
-handle = "syncstock-production"
+handle = "syncstock-productionn"
 application_url = "https://sync-stock-six.vercel.app/app"
 embedded = true
 
