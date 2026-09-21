@@ -40,9 +40,9 @@ Ship a reliable public embedded Shopify app where one supported paid Shopify ord
 - [ ] Finish App Store listing content and required real app screenshots.
 - [ ] Run Shopify automated submission checks after listing/configuration is complete.
 - [ ] Select the app capabilities required by Shopify review and complete the final App Store requirements self-review.
-- [ ] Configure/verify Shopify App Pricing for Solo $8/mo, Scale $29/mo, Empire $49/mo.
+- [x] Shopify App Pricing enabled with three public monthly plans: Solo $8/mo, Scale $29/mo, Empire $49/mo; all allow free use on partner/development stores.
 - [ ] Verify production Partner/App Pricing identifiers and Partner API permission.
-- [ ] Run an authorized no-charge development-store flow: embedded App Home → QuickBooks connect → mapping → Shopify-hosted plan selection → paid test order → QuickBooks reconciliation. Embedded App Home, QuickBooks connection, and one product mapping are now verified; plan selection and paid-order reconciliation remain.
+- [ ] Run an authorized no-charge development-store flow: embedded App Home → QuickBooks connect → mapping → Shopify-hosted plan selection → paid test order → QuickBooks reconciliation. Embedded App Home, QuickBooks connection, one product mapping, and the public plan catalog are verified; plan selection and paid-order reconciliation remain.
 - [ ] Submit for Shopify App Store review only after the automated checks and billing flow pass.
 
 ### 2. Broader accounting acceptance
