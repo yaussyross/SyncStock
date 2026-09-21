@@ -2,6 +2,7 @@ import { db } from "./db";
 import { ensureFreshShopifyConnection, fetchShopifyShopId } from "./shopify";
 
 const PARTNER_API_VERSION = "2026-07";
+const DEFAULT_SHOPIFY_APP_HANDLE = "syncstock-production";
 
 export type ShopifyPlanTier = "starter" | "growth" | "unlimited";
 
@@ -34,8 +35,7 @@ function requiredPartnerConfig() {
 }
 
 export function shopifyPricingUrl(shopDomain: string) {
-  const appHandle = process.env.SHOPIFY_APP_HANDLE;
-  if (!appHandle) throw new Error("SHOPIFY_APP_HANDLE is not configured");
+  const appHandle = process.env.SHOPIFY_APP_HANDLE?.trim() || DEFAULT_SHOPIFY_APP_HANDLE;
   if (!shopDomain.endsWith(".myshopify.com")) throw new Error("Invalid Shopify shop domain");
   const storeHandle = shopDomain.slice(0, -".myshopify.com".length);
   if (!storeHandle) throw new Error("Invalid Shopify shop domain");
