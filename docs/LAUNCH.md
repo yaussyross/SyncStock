@@ -1,10 +1,19 @@
 # SyncStock launch record
 
-Last checked: **September 19, 2026**
+Last checked: **September 21, 2026**
 
 Canonical repository: https://github.com/yaussyross/SyncStock
 Production app: https://sync-stock-six.vercel.app
 Founding pricing: **Solo $8/month**, **Scale $29/month**, **Empire $49/month**. New accounts receive 20 synced orders free with no card required.
+
+## September 21 Shopify App Pricing checkpoint
+
+- Shopify App Pricing is enabled for **SyncStock Production**.
+- Three public monthly plans are configured and visible in the Partner pricing manager: **Solo $8/month**, **Scale $29/month**, and **Empire $49/month**.
+- Each public plan is configured as monthly recurring with no free-trial days and **Free for partners and developers** enabled, so the TEST development store can exercise plan selection without a real charge.
+- The legacy private `shopify-test` $0/month plan remains separate and was not modified.
+- The next billing acceptance step is to open SyncStock inside the TEST Shopify Admin and use **Manage Shopify plan** to verify Shopify-hosted plan selection/return. After entitlement verification, run one paid TEST-store order through the saved `SYNCSTOCK-TEST-10` → QuickBooks `Services` mapping.
+- No paid advertising or customer charge is authorized for this test.
 
 ## September 19 App Store submission checkpoint
 
@@ -26,7 +35,7 @@ Founding pricing: **Solo $8/month**, **Scale $29/month**, **Empire $49/month**. 
 - Shopify submission prerequisites completed: app icon, emergency developer contact, English listing language, minimum protected-customer-data declaration, and 9/9 data-protection questionnaire answers.
 - Listing work in progress: public app name `SyncStock`, primary category Store management → Finances → Accounting, English language, introduction/details/features, and 1600×900 feature media are prepared/entered. Required real desktop screenshots are still outstanding.
 - Opening the production app inside the TEST Shopify admin exposed Shopify's new expiring-offline-token requirement. That code blocker is now fixed in PR #25 and deployed. The next merchant-session verification is to reopen/refresh the embedded app so App Bridge can issue a fresh ID token and SyncStock can store the new expiring offline token pair.
-- Current production data for the TEST store now has an active QuickBooks sandbox connection and one saved product mapping, with no sync logs yet. The remaining no-charge acceptance sequence is Shopify-hosted test plan selection where supported → paid TEST-store order → QuickBooks reconciliation.
+- Current production data for the TEST store has an active QuickBooks sandbox connection and one saved product mapping, with no sync logs yet. Shopify App Pricing now has the $8/$29/$49 public monthly catalog configured with free development-store testing. The remaining no-charge acceptance sequence is Shopify-hosted plan selection → paid TEST-store order → QuickBooks reconciliation.
 - Dedicated SyncStock social profiles are not yet connected in Metricool. Existing Metricool brand `6904340` still points to personal TikTok `rausssy`, Facebook `1223731030831532`, and unrelated Instagram `pawtywalksatx`; do not publish new SyncStock campaign content to those by default.
 - No paid advertising is authorized. The Shopify App Store registration fee was paid by the owner through Shopify; any further fee, ad spend, boost, or other outgoing cash still requires explicit approval.
 
