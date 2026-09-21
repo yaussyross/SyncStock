@@ -37,7 +37,11 @@ function requiredPartnerConfig() {
 }
 
 export function shopifyPricingUrl(shopDomain: string) {
-  const appHandle = process.env.SHOPIFY_APP_HANDLE?.trim() || DEFAULT_SHOPIFY_APP_HANDLE;
+  const configuredHandle = process.env.SHOPIFY_APP_HANDLE?.trim();
+  const appHandle =
+    !configuredHandle || configuredHandle === "syncstock-production"
+      ? DEFAULT_SHOPIFY_APP_HANDLE
+      : configuredHandle;
   if (!shopDomain.endsWith(".myshopify.com")) throw new Error("Invalid Shopify shop domain");
   const storeHandle = shopDomain.slice(0, -".myshopify.com".length);
   if (!storeHandle) throw new Error("Invalid Shopify shop domain");
