@@ -114,6 +114,21 @@ jobs:
       - name: Production build
         run: npm run build
 
+      - name: Public HTTP route smoke
+        shell: bash
+        run: |
+          npm run start > /tmp/syncstock-next.log 2>&1 &
+          server_pid=$!
+          trap 'kill $server_pid || true' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:3000/ > /dev/null; then break; fi
+            sleep 1
+          done
+          for route in / /signup /login /privacy /terms /support /docs /tools/bookkeeping-cost /app /robots.txt /sitemap.xml; do
+            echo "Checking $route"
+            curl --fail --silent --show-error "http://127.0.0.1:3000$route" > /dev/null
+          done
+
       - name: Export generated package lock
         if: hashFiles('package-lock.json') != ''
         uses: actions/upload-artifact@v4
