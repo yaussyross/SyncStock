@@ -207,3 +207,8 @@ Resources:
 - Merchant support exists at `/support`.
 - Setup documentation exists at `/docs`.
 - Public marketing copy describes an initial release rather than a beta to avoid submitting a product explicitly labeled as a beta.
+
+
+## Verified Shopify app handle
+
+Shopify Admin API lookup for production client ID `6ad1f2ea53500a6202c9a046f6be56df` returned app handle **`syncstock-productionn`** on September 21, 2026. Use this exact handle for Shopify Admin deep links and hosted App Pricing URLs. The previous `syncstock-production` assumption was incorrect and causes Shopify Admin 404s.
