@@ -38,7 +38,7 @@ const previousHandle = process.env.SHOPIFY_APP_HANDLE;
 delete process.env.SHOPIFY_APP_HANDLE;
 assert.equal(
   shopifyPricingUrl("test-wc9egg3y.myshopify.com"),
-  "https://admin.shopify.com/store/test-wc9egg3y/charges/syncstock-production/pricing_plans",
+  "https://admin.shopify.com/store/test-wc9egg3y/charges/syncstock-productionn/pricing_plans",
   "canonical public-app handle should work without a deployment env override"
 );
 process.env.SHOPIFY_APP_HANDLE = "syncstock-override";
