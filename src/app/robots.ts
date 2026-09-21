@@ -4,8 +4,8 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
-      allow: ["/", "/signup", "/login", "/privacy", "/terms"],
-      disallow: ["/api/", "/dashboard/", "/feedback"],
+      allow: "/",
+      disallow: ["/api/", "/dashboard/", "/app", "/shopify/", "/login", "/feedback"],
     },
     sitemap: "https://sync-stock-six.vercel.app/sitemap.xml",
   };

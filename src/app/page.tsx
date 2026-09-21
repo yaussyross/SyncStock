@@ -1,4 +1,9 @@
+import type { Metadata } from "next";
 import Footer from "@/components/Footer";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 const proofPoints = [
   ["01", "Paid-order trigger", "Sync starts from Shopify's paid-order event, not a manual export."],
@@ -67,7 +72,7 @@ export default function LandingPage() {
               </div>
               <div className="launch-proof-row">
                 <div><strong>20</strong><span>free synced orders</span></div>
-                <div><strong>$0</strong><span>card required to test</span></div>
+                <div><strong>No</strong><span>card required</span></div>
                 <div><strong>1→1</strong><span>order-to-receipt goal</span></div>
               </div>
             </div>
@@ -165,7 +170,7 @@ export default function LandingPage() {
             <div className="section-heading pricing-heading">
               <div>
                 <p className="section-kicker">LAUNCH PRICING</p>
-                <h2>Simple pricing while we prove the core.</h2>
+                <h2>Simple pricing that scales with order volume.</h2>
               </div>
               <p>Every account starts with 20 free synced orders. No card required to test the workflow.</p>
             </div>
@@ -203,7 +208,7 @@ export default function LandingPage() {
           <div>
             <p className="section-kicker">INITIAL RELEASE</p>
             <h2>Stop babysitting order entry.</h2>
-            <p>Connect the workflow, map your products, and help shape the focused Shopify → QuickBooks tool you actually want to use.</p>
+            <p>Connect your store, map your products, and keep eligible paid orders moving into QuickBooks with visible checks.</p>
           </div>
           <a href="/signup" className="btn btn-large">Start with 20 free orders</a>
         </section>
