@@ -2,6 +2,9 @@ import { db } from "./db";
 import { ensureFreshShopifyConnection, fetchShopifyShopId } from "./shopify";
 
 const PARTNER_API_VERSION = "2026-07";
+const DEFAULT_SHOPIFY_APP_HANDLE = "syncstock-production";
+const DEFAULT_SHOPIFY_PARTNER_ORG_ID = "511473";
+const DEFAULT_SHOPIFY_APP_GID = "gid://shopify/App/424848261121";
 
 export type ShopifyPlanTier = "starter" | "growth" | "unlimited";
 
@@ -26,16 +29,15 @@ export interface ActiveShopifySubscription {
 }
 
 function requiredPartnerConfig() {
-  const organizationId = process.env.SHOPIFY_PARTNER_ORG_ID;
-  const accessToken = process.env.SHOPIFY_PARTNER_API_ACCESS_TOKEN;
-  const appId = process.env.SHOPIFY_APP_GID;
-  if (!organizationId || !accessToken || !appId) return null;
+  const organizationId = process.env.SHOPIFY_PARTNER_ORG_ID?.trim() || DEFAULT_SHOPIFY_PARTNER_ORG_ID;
+  const accessToken = process.env.SHOPIFY_PARTNER_API_ACCESS_TOKEN?.trim();
+  const appId = process.env.SHOPIFY_APP_GID?.trim() || DEFAULT_SHOPIFY_APP_GID;
+  if (!accessToken) return null;
   return { organizationId, accessToken, appId };
 }
 
 export function shopifyPricingUrl(shopDomain: string) {
-  const appHandle = process.env.SHOPIFY_APP_HANDLE;
-  if (!appHandle) throw new Error("SHOPIFY_APP_HANDLE is not configured");
+  const appHandle = process.env.SHOPIFY_APP_HANDLE?.trim() || DEFAULT_SHOPIFY_APP_HANDLE;
   if (!shopDomain.endsWith(".myshopify.com")) throw new Error("Invalid Shopify shop domain");
   const storeHandle = shopDomain.slice(0, -".myshopify.com".length);
   if (!storeHandle) throw new Error("Invalid Shopify shop domain");

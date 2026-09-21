@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { ActiveShopifySubscription, planTierForShopifySubscription } from "../src/lib/shopify-billing";
+import { ActiveShopifySubscription, planTierForShopifySubscription, shopifyPricingUrl } from "../src/lib/shopify-billing";
 
 function subscription(amount: string, options: { currency?: string; billingPeriod?: string; active?: boolean } = {}): ActiveShopifySubscription {
   return {
@@ -32,3 +32,20 @@ assert.equal(planTierForShopifySubscription(subscription("8.00", { billingPeriod
 assert.equal(planTierForShopifySubscription(subscription("8.00", { active: false })), null, "inactive price must not map");
 
 console.log("Shopify App Pricing catalog mapping tests passed.");
+
+
+const previousHandle = process.env.SHOPIFY_APP_HANDLE;
+delete process.env.SHOPIFY_APP_HANDLE;
+assert.equal(
+  shopifyPricingUrl("test-wc9egg3y.myshopify.com"),
+  "https://admin.shopify.com/store/test-wc9egg3y/charges/syncstock-production/pricing_plans",
+  "canonical public-app handle should work without a deployment env override"
+);
+process.env.SHOPIFY_APP_HANDLE = "syncstock-override";
+assert.equal(
+  shopifyPricingUrl("test-wc9egg3y.myshopify.com"),
+  "https://admin.shopify.com/store/test-wc9egg3y/charges/syncstock-override/pricing_plans",
+  "deployment env override should still be honored"
+);
+if (previousHandle === undefined) delete process.env.SHOPIFY_APP_HANDLE;
+else process.env.SHOPIFY_APP_HANDLE = previousHandle;
