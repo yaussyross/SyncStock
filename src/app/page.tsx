@@ -56,7 +56,7 @@ export default function LandingPage() {
 
           <section className="hero launch-hero">
             <div className="hero-copy">
-              <div className="kicker"><span className="status-dot" /> Founding beta · accepting early customers</div>
+              <div className="kicker"><span className="status-dot" /> Initial release · accepting merchants</div>
               <h1>Shopify orders in.<br /><span className="headline-accent">Clean QuickBooks out.</span></h1>
               <p className="lede">
                 SyncStock is a focused Shopify → QuickBooks workflow for merchants who are done copying orders by hand — and unwilling to trust automation that fails silently.
@@ -101,7 +101,7 @@ export default function LandingPage() {
             <div><span>BUILT FOR</span><strong>Shopify merchants</strong></div>
             <div><span>CONNECTS TO</span><strong>QuickBooks Online</strong></div>
             <div><span>PRIORITY</span><strong>Accounting correctness</strong></div>
-            <div><span>STATUS</span><strong>Founding beta</strong></div>
+            <div><span>STATUS</span><strong>Initial release</strong></div>
           </div>
         </section>
 
@@ -130,7 +130,7 @@ export default function LandingPage() {
                 <p className="section-kicker">THE WORKFLOW</p>
                 <h2>Four steps. No mystery box.</h2>
               </div>
-              <p>Founding beta onboarding stays intentionally narrow so we can prove the core path before expanding the product.</p>
+              <p>Initial-release onboarding stays intentionally narrow so merchants can configure the core path safely before expanding usage.</p>
             </div>
             <div className="workflow-steps">
               <div><span>01</span><h3>Connect</h3><p>Authorize Shopify and QuickBooks Online.</p></div>
@@ -144,9 +144,9 @@ export default function LandingPage() {
         <section className="container section launch-trust">
           <div className="trust-panel">
             <div className="trust-copy">
-              <p className="section-kicker">FOUNDING-BETA STANDARD</p>
+              <p className="section-kicker">RELIABILITY STANDARD</p>
               <h2>We would rather stop a sync than guess with your books.</h2>
-              <p>SyncStock is still a founding beta. That means we label the product honestly, keep unsupported accounting cases out of QuickBooks, and use customer feedback to tighten the workflow before broad release.</p>
+              <p>SyncStock focuses on supported accounting workflows, blocks unsupported cases before they reach QuickBooks, and keeps sync results visible so merchants can review what happened.</p>
               <div className="trust-actions">
                 <a className="btn" href="/signup">Join the beta</a>
                 <a className="btn btn-secondary" href="/feedback">Leave feedback</a>
@@ -164,7 +164,7 @@ export default function LandingPage() {
           <div className="container section">
             <div className="section-heading pricing-heading">
               <div>
-                <p className="section-kicker">FOUNDING PRICING</p>
+                <p className="section-kicker">LAUNCH PRICING</p>
                 <h2>Simple pricing while we prove the core.</h2>
               </div>
               <p>Every account starts with 20 free synced orders. No card required to test the workflow.</p>
@@ -183,7 +183,7 @@ export default function LandingPage() {
                 </article>
               ))}
             </div>
-            <p className="pricing-note">Founding pricing applies during the beta and may change before broad public launch. Existing paid customers receive advance notice of pricing changes.</p>
+            <p className="pricing-note">Launch pricing may change as the product expands. Existing paid customers receive advance notice of pricing changes.</p>
           </div>
         </section>
 
@@ -195,13 +195,13 @@ export default function LandingPage() {
             <div><h3>What is the beta focused on?</h3><p>Paid Shopify orders → QuickBooks Online sales receipts, explicit product mapping, reconciliation checks, retry safety, and visible sync history.</p></div>
             <div><h3>What happens if the totals do not match?</h3><p>The order is blocked rather than forced into QuickBooks. The goal is to make unsupported or questionable accounting visible instead of silently writing it.</p></div>
             <div><h3>Can I try it before paying?</h3><p>Yes. New accounts start with 20 free synced orders and do not require a card to create the account.</p></div>
-            <div><h3>Can I send product feedback?</h3><p>Yes. Signed-in founding users can submit bugs, feature requests, onboarding friction, and ratings through the in-product feedback page.</p></div>
+            <div><h3>Can I send product feedback?</h3><p>Yes. Signed-in users can submit bugs, feature requests, onboarding friction, and ratings through the in-product feedback page.</p></div>
           </div>
         </section>
 
         <section className="container final-cta launch-final-cta">
           <div>
-            <p className="section-kicker">FOUNDING BETA</p>
+            <p className="section-kicker">INITIAL RELEASE</p>
             <h2>Stop babysitting order entry.</h2>
             <p>Connect the workflow, map your products, and help shape the focused Shopify → QuickBooks tool you actually want to use.</p>
           </div>
