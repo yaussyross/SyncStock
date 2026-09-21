@@ -47,9 +47,9 @@ export default function SignupPage() {
 
   return (
     <main className="container" style={{ paddingTop: 80, maxWidth: 440 }}>
-      <h1 style={{ fontSize: 28, marginBottom: 8 }}>Start your free trial</h1>
+      <h1 style={{ fontSize: 28, marginBottom: 8 }}>Start with 20 free orders</h1>
       <p style={{ color: "var(--paper-dim)", marginBottom: 24 }}>20 synced orders free. No card required.</p>
-      <form onSubmit={handleSubmit} className="card">
+      <form onSubmit={handleSubmit} className="card" aria-busy={loading}>
         <label style={{ display: "block", marginBottom: 14 }}>
           <span style={{ display: "block", fontSize: 13, marginBottom: 6 }}>Email</span>
           <input type="email" autoComplete="email" placeholder="you@yourstore.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
