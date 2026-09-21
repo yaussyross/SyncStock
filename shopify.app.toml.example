@@ -4,6 +4,7 @@
 
 name = "SyncStock"
 client_id = "REPLACE_WITH_SHOPIFY_CLIENT_ID"
+handle = "syncstock-productionn"
 application_url = "https://REPLACE_WITH_PRODUCTION_DOMAIN/app"
 embedded = true
 
