@@ -4,12 +4,16 @@ import "./fab.css";
 import FeedbackLink from "@/components/FeedbackLink";
 
 export const metadata = {
+  metadataBase: new URL("https://sync-stock-six.vercel.app"),
   title: "SyncStock — Shopify orders into clean QuickBooks",
   description: "Sync paid Shopify orders to QuickBooks Online with explicit product mapping, reconciliation checks, duplicate protection, and visible sync history.",
   openGraph: {
     title: "SyncStock — Shopify orders into clean QuickBooks",
     description: "Focused Shopify → QuickBooks automation with mapping, reconciliation checks, retry safety, and visible sync history.",
     type: "website",
+  },
+  alternates: {
+    canonical: "/",
   },
   twitter: {
     card: "summary_large_image",
