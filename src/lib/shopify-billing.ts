@@ -3,6 +3,8 @@ import { ensureFreshShopifyConnection, fetchShopifyShopId } from "./shopify";
 
 const PARTNER_API_VERSION = "2026-07";
 const DEFAULT_SHOPIFY_APP_HANDLE = "syncstock-production";
+const DEFAULT_SHOPIFY_PARTNER_ORG_ID = "511473";
+const DEFAULT_SHOPIFY_APP_GID = "gid://shopify/App/424848261121";
 
 export type ShopifyPlanTier = "starter" | "growth" | "unlimited";
 
@@ -27,10 +29,10 @@ export interface ActiveShopifySubscription {
 }
 
 function requiredPartnerConfig() {
-  const organizationId = process.env.SHOPIFY_PARTNER_ORG_ID;
-  const accessToken = process.env.SHOPIFY_PARTNER_API_ACCESS_TOKEN;
-  const appId = process.env.SHOPIFY_APP_GID;
-  if (!organizationId || !accessToken || !appId) return null;
+  const organizationId = process.env.SHOPIFY_PARTNER_ORG_ID?.trim() || DEFAULT_SHOPIFY_PARTNER_ORG_ID;
+  const accessToken = process.env.SHOPIFY_PARTNER_API_ACCESS_TOKEN?.trim();
+  const appId = process.env.SHOPIFY_APP_GID?.trim() || DEFAULT_SHOPIFY_APP_GID;
+  if (!accessToken) return null;
   return { organizationId, accessToken, appId };
 }
 
