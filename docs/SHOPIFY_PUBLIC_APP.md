@@ -18,6 +18,6 @@ QuickBooks OAuth can leave the Shopify iframe at merchant interaction and return
 
 ## Production credentials still required
 
-The new public app's client ID and client secret must replace the old custom-app values in production after the embedded release has passed CI. `SHOPIFY_APP_GID`, `SHOPIFY_PARTNER_ORG_ID`, and a Partner API token with Manage apps access are required for Shopify App Pricing entitlement checks. The canonical public app handle defaults to `syncstock-production`; `SHOPIFY_APP_HANDLE` remains an optional deployment override.
+The new public app's client ID and client secret must replace the old custom-app values in production after the embedded release has passed CI. A Partner API token with **Manage apps** access is required for Shopify App Pricing entitlement checks. SyncStock defaults to the canonical Partner organization `511473`, public app GID `gid://shopify/App/424848261121`, and app handle `syncstock-production`; `SHOPIFY_PARTNER_ORG_ID`, `SHOPIFY_APP_GID`, and `SHOPIFY_APP_HANDLE` remain optional deployment overrides.
 
 Never commit credential values.
