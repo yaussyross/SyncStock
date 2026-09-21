@@ -1,6 +1,6 @@
 # Shopify App Store submission working sheet
 
-Last updated: September 19, 2026.
+Last updated: September 21, 2026.
 
 This file records factual listing copy and reviewer instructions for the public **SyncStock Production** app. It is a working sheet only; Shopify Partner Dashboard remains the source of truth for submission state.
 
@@ -77,6 +77,14 @@ New accounts receive the first **20 synced orders free** with no card required.
 
 New public merchants must use **Shopify-hosted App Pricing**. Do not configure new public subscriptions through legacy Stripe.
 
+Verified Partner pricing state on September 21:
+- Shopify App Pricing: **enabled**
+- Public plans: **Solo $8/month**, **Scale $29/month**, **Empire $49/month**
+- Billing: monthly recurring
+- Free trial: 0 days
+- Development stores: **Free for partners and developers** enabled
+- Legacy private `shopify-test` plan remains separate and unchanged.
+
 ## Installation / data access
 
 Required Admin API scopes:
@@ -119,7 +127,7 @@ Supported narrow acceptance case: one paid order with mapped products. Refunds/c
 
 ## Do not submit until these gates are verified
 
-- Shopify App Pricing is configured for $8/$29/$49 monthly plans.
+- [x] Shopify App Pricing is configured for $8/$29/$49 monthly public plans with free development-store testing.
 - Partner/App Pricing environment values are configured and the Partner API token has the required app-management permission.
 - Shopify automated submission checks pass.
 - Required app capabilities are selected.
