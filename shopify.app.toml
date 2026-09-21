@@ -1,0 +1,23 @@
+# Canonical production configuration for the public SyncStock Shopify app.
+# This file contains public app metadata only. Do not add secrets here.
+
+name = "SyncStock Production"
+client_id = "6ad1f2ea53500a6202c9a046f6be56df"
+handle = "syncstock-production"
+application_url = "https://sync-stock-six.vercel.app/app"
+embedded = true
+
+[access_scopes]
+scopes = "read_orders,read_products"
+
+[auth]
+redirect_urls = [
+  "https://sync-stock-six.vercel.app/api/auth/shopify/callback"
+]
+
+[webhooks]
+api_version = "2026-07"
+
+[[webhooks.subscriptions]]
+compliance_topics = ["customers/data_request", "customers/redact", "shop/redact"]
+uri = "/api/webhooks/shopify/compliance"
