@@ -12,9 +12,6 @@ export const metadata = {
     description: "Focused Shopify → QuickBooks automation with mapping, reconciliation checks, retry safety, and visible sync history.",
     type: "website",
   },
-  alternates: {
-    canonical: "/",
-  },
   twitter: {
     card: "summary_large_image",
     title: "SyncStock — Shopify orders into clean QuickBooks",
