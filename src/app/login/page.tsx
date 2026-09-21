@@ -14,28 +14,42 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15_000);
 
-    if (res.ok) {
-      router.push("/dashboard");
-      router.refresh();
-      return;
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+        signal: controller.signal,
+      });
+
+      if (res.ok) {
+        router.push("/dashboard");
+        router.refresh();
+        return;
+      }
+
+      const body = await res.json().catch(() => ({}));
+      setError(body.error || "Could not log in.");
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        setError("Login timed out. Please try again.");
+      } else {
+        setError("Could not reach SyncStock. Please check your connection and try again.");
+      }
+    } finally {
+      window.clearTimeout(timeout);
+      setLoading(false);
     }
-
-    const body = await res.json().catch(() => ({}));
-    setError(body.error || "Could not log in.");
-    setLoading(false);
   }
 
   return (
     <main className="container" style={{ paddingTop: 80, maxWidth: 440 }}>
       <h1 style={{ fontSize: 28, marginBottom: 8 }}>Log in</h1>
       <p style={{ color: "var(--paper-dim)", marginBottom: 24 }}>Manage your Shopify → QuickBooks sync.</p>
-      <form onSubmit={handleSubmit} className="card">
+      <form onSubmit={handleSubmit} className="card" aria-busy={loading}>
         <label style={{ display: "block", marginBottom: 14 }}>
           <span style={{ display: "block", fontSize: 13, marginBottom: 6 }}>Email</span>
           <input type="email" autoComplete="email" placeholder="you@yourstore.com" value={email} onChange={(e) => setEmail(e.target.value)} required />

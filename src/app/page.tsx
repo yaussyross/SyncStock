@@ -50,7 +50,7 @@ export default function LandingPage() {
               <a href="/tools/bookkeeping-cost">Free calculator</a>
               <a href="/feedback">Feedback</a>
               <a href="/login">Sign in</a>
-              <a href="/signup" className="btn btn-small">Start free</a>
+              <a href="/signup" className="btn btn-small">Start with 20 free</a>
             </div>
           </nav>
 
@@ -77,7 +77,7 @@ export default function LandingPage() {
               <div className="sync-console launch-console" aria-label="Example SyncStock order sync">
                 <div className="console-topline">
                   <span className="mono">SYNCSTOCK / ORDER PIPELINE</span>
-                  <span className="console-live"><span className="status-dot" /> illustrative beta workflow</span>
+                  <span className="console-live"><span className="status-dot" /> illustrative workflow</span>
                 </div>
                 <div className="launch-stage">
                   <div className="launch-stage-top"><span>01 · SHOPIFY</span><span className="badge badge-success">PAID</span></div>
@@ -148,14 +148,14 @@ export default function LandingPage() {
               <h2>We would rather stop a sync than guess with your books.</h2>
               <p>SyncStock focuses on supported accounting workflows, blocks unsupported cases before they reach QuickBooks, and keeps sync results visible so merchants can review what happened.</p>
               <div className="trust-actions">
-                <a className="btn" href="/signup">Join the beta</a>
+                <a className="btn" href="/signup">Start with 20 free orders</a>
                 <a className="btn btn-secondary" href="/feedback">Leave feedback</a>
               </div>
             </div>
             <div className="trust-stack">
               <div><span className="status-dot" /><p><strong>Encrypted connection tokens</strong><br />OAuth tokens are stored encrypted at rest.</p></div>
               <div><span className="status-dot" /><p><strong>Audit-oriented sync history</strong><br />Successes, blocked orders, and retry state remain visible.</p></div>
-              <div><span className="status-dot" /><p><strong>Beta feedback queue</strong><br />Signed-in customers can send bugs, onboarding friction, and feature requests directly from SyncStock.</p></div>
+              <div><span className="status-dot" /><p><strong>Direct feedback queue</strong><br />Signed-in customers can send bugs, onboarding friction, and feature requests directly from SyncStock.</p></div>
             </div>
           </div>
         </section>
@@ -192,7 +192,7 @@ export default function LandingPage() {
             <div><p className="section-kicker">FAQ</p><h2>Know what you are connecting.</h2></div>
           </div>
           <div className="faq-grid">
-            <div><h3>What is the beta focused on?</h3><p>Paid Shopify orders → QuickBooks Online sales receipts, explicit product mapping, reconciliation checks, retry safety, and visible sync history.</p></div>
+            <div><h3>What does SyncStock focus on?</h3><p>Paid Shopify orders → QuickBooks Online sales receipts, explicit product mapping, reconciliation checks, retry safety, and visible sync history.</p></div>
             <div><h3>What happens if the totals do not match?</h3><p>The order is blocked rather than forced into QuickBooks. The goal is to make unsupported or questionable accounting visible instead of silently writing it.</p></div>
             <div><h3>Can I try it before paying?</h3><p>Yes. New accounts start with 20 free synced orders and do not require a card to create the account.</p></div>
             <div><h3>Can I send product feedback?</h3><p>Yes. Signed-in users can submit bugs, feature requests, onboarding friction, and ratings through the in-product feedback page.</p></div>

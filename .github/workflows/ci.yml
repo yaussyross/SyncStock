@@ -108,6 +108,9 @@ jobs:
       - name: Embedded mapping removal regression
         run: npx tsx scripts/mapping-selection-smoke.ts
 
+      - name: Launch surface regression
+        run: npm run test:launch-surface
+
       - name: Production build
         run: npm run build
 

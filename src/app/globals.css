@@ -403,3 +403,18 @@ footer .footer-links { display: flex; flex-wrap: wrap; }
     padding: 16px;
   }
 }
+
+.embedded-readiness {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+.embedded-readiness .badge {
+  flex: 0 0 auto;
+}
+@media (max-width: 640px) {
+  .embedded-readiness {
+    align-items: flex-start;
+  }
+}

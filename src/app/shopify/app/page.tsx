@@ -153,6 +153,12 @@ export default function ShopifyAppHome() {
   }
 
   const selectedCount = useMemo(() => Object.values(selections).filter(Boolean).length, [selections]);
+  const setupComplete = Boolean(status?.shopify.webhookReady && status?.quickbooks.connected && status?.mappings.count);
+  const setupStepsComplete = [
+    Boolean(status?.shopify.webhookReady),
+    Boolean(status?.quickbooks.connected),
+    Boolean(status?.mappings.count),
+  ].filter(Boolean).length;
   const removeVariantIds = useMemo(() => clearedMappingIds(
     variants.map((variant) => variant.legacyResourceId), savedVariantIds, selections,
   ), [variants, savedVariantIds, selections]);
@@ -170,6 +176,22 @@ export default function ShopifyAppHome() {
 
       {status && (
         <>
+          <div className="card embedded-readiness" style={{ marginBottom: 18 }}>
+            <div>
+              <div className="section-kicker">SETUP READINESS</div>
+              <strong style={{ display: "block", marginTop: 8, fontSize: 18 }}>
+                {setupComplete ? "Ready to sync paid orders" : `${setupStepsComplete} of 3 setup steps complete`}
+              </strong>
+              <p style={{ color: "#6d7175", marginTop: 6, fontSize: 13 }}>
+                {setupComplete
+                  ? "Store webhook, QuickBooks connection, and product mapping are ready."
+                  : "Complete the remaining connection and mapping steps before testing a paid order."}
+              </p>
+            </div>
+            <span className={`badge ${setupComplete ? "badge-success" : "badge-pending"}`}>
+              {setupComplete ? "READY" : "SETUP"}
+            </span>
+          </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 18 }}>
             <div className="card">
               <div className="section-kicker">SHOPIFY</div>
@@ -233,7 +255,10 @@ export default function ShopifyAppHome() {
           <div className="card">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
               <h2 style={{ fontSize: 19 }}>Recent sync activity</h2>
-              <span style={{ color: "#6d7175", fontSize: 13 }}>{status.adjustmentsNeedingReview} refund/cancellation events need review</span>
+              <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                <span style={{ color: "#6d7175", fontSize: 13 }}>{status.adjustmentsNeedingReview} refund/cancellation events need review</span>
+                <button className="btn btn-secondary btn-small" onClick={() => refreshStatus()} disabled={Boolean(busy)}>Refresh</button>
+              </div>
             </div>
             {status.logs.length === 0 ? (
               <p style={{ color: "#6d7175", marginTop: 12 }}>No paid orders have been synced yet.</p>
