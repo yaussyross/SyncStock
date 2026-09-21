@@ -49,3 +49,13 @@ assert.equal(
 );
 if (previousHandle === undefined) delete process.env.SHOPIFY_APP_HANDLE;
 else process.env.SHOPIFY_APP_HANDLE = previousHandle;
+
+
+process.env.SHOPIFY_APP_HANDLE = "syncstock-production";
+assert.equal(
+  shopifyPricingUrl("test-wc9egg3y.myshopify.com"),
+  "https://admin.shopify.com/store/test-wc9egg3y/charges/syncstock-productionn/pricing_plans",
+  "stale pre-verification handle should normalize to the verified canonical handle"
+);
+if (previousHandle === undefined) delete process.env.SHOPIFY_APP_HANDLE;
+else process.env.SHOPIFY_APP_HANDLE = previousHandle;
