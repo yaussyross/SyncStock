@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { PLAN_LABELS, PLAN_LIMITS } from "@/lib/plans";
 import { refreshShopifyBillingForUser } from "@/lib/shopify-billing";
+import { getQboClientForUser } from "@/lib/qbo";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,19 @@ export async function GET() {
     db.orderAdjustment.count({ where: { userId: user.id, status: "needs_review" } }),
   ]);
 
+  let qboRequiresReconnect = false;
+  if (qbo) {
+    try {
+      // This does not query QuickBooks. It only refreshes the OAuth access token
+      // when the stored token is near expiry. A rejected refresh token means the
+      // merchant must explicitly authorize QuickBooks again.
+      await getQboClientForUser(user.id);
+    } catch (error) {
+      qboRequiresReconnect = true;
+      console.warn("[embedded qbo] QuickBooks authorization requires reconnect", error);
+    }
+  }
+
   const limit = PLAN_LIMITS[user.planTier] ?? PLAN_LIMITS.trial;
   return NextResponse.json({
     shopify: {
@@ -38,7 +52,11 @@ export async function GET() {
       webhookReady: Boolean(shopify?.webhookId),
       lifecycleReady: Boolean(shopify?.refundWebhookId && shopify?.cancelledWebhookId && shopify?.uninstallWebhookId),
     },
-    quickbooks: { connected: Boolean(qbo), realmId: qbo?.realmId ?? null },
+    quickbooks: {
+      connected: Boolean(qbo) && !qboRequiresReconnect,
+      requiresReconnect: qboRequiresReconnect,
+      realmId: qbo?.realmId ?? null,
+    },
     mappings: { count: mappingCount },
     plan: {
       tier: user.planTier,
