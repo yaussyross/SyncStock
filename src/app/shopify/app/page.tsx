@@ -5,7 +5,7 @@ import { clearedMappingIds } from "@/lib/mapping-selection";
 
 type EmbeddedStatus = {
   shopify: { connected: boolean; domain: string | null; webhookReady: boolean; lifecycleReady: boolean };
-  quickbooks: { connected: boolean; realmId: string | null };
+  quickbooks: { connected: boolean; requiresReconnect?: boolean; realmId: string | null };
   mappings: { count: number };
   plan: { tier: string; label: string; status: string; used: number; limit: number | null };
   adjustmentsNeedingReview: number;
@@ -105,6 +105,7 @@ export default function ShopifyAppHome() {
       setCatalogLoaded(true);
     } catch (err: any) {
       setError(err?.message || "Could not load product catalogs.");
+      try { await refreshStatus(); } catch {}
     } finally {
       setBusy("");
     }
@@ -172,7 +173,17 @@ export default function ShopifyAppHome() {
       </div>
 
       {busy && <div className="card" style={{ marginBottom: 16 }}><strong>{busy}</strong></div>}
-      {error && <div className="card" style={{ marginBottom: 16, borderColor: "#d72c0d", background: "#fff4f4", color: "#5c1f15" }}><strong>Action needed</strong><p style={{ marginTop: 6 }}>{error}</p></div>}
+      {error && (
+        <div className="card" style={{ marginBottom: 16, borderColor: "#d72c0d", background: "#fff4f4", color: "#5c1f15" }}>
+          <strong>Action needed</strong>
+          <p style={{ marginTop: 6 }}>{error}</p>
+          {(status?.quickbooks.requiresReconnect || /refresh token|authorize again|quickbooks/i.test(error)) && (
+            <button className="btn btn-small" style={{ marginTop: 12 }} onClick={connectQuickBooks}>
+              Reconnect QuickBooks
+            </button>
+          )}
+        </div>
+      )}
 
       {status && (
         <>
@@ -202,8 +213,14 @@ export default function ShopifyAppHome() {
             </div>
             <div className="card">
               <div className="section-kicker">QUICKBOOKS</div>
-              <strong style={{ display: "block", marginTop: 8 }}>{status.quickbooks.connected ? "Connected" : "Not connected"}</strong>
-              {!status.quickbooks.connected && <button className="btn btn-small" style={{ marginTop: 12 }} onClick={connectQuickBooks}>Connect QuickBooks</button>}
+              <strong style={{ display: "block", marginTop: 8 }}>
+                {status.quickbooks.requiresReconnect ? "Reconnect required" : status.quickbooks.connected ? "Connected" : "Not connected"}
+              </strong>
+              {!status.quickbooks.connected && (
+                <button className="btn btn-small" style={{ marginTop: 12 }} onClick={connectQuickBooks}>
+                  {status.quickbooks.requiresReconnect ? "Reconnect QuickBooks" : "Connect QuickBooks"}
+                </button>
+              )}
             </div>
             <div className="card">
               <div className="section-kicker">PLAN</div>
