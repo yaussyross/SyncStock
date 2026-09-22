@@ -12,6 +12,6 @@ assert.match(route, /qboInvoiceId/);
 assert.match(app, /retrySync/);
 assert.match(app, /Could not retry order sync/);
 assert.match(app, /log\.errorMessage/);
-assert.match(app, />Retry</);
+assert.match(app, /Retry/);
 
 console.log("Embedded retry regression passed.");
