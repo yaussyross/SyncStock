@@ -27,7 +27,7 @@ async function userFromShopifyIdToken(token: string) {
 // Supports secure web cookies, bearer tokens for the deferred mobile client,
 // and Shopify App Bridge ID tokens for the embedded public app.
 export async function getCurrentUser() {
-  const cookieToken = cookies().get(COOKIE_NAME)?.value;
+  const cookieToken = (await cookies()).get(COOKIE_NAME)?.value;
   if (cookieToken) {
     try {
       return await userFromSyncStockToken(cookieToken);
@@ -36,7 +36,7 @@ export async function getCurrentUser() {
     }
   }
 
-  const authHeader = headers().get("authorization");
+  const authHeader = (await headers()).get("authorization");
   const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
   if (!bearerToken) return null;
 
