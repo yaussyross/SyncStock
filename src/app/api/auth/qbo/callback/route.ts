@@ -25,7 +25,11 @@ function readEmbeddedState(state: string): EmbeddedState | null {
 }
 
 function embeddedReturnUrl(shopDomain: string) {
-  const handle = process.env.SHOPIFY_APP_HANDLE;
+  const configuredHandle = process.env.SHOPIFY_APP_HANDLE?.trim();
+  const handle =
+    !configuredHandle || configuredHandle === "syncstock-production"
+      ? "syncstock-productionn"
+      : configuredHandle;
   const storeHandle = shopDomain.replace(/\.myshopify\.com$/i, "");
   if (handle && storeHandle) {
     return `https://admin.shopify.com/store/${encodeURIComponent(storeHandle)}/apps/${encodeURIComponent(handle)}`;

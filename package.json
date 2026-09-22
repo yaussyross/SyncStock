@@ -21,10 +21,11 @@
     "test:billing": "tsx scripts/billing-smoke.ts",
     "test:launch-surface": "tsx scripts/launch-surface-smoke.ts",
     "test:group:accounting": "npm run test:reconciliation && npm run test:core && npm run test:billing",
-    "test:group:embedded": "npm run test:shopify-billing && npm run test:shopify-auth && npm run test:shopify-errors && npx tsx scripts/mapping-selection-smoke.ts && npm run test:qbo-reconnect",
+    "test:group:embedded": "npm run test:shopify-billing && npm run test:shopify-auth && npm run test:shopify-errors && npx tsx scripts/mapping-selection-smoke.ts && npm run test:qbo-reconnect && npm run test:qbo-return-handle",
     "test:group:public": "npm run test:launch-surface && npm run build",
     "test:launch-groups": "npm run test:group:accounting && npm run test:group:embedded && npm run test:group:public",
-    "test:qbo-reconnect": "tsx scripts/qbo-reconnect-smoke.ts"
+    "test:qbo-reconnect": "tsx scripts/qbo-reconnect-smoke.ts",
+    "test:qbo-return-handle": "tsx scripts/qbo-return-handle-smoke.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",
