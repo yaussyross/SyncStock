@@ -374,6 +374,11 @@ footer .footer-links { display: flex; flex-wrap: wrap; }
   color: #7a5b00;
   border: 1px solid #e7d878;
 }
+.embedded-app .badge-failed {
+  background: #fff4f4;
+  color: #8e1f0b;
+  border: 1px solid #f2c6c2;
+}
 .embedded-app table {
   color: #202223;
 }
