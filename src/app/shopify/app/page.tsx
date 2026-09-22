@@ -23,6 +23,26 @@ type ShopifyVariant = {
 type QboItem = { id: string; name: string; sku: string | null; type: string | null };
 type Mapping = { shopifyVariantId: string; qboItemId: string };
 
+const RETRYABLE_SYNC_STATUSES = new Set([
+  "failed",
+  "queue_failed",
+  "skipped_no_mapping",
+  "blocked_reconciliation",
+  "skipped_quota_exceeded",
+]);
+
+function syncStatusPresentation(status: string) {
+  if (status === "success") return { label: "Synced", className: "badge-success" };
+  if (status === "pending") return { label: "Processing", className: "badge-pending" };
+  if (status === "skipped_no_mapping") return { label: "Mapping needed", className: "badge-pending" };
+  if (status === "skipped_quota_exceeded") return { label: "Plan action needed", className: "badge-pending" };
+  if (status === "blocked_reconciliation") return { label: "Total mismatch", className: "badge-failed" };
+  if (status === "reconciliation_failed_qbo") return { label: "Review in QuickBooks", className: "badge-failed" };
+  if (status === "queue_failed") return { label: "Retry needed", className: "badge-failed" };
+  if (status === "failed") return { label: "Failed", className: "badge-failed" };
+  return { label: status.replace(/_/g, " "), className: "badge-pending" };
+}
+
 declare global {
   interface Window {
     shopify?: { idToken: () => Promise<string> };
@@ -149,12 +169,28 @@ export default function ShopifyAppHome() {
         method: "POST",
         body: JSON.stringify({ syncLogId }),
       });
-      await refreshStatus();
+
+      // Keep the merchant on the same screen and refresh until the queue has
+      // either completed or reached a merchant-actionable state.
+      for (let attempt = 0; attempt < 8; attempt += 1) {
+        await new Promise((resolve) => window.setTimeout(resolve, attempt === 0 ? 900 : 1400));
+        const next = await shopifyFetch("/api/shopify/embedded/status");
+        setStatus(next);
+        const retried = (next.logs as EmbeddedStatus["logs"]).find((log) => log.id === syncLogId);
+        if (retried && retried.status !== "pending") break;
+      }
     } catch (err: any) {
       setError(err?.message || "Could not retry order sync.");
     } finally {
       setBusy("");
     }
+  }
+
+  async function resolveMissingMapping() {
+    await loadCatalogs();
+    window.setTimeout(() => {
+      document.getElementById("product-mappings")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
   }
 
   async function openBilling() {
@@ -188,9 +224,9 @@ export default function ShopifyAppHome() {
         <p style={{ color: "#6d7175", marginTop: 8 }}>Connect QuickBooks, map your products, then let SyncStock reconcile paid orders before they reach your books.</p>
       </div>
 
-      {busy && <div className="card" style={{ marginBottom: 16 }}><strong>{busy}</strong></div>}
+      {busy && <div className="card" role="status" aria-live="polite" style={{ marginBottom: 16 }}><strong>{busy}</strong></div>}
       {error && (
-        <div className="card" style={{ marginBottom: 16, borderColor: "#d72c0d", background: "#fff4f4", color: "#5c1f15" }}>
+        <div className="card" role="alert" style={{ marginBottom: 16, borderColor: "#d72c0d", background: "#fff4f4", color: "#5c1f15" }}>
           <strong>Action needed</strong>
           <p style={{ marginTop: 6 }}>{error}</p>
           {(status?.quickbooks.requiresReconnect || /refresh token|authorize again|quickbooks/i.test(error)) && (
@@ -252,7 +288,7 @@ export default function ShopifyAppHome() {
           </div>
 
           {catalogLoaded && (
-            <div className="card" style={{ marginBottom: 18 }}>
+            <div id="product-mappings" className="card" style={{ marginBottom: 18, scrollMarginTop: 20 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                 <div>
                   <h2 style={{ fontSize: 19 }}>Product mappings</h2>
@@ -300,23 +336,32 @@ export default function ShopifyAppHome() {
                 <table style={{ minWidth: 680 }}>
                   <thead><tr><th>Order</th><th>Status</th><th>Shopify</th><th>QuickBooks</th><th>When</th><th>Action</th></tr></thead>
                   <tbody>{status.logs.map((log) => {
-                    const retryable = ["failed", "queue_failed", "skipped_no_mapping", "blocked_reconciliation", "skipped_quota_exceeded"].includes(log.status);
+                    const retryable = RETRYABLE_SYNC_STATUSES.has(log.status);
+                    const presentation = syncStatusPresentation(log.status);
                     return (
                       <tr key={log.id}>
-                        <td>{log.orderNumber || "—"}</td>
+                        <td><strong>{log.orderNumber || "—"}</strong></td>
                         <td>
-                          <div>{log.status.replace(/_/g, " ")}</div>
-                          {log.errorMessage && <div style={{ color: "#6d7175", fontSize: 12, marginTop: 3 }}>{log.errorMessage}</div>}
+                          <span className={`badge ${presentation.className}`}>{presentation.label}</span>
+                          {log.errorMessage && <div style={{ color: "#6d7175", fontSize: 12, lineHeight: 1.45, marginTop: 6, maxWidth: 360 }}>{log.errorMessage}</div>}
                         </td>
                         <td>{log.shopifyTotal || "—"}</td>
                         <td>{log.qboActualTotal || "—"}</td>
                         <td>{new Date(log.createdAt).toLocaleString()}</td>
                         <td>
-                          {retryable ? (
-                            <button className="btn btn-secondary btn-small" onClick={() => retrySync(log.id)} disabled={Boolean(busy)}>
-                              Retry
-                            </button>
-                          ) : "—"}
+                          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                            {log.status === "skipped_no_mapping" && (
+                              <button className="btn btn-secondary btn-small" onClick={resolveMissingMapping} disabled={Boolean(busy)}>
+                                Map products
+                              </button>
+                            )}
+                            {retryable && (
+                              <button className="btn btn-secondary btn-small" onClick={() => retrySync(log.id)} disabled={Boolean(busy)}>
+                                Retry
+                              </button>
+                            )}
+                            {!retryable && log.status !== "success" && "—"}
+                          </div>
                         </td>
                       </tr>
                     );
