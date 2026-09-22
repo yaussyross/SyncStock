@@ -1,6 +1,6 @@
 # SyncStock
 
-SyncStock is a reliability-first Shopify → QuickBooks Online micro-SaaS. The founding beta is focused on one accounting workflow: a paid Shopify order should become one correct QuickBooks transaction, with visible errors and safe retries.
+SyncStock is a reliability-first Shopify → QuickBooks Online micro-SaaS. The initial release focuses on one accounting workflow: a paid Shopify order should become one correct QuickBooks transaction, with visible errors and safe retries.
 
 ## Product
 
@@ -16,7 +16,7 @@ SyncStock is a reliability-first Shopify → QuickBooks Online micro-SaaS. The f
 - Legacy Stripe compatibility only for previously-created subscriptions
 - Public marketing/pricing site
 
-## Founding pricing
+## Pricing
 
 - **Solo — $8/mo:** up to 200 orders/month
 - **Scale — $29/mo:** up to 1,000 orders/month
@@ -63,8 +63,8 @@ Copy `.env.example` to `.env` and provide your own credentials. Never commit rea
 
 ## Production status
 
-**Founding beta / core integration path verified in isolation.** On September 16, 2026, a paid Shopify development-store order completed the isolated Shopify → queue → worker → QuickBooks sandbox flow with an exact `$10.00` reconciliation, one quota increment, and duplicate protection.
+**Core integration path verified in isolation.** On September 16, 2026, a paid Shopify development-store order completed the isolated Shopify → queue → worker → QuickBooks sandbox flow with an exact `$10.00` reconciliation, one quota increment, and duplicate protection.
 
-As of September 19, the canonical production Vercel project is live, the persistent Railway worker and Redis are healthy, Supabase is healthy, Shopify embedded App Home and mapping flows are merged, and the public legal/config surfaces have been updated for Shopify-hosted billing.
+As of September 22, the canonical production Vercel project is live, the persistent Railway worker and Redis are healthy, Supabase is healthy, Shopify embedded App Home and mapping flows are live, QuickBooks reconnect handling is production-safe, failed/skipped syncs expose merchant recovery actions, and public legal/support/docs surfaces are deployed.
 
-The remaining public-launch gate is Shopify-controlled production configuration and review: verify the production public-app/App Pricing configuration with an authorized test merchant, then complete broader beta accounting cases such as shipping/discount/tax combinations, expired OAuth, uninstall, and refund/cancellation review. See [the launch record](docs/LAUNCH.md).
+The remaining public-launch gate is Shopify App Store submission/review. Before submission, capture a current-production successful TEST-store sync for screenshot 3 and the reviewer screencast, then complete the required testing credentials/instructions. Broader accounting acceptance cases such as shipping/discount/tax combinations, uninstall, and refund/cancellation review remain follow-up verification work. See [the launch record](docs/LAUNCH.md).
