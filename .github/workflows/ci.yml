@@ -1,5 +1,8 @@
 name: SyncStock CI
 
+permissions:
+  contents: write
+
 on:
   pull_request:
     branches: [main]
@@ -62,6 +65,18 @@ jobs:
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+
+      - name: Commit regenerated package lock
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          if ! git diff --quiet -- package-lock.json; then
+            git config user.name "syncstock-ci"
+            git config user.email "actions@users.noreply.github.com"
+            git add package-lock.json
+            git commit -m "Regenerate package lock for Next 15"
+            git push origin HEAD:${{ github.head_ref }}
+          fi
 
       - name: Validate Prisma schema
         run: npx prisma validate
