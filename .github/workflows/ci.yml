@@ -61,13 +61,7 @@ jobs:
           node-version: 22
 
       - name: Install dependencies
-        shell: bash
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci --no-audit --no-fund
-          else
-            npm install --no-audit --no-fund
-          fi
+        run: npm install --no-audit --no-fund
 
       - name: Validate Prisma schema
         run: npx prisma validate
