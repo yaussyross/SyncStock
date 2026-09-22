@@ -111,6 +111,9 @@ jobs:
       - name: Launch surface regression
         run: npm run test:launch-surface
 
+      - name: QuickBooks reconnect regression
+        run: npm run test:qbo-reconnect
+
       - name: Production build
         run: npm run build
 
