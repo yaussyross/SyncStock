@@ -7,7 +7,8 @@ import ConnectPanel from "@/components/ConnectPanel";
 import SyncLogTable from "@/components/SyncLogTable";
 import LogoutButton from "@/components/LogoutButton";
 
-export default async function DashboardPage({ searchParams }: { searchParams: { webhook_error?: string; lifecycle_warning?: string; billing?: string } }) {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ webhook_error?: string; lifecycle_warning?: string; billing?: string }> }) {
+  const query = await searchParams;
   let user = await getCurrentUser();
   if (!user) redirect("/login");
 
@@ -28,8 +29,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
   ]);
 
   const limit = PLAN_LIMITS[user.planTier] ?? PLAN_LIMITS.trial;
-  const webhookFailed = searchParams.webhook_error === "1" || Boolean(shopifyConn && !shopifyConn.webhookId);
-  const lifecycleMissing = searchParams.lifecycle_warning === "1" || Boolean(
+  const webhookFailed = query.webhook_error === "1" || Boolean(shopifyConn && !shopifyConn.webhookId);
+  const lifecycleMissing = query.lifecycle_warning === "1" || Boolean(
     shopifyConn && (!shopifyConn.refundWebhookId || !shopifyConn.cancelledWebhookId || !shopifyConn.uninstallWebhookId)
   );
   const readyForMappings = Boolean(shopifyConn && qboConn);
@@ -51,7 +52,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
         </div>
       </div>
 
-      {searchParams.billing === "success" && (
+      {query.billing === "success" && (
         <div className="card" style={{ borderColor: "rgba(131, 208, 147, 0.35)" }}>
           <strong>Shopify billing approval completed.</strong>
           <p style={{ marginTop: 6, fontSize: 14, color: "var(--paper-dim)" }}>SyncStock checks the active Shopify app subscription and updates your plan automatically.</p>
