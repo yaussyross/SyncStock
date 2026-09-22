@@ -141,6 +141,22 @@ export default function ShopifyAppHome() {
     }
   }
 
+  async function retrySync(syncLogId: string) {
+    setError("");
+    setBusy("Retrying order sync…");
+    try {
+      await shopifyFetch("/api/shopify/embedded/retry", {
+        method: "POST",
+        body: JSON.stringify({ syncLogId }),
+      });
+      await refreshStatus();
+    } catch (err: any) {
+      setError(err?.message || "Could not retry order sync.");
+    } finally {
+      setBusy("");
+    }
+  }
+
   async function openBilling() {
     setError("");
     setBusy("Opening Shopify billing…");
@@ -282,8 +298,29 @@ export default function ShopifyAppHome() {
             ) : (
               <div style={{ overflowX: "auto", marginTop: 12 }}>
                 <table style={{ minWidth: 680 }}>
-                  <thead><tr><th>Order</th><th>Status</th><th>Shopify</th><th>QuickBooks</th><th>When</th></tr></thead>
-                  <tbody>{status.logs.map((log) => <tr key={log.id}><td>{log.orderNumber || "—"}</td><td>{log.status.replace(/_/g, " ")}</td><td>{log.shopifyTotal || "—"}</td><td>{log.qboActualTotal || "—"}</td><td>{new Date(log.createdAt).toLocaleString()}</td></tr>)}</tbody>
+                  <thead><tr><th>Order</th><th>Status</th><th>Shopify</th><th>QuickBooks</th><th>When</th><th>Action</th></tr></thead>
+                  <tbody>{status.logs.map((log) => {
+                    const retryable = ["failed", "queue_failed", "skipped_no_mapping", "blocked_reconciliation", "skipped_quota_exceeded"].includes(log.status);
+                    return (
+                      <tr key={log.id}>
+                        <td>{log.orderNumber || "—"}</td>
+                        <td>
+                          <div>{log.status.replace(/_/g, " ")}</div>
+                          {log.errorMessage && <div style={{ color: "#6d7175", fontSize: 12, marginTop: 3 }}>{log.errorMessage}</div>}
+                        </td>
+                        <td>{log.shopifyTotal || "—"}</td>
+                        <td>{log.qboActualTotal || "—"}</td>
+                        <td>{new Date(log.createdAt).toLocaleString()}</td>
+                        <td>
+                          {retryable ? (
+                            <button className="btn btn-secondary btn-small" onClick={() => retrySync(log.id)} disabled={Boolean(busy)}>
+                              Retry
+                            </button>
+                          ) : "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}</tbody>
                 </table>
               </div>
             )}
