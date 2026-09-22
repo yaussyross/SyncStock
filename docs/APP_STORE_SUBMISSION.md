@@ -1,6 +1,6 @@
 # Shopify App Store submission working sheet
 
-Last updated: September 21, 2026.
+Last updated: September 22, 2026.
 
 This file records factual listing copy and reviewer instructions for the public **SyncStock Production** app. It is a working sheet only; Shopify Partner Dashboard remains the source of truth for submission state.
 
@@ -44,13 +44,13 @@ Feature image:
 Desktop screenshot 1:
 - Real embedded App Home/status screen
 - Required size: **1600×900**
-- Prepared asset: `syncstock_screenshot_1_dashboard_1600x900.png`
+- Prepared conversation asset: `syncstock-app-home-final-1600x900.png`
 - Alt text: **SyncStock dashboard showing Shopify and QuickBooks sync status**
 
 Desktop screenshot 2:
 - Real product-mapping screen with the TEST store and QuickBooks connected
 - Required size: **1600×900**
-- Prepared asset: `syncstock_screenshot_2_mapping_1600x900.png`
+- Prepared conversation asset: `syncstock-product-mapping-1600x900.png`
 - Alt text: **Product mapping between store variants and QuickBooks items**
 
 Desktop screenshot 3:
@@ -68,7 +68,7 @@ Integrations:
 
 ## Pricing
 
-Founding monthly catalog:
+Monthly catalog:
 - **Solo — $8/month — up to 200 orders/month**
 - **Scale — $29/month — up to 1,000 orders/month**
 - **Empire — $49/month — unlimited orders**
@@ -131,15 +131,15 @@ Supported narrow acceptance case: one paid order with mapped products. Refunds/c
 - Partner/App Pricing environment values are configured and the Partner API token has the required app-management permission.
 - Shopify automated submission checks pass.
 - Required app capabilities are selected.
-- A successful current-production TEST-store order sync is captured for screenshot 3.
+- A successful current-production TEST-store order sync is captured for screenshot 3 and the screencast.
 - Review instructions and all remaining Partner Dashboard fields are complete.
 - `support@syncstock.app` is confirmed to be monitored before listing it as the merchant support mailbox.
 
 No paid ad spend, boosts, fees, or other cash outflow may be initiated without Ross's explicit approval.
 
-## Shopify App Store listing completion matrix — September 21
+## Shopify App Store listing completion matrix — September 22
 
-Current submission form reports ten remaining issue groups. Use the following values and assets.
+Use the following values and assets for the remaining submission fields. The Partner Dashboard is the source of truth for the live issue count.
 
 ### Basic app information
 
@@ -212,3 +212,20 @@ Resources:
 ## Verified Shopify app handle
 
 Shopify Admin API lookup for production client ID `6ad1f2ea53500a6202c9a046f6be56df` returned app handle **`syncstock-productionn`** on September 21, 2026. Use this exact handle for Shopify Admin deep links and hosted App Pricing URLs. The previous `syncstock-production` assumption was incorrect and causes Shopify Admin 404s.
+
+## Current capture blocker — September 22
+
+Production infrastructure is healthy and the current worker accepts the minimized queue payload.
+
+The latest live test order, **#1006**, reached the worker successfully but stopped safely with `skipped_no_mapping` because its line item (**The Hidden Snowboard**) has no saved QuickBooks mapping. This is now a merchant-actionable state rather than a queue/infrastructure failure.
+
+The embedded app now provides:
+- Human-readable sync status badges.
+- Inline error detail.
+- **Map products** shortcut for missing mappings.
+- **Retry** for eligible failed/skipped orders.
+- Automatic status polling after retry.
+
+To finish screenshot 3 and the screencast, either map **The Hidden Snowboard** to the intended QuickBooks item and retry #1006, or create a new paid test order containing the already-mapped **SyncStock Test Product** (`SYNCSTOCK-TEST-10` → QuickBooks **Services**). The second path is preferred because it preserves the explicit mapping model.
+
+Do not create or approve any real merchant charge during capture. Development-store plan selection may proceed only when Shopify clearly shows **$0 due**.
