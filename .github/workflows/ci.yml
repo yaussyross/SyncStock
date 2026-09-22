@@ -117,6 +117,9 @@ jobs:
       - name: Embedded retry regression
         run: npm run test:embedded-retry
 
+      - name: Embedded sync recovery UX
+        run: npm run test:embedded-sync-recovery
+
       - name: Production build
         run: npm run build
 
