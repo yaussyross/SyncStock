@@ -114,6 +114,9 @@ jobs:
       - name: QuickBooks reconnect regression
         run: npm run test:qbo-reconnect
 
+      - name: Embedded retry regression
+        run: npm run test:embedded-retry
+
       - name: Production build
         run: npm run build
 
