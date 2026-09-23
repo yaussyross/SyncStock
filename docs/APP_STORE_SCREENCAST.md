@@ -1,6 +1,6 @@
 # Shopify App Store reviewer screencast runbook
 
-Use this runbook only after the current-production TEST-store flow is ready to produce a successful paid-order sync.
+Current-production acceptance is verified with TEST order **#1007**. Use this runbook to capture that proven flow for Shopify review.
 
 Target length: **3–6 minutes**. Keep the recording in English, with no personal credentials, browser password prompts, unrelated tabs, or customer PII visible.
 
@@ -16,6 +16,7 @@ Target length: **3–6 minutes**. Keep the recording in English, with no persona
   - SKU: **SYNCSTOCK-TEST-10**
   - QuickBooks item: **Services**
 - Recent activity can be refreshed from App Home.
+- Verified acceptance target: order **#1007**, Shopify **$10.00 USD**, QuickBooks **$10.00 USD**, difference **$0.00**.
 - If Shopify App Pricing is shown during recording, continue only if the development store clearly shows **$0 due**.
 - Do not expose Ross's personal Intuit credentials. Reviewer credentials must be a dedicated sandbox login.
 
@@ -116,4 +117,4 @@ Before submitting the URL:
 
 ## Screenshot 3 capture point
 
-Immediately after the successful sync appears in Recent sync activity, capture the App Home at 1600×900. The target row should show the order as **Synced** with matching Shopify and QuickBooks totals. Do not fabricate or manually edit the status.
+Capture the App Home at 1600×900 with verified order **#1007** visible in Recent sync activity. The target row should show **Synced** with Shopify **$10.00** and QuickBooks **$10.00** totals. Do not fabricate or manually edit the status.
