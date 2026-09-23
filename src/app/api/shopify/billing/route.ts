@@ -33,7 +33,7 @@ export async function POST() {
 
   if (!shopifyConnection || !shopifyConnection.webhookId || !qboConnection || mappingCount < 1) {
     return NextResponse.json(
-      { error: "Finish Shopify, QuickBooks, and at least one product mapping before choosing a paid plan. Your 20-order beta trial remains free." },
+      { error: "Finish Shopify, QuickBooks, and at least one product mapping before choosing a paid plan. Your 20-order trial remains free." },
       { status: 409 }
     );
   }

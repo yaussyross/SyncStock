@@ -8,6 +8,12 @@ const DEFAULT_SHOPIFY_APP_GID = "gid://shopify/App/424848261121";
 
 export type ShopifyPlanTier = "starter" | "growth" | "unlimited";
 
+const PLAN_TIER_BY_HANDLE: Record<string, ShopifyPlanTier> = {
+  solo: "starter",
+  scale: "growth",
+  empire: "unlimited",
+};
+
 export interface ActiveShopifySubscription {
   billingPeriod: string;
   cancelAtEndOfCycle: boolean;
@@ -53,7 +59,16 @@ export function planTierForShopifySubscription(subscription: ActiveShopifySubscr
   const flat = subscription.items.find(
     (item) => item.price.__typename === "FlatRatePrice" && item.price.active && item.price.currency === "USD" && item.price.amount
   );
-  if (!flat?.price.amount) return null;
+  if (!flat) return null;
+
+  // Shopify creates no-charge development-store contracts with an effective
+  // recurring amount of $0. The subscription item handle remains the plan
+  // handle, so use it as the canonical mapping and keep amount matching as a
+  // production/backward-compatible fallback.
+  const handleTier = PLAN_TIER_BY_HANDLE[flat.handle.trim().toLowerCase()];
+  if (handleTier) return handleTier;
+
+  if (!flat.price.amount) return null;
   const amount = Number(flat.price.amount);
   if (amount === 8) return "starter";
   if (amount === 29) return "growth";
