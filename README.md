@@ -27,7 +27,7 @@ New public-app merchants are billed through Shopify. The legacy Stripe plan keys
 
 ## Stack
 
-- Next.js 14
+- Next.js 15
 - Prisma + PostgreSQL / Supabase
 - BullMQ + Redis / Railway
 - Shopify GraphQL Admin API + App Bridge
@@ -65,6 +65,6 @@ Copy `.env.example` to `.env` and provide your own credentials. Never commit rea
 
 **Core integration path verified in isolation.** On September 16, 2026, a paid Shopify development-store order completed the isolated Shopify → queue → worker → QuickBooks sandbox flow with an exact `$10.00` reconciliation, one quota increment, and duplicate protection.
 
-As of September 22, the canonical production Vercel project is live, the persistent Railway worker and Redis are healthy, Supabase is healthy, Shopify embedded App Home and mapping flows are live, QuickBooks reconnect handling is production-safe, failed/skipped syncs expose merchant recovery actions, and public legal/support/docs surfaces are deployed.
+As of September 23, the canonical production Vercel project is live on patched Next.js 15.5.24, the persistent Railway worker and Redis are healthy, Supabase is healthy, Shopify embedded App Home and mapping flows are live, QuickBooks reconnect handling is production-safe, failed/skipped syncs expose merchant recovery actions, and public legal/support/docs surfaces are deployed.
 
-The remaining public-launch gate is Shopify App Store submission/review. Before submission, capture a current-production successful TEST-store sync for screenshot 3 and the reviewer screencast, then complete the required testing credentials/instructions. Broader accounting acceptance cases such as shipping/discount/tax combinations, uninstall, and refund/cancellation review remain follow-up verification work. See [the launch record](docs/LAUNCH.md).
+Current-production TEST order **#1007** completed the Shopify → queue → worker → QuickBooks sandbox path with an exact **$10.00 → $10.00** reconciliation, QuickBooks transaction **147**, and one trial-quota increment. The remaining public-launch gate is Shopify App Store submission/review: capture screenshot 3 and the reviewer screencast from this verified flow, then complete the remaining reviewer credentials/instructions. Broader accounting acceptance cases such as shipping/discount/tax combinations, uninstall, and refund/cancellation review remain follow-up verification work. See [the launch record](docs/LAUNCH.md).
