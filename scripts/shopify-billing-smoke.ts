@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { ActiveShopifySubscription, planTierForShopifySubscription, shopifyPricingUrl } from "../src/lib/shopify-billing";
 
-function subscription(amount: string, options: { currency?: string; billingPeriod?: string; active?: boolean } = {}): ActiveShopifySubscription {
+function subscription(
+  amount: string,
+  options: { currency?: string; billingPeriod?: string; active?: boolean; handle?: string } = {}
+): ActiveShopifySubscription {
   return {
     billingPeriod: options.billingPeriod ?? "EVERY_30_DAYS",
     cancelAtEndOfCycle: false,
@@ -11,7 +14,7 @@ function subscription(amount: string, options: { currency?: string; billingPerio
       endTime: "2026-10-01T00:00:00Z",
     },
     items: [{
-      handle: "syncstock-plan",
+      handle: options.handle ?? "syncstock-plan",
       description: "SyncStock",
       price: {
         __typename: "FlatRatePrice",
@@ -26,6 +29,26 @@ function subscription(amount: string, options: { currency?: string; billingPerio
 assert.equal(planTierForShopifySubscription(subscription("8.00")), "starter");
 assert.equal(planTierForShopifySubscription(subscription("29.00")), "growth");
 assert.equal(planTierForShopifySubscription(subscription("49.00")), "unlimited");
+assert.equal(
+  planTierForShopifySubscription(subscription("0.00", { handle: "solo" })),
+  "starter",
+  "no-charge development-store Solo plan must map by handle"
+);
+assert.equal(
+  planTierForShopifySubscription(subscription("0.00", { handle: "scale" })),
+  "growth",
+  "no-charge development-store Scale plan must map by handle"
+);
+assert.equal(
+  planTierForShopifySubscription(subscription("0.00", { handle: "empire" })),
+  "unlimited",
+  "no-charge development-store Empire plan must map by handle"
+);
+assert.equal(
+  planTierForShopifySubscription(subscription("0.00", { handle: "unknown-plan" })),
+  null,
+  "unknown zero-dollar plan must not grant an entitlement"
+);
 assert.equal(planTierForShopifySubscription(subscription("19.00")), null, "stale catalog price must not map");
 assert.equal(planTierForShopifySubscription(subscription("8.00", { currency: "CAD" })), null, "non-USD plan must not map");
 assert.equal(planTierForShopifySubscription(subscription("8.00", { billingPeriod: "ANNUAL" })), null, "annual plan must not map");
