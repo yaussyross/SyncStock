@@ -125,7 +125,7 @@ Terms, privacy, feedback, and a support contact route are present on the product
 
 Prioritize an owner-operated Shopify store already using QuickBooks Online, roughly 50–200 paid orders per month, whose bookkeeping workflow genuinely calls for individual sales receipts. Qualify the workflow before taking live books. Do not market SyncStock as payout reconciliation, inventory synchronization, or complete bookkeeping.
 
-Current founding offer:
+Current initial-release offer:
 
 - First 20 synced orders: free, no card required.
 - Solo: **$8/month** for up to 200 orders/month.
@@ -134,11 +134,11 @@ Current founding offer:
 
 Merchant outreach copy:
 
-> Still entering Shopify orders into QuickBooks one at a time? SyncStock is a founding beta focused on individual paid-order receipts, explicit product mapping, reconciliation checks, and duplicate-safe retries. The core Shopify → QuickBooks sandbox flow has passed end to end. You can start with 20 synced orders free, then Solo is $8/month for up to 200 orders. Would you be open to a short beta walkthrough?
+> Still entering Shopify orders into QuickBooks one at a time? SyncStock is an initial-release app focused on individual paid-order receipts, explicit product mapping, reconciliation checks, and duplicate-safe retries. The current-production TEST flow has passed end to end. You can start with 20 synced orders free, then Solo is $8/month for up to 200 orders. Would you be open to a short walkthrough?
 
 Bookkeeper outreach copy:
 
-> SyncStock is a focused Shopify → QuickBooks founding beta for small merchants whose workflow calls for individual sales receipts. It maps variants, checks totals before writing, and keeps retry state visible. The core sandbox flow has passed end to end; refunds/cancellations remain review-driven and payout reconciliation is not the product. Would you review the workflow for fit with any smaller Shopify clients?
+> SyncStock is a focused Shopify → QuickBooks initial-release app for small merchants whose workflow calls for individual sales receipts. It maps variants, checks totals before writing, and keeps retry state visible. The current-production TEST flow has passed end to end; refunds/cancellations remain review-driven and payout reconciliation is not the product. Would you review the workflow for fit with any smaller Shopify clients?
 
 Do not fabricate users, revenue, testimonials, savings, scarcity, or production capabilities that have not been verified.
 
