@@ -11,6 +11,10 @@ const layout = read("src/app/layout.tsx");
 const signup = read("src/app/signup/page.tsx");
 const login = read("src/app/login/page.tsx");
 const embedded = read("src/app/shopify/app/page.tsx");
+const terms = read("src/app/terms/page.tsx");
+const billing = read("src/app/dashboard/billing/page.tsx");
+const feedback = read("src/app/feedback/page.tsx");
+const feedbackForm = read("src/components/FeedbackForm.tsx");
 
 for (const p of [
   "src/app/privacy/page.tsx",
@@ -27,6 +31,18 @@ for (const p of [
 assert.match(landing, /20 free/);
 assert.doesNotMatch(landing, /Join the beta|illustrative beta workflow|Beta feedback queue|What is the beta focused on/);
 assert.doesNotMatch(layout, /Founding beta/);
+for (const [name, source] of [
+  ["terms", terms],
+  ["billing", billing],
+  ["feedback", feedback],
+  ["feedback form", feedbackForm],
+] as const) {
+  assert.doesNotMatch(
+    source,
+    /founding beta|founding-beta|beta safety gate|beta feedback/i,
+    `stale beta copy found in ${name}`
+  );
+}
 assert.match(signup, /Start with 20 free orders/);
 assert.match(login, /AbortController/);
 assert.match(embedded, /Ready to sync paid orders/);
