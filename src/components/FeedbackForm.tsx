@@ -97,7 +97,7 @@ export default function FeedbackForm() {
           {status === "sending" ? "Sending…" : "Send feedback"}
         </button>
       </div>
-      {status === "sent" && <p className="feedback-success">Received. Thank you — this goes directly into the SyncStock beta feedback queue.</p>}
+      {status === "sent" && <p className="feedback-success">Received. Thank you — this goes directly into the SyncStock feedback queue.</p>}
       {status === "error" && <p className="feedback-error">{error}</p>}
     </form>
   );
