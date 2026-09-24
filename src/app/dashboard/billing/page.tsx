@@ -28,11 +28,11 @@ export default function BillingPage() {
         if (data.source === "stripe_legacy") {
           setBillingStatus("Legacy Stripe subscription active. Contact support before changing plans.");
         } else if (!data.configured) {
-          setBillingStatus("Shopify App Pricing setup is still being completed for this founding beta.");
+          setBillingStatus("Shopify App Pricing setup is still being completed for this account.");
         } else if (data.active) {
           setBillingStatus(`Shopify billing active${data.planTier ? ` · ${data.planTier}` : ""}.`);
         } else {
-          setBillingStatus("No paid Shopify plan is active. Your 20-order founding trial remains available.");
+          setBillingStatus("No paid Shopify plan is active. Your 20 free synced orders remain available.");
         }
       })
       .catch(() => {
@@ -48,7 +48,7 @@ export default function BillingPage() {
           <p className="section-kicker">FOUNDING PRICING</p>
           <h1 style={{ fontSize: 32, marginTop: 8, marginBottom: 8 }}>Choose a plan</h1>
           <p style={{ color: "var(--paper-dim)", marginBottom: 12 }}>Your first 20 synced orders are free. Paid plans are approved and billed by Shopify.</p>
-          <p style={{ color: "var(--paper-dim)", marginBottom: 8, fontSize: 13 }}>Beta safety gate: plan selection unlocks only after Shopify, QuickBooks, and at least one product mapping are ready, so you are not charged for an unusable setup.</p>
+          <p style={{ color: "var(--paper-dim)", marginBottom: 8, fontSize: 13 }}>Setup safety gate: plan selection unlocks only after Shopify, QuickBooks, and at least one product mapping are ready, so you are not charged for an unusable setup.</p>
           <p style={{ color: "var(--paper-dim)", marginBottom: 28, fontSize: 13 }}>{billingStatus}</p>
         </div>
         <button className="btn btn-secondary" onClick={openShopifyPlans}>Manage Shopify plan</button>
@@ -58,7 +58,7 @@ export default function BillingPage() {
         <div className="ledger-row"><div><div className="plan-name">Scale</div><div className="plan-desc">Up to 1,000 orders per paid billing period</div></div><div style={{ display: "flex", alignItems: "center", gap: 16 }}><div className="plan-price">$29/mo</div><button className="btn" onClick={openShopifyPlans}>Choose in Shopify</button></div></div>
         <div className="ledger-row"><div><div className="plan-name">Empire</div><div className="plan-desc">Unlimited paid-order sync volume</div></div><div style={{ display: "flex", alignItems: "center", gap: 16 }}><div className="plan-price">$49/mo</div><button className="btn" onClick={openShopifyPlans}>Choose in Shopify</button></div></div>
       </div>
-      <p style={{ color: "var(--paper-dim)", fontSize: 13, marginTop: 22, maxWidth: 700 }}>Founding-beta pricing. Shopify shows the available plans, collects merchant approval, and handles app billing. SyncStock never stores card details.</p>
+      <p style={{ color: "var(--paper-dim)", fontSize: 13, marginTop: 22, maxWidth: 700 }}>Initial-release pricing. Shopify shows the available plans, collects merchant approval, and handles app billing. SyncStock never stores card details.</p>
     </main>
   );
 }
