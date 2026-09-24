@@ -1,6 +1,6 @@
 # Shopify App Store submission working sheet
 
-Last updated: September 23, 2026.
+Last updated: September 24, 2026.
 
 This file records factual listing copy and reviewer instructions for the public **SyncStock Production** app. It is a working sheet only; Shopify Partner Dashboard remains the source of truth for submission state.
 
@@ -54,12 +54,12 @@ Desktop screenshot 2:
 - Alt text: **Product mapping between store variants and QuickBooks items**
 
 Desktop screenshot 3:
+- [x] Uploaded in the Shopify Partner submission on September 24.
 - Current-production acceptance is verified with TEST order **#1007**.
-- Capture the embedded App Home with Recent sync activity showing **#1007** as successful.
 - Verified totals: Shopify **$10.00 USD** → QuickBooks **$10.00 USD**, reconciliation difference **$0.00**.
 - QuickBooks transaction ID: **147**.
-- Alt text: **Order sync history with QuickBooks status and reconciliation results**
-- Do not fabricate or manually edit the screenshot.
+- Current listing alt text: **Successful order sync with matching QuickBooks totals**
+- Do not recapture unless Shopify rejects the existing uploaded image.
 
 Mobile screenshots: optional; omit for initial submission unless Shopify requires them.
 
@@ -134,14 +134,16 @@ Supported narrow acceptance case: one paid order with mapped products. Refunds/c
 - Shopify automated submission checks pass.
 - Required app capabilities are selected.
 - [x] A successful current-production TEST-store order sync is verified: **#1007**, $10.00 → $10.00, reconciliation difference $0.00, quota 0/20 → 1/20.
-- Screenshot 3 is captured from the embedded App Home showing the successful #1007 row.
-- Reviewer screencast is recorded from the verified current-production flow.
-- Review instructions and all remaining Partner Dashboard fields are complete.
-- `support@syncstock.app` is confirmed to be monitored before listing it as the merchant support mailbox.
+- [x] Three desktop screenshots are uploaded, including the successful #1007 sync.
+- [x] Feature media image is uploaded.
+- Reviewer screencast URL is provided.
+- Dedicated QuickBooks sandbox reviewer test-account credentials are provided.
+- The live Partner submission currently reports exactly two remaining issues: **Test account** and **Screencast URL**.
+- Support-mail routing is a separate operational follow-up and is not one of the current Partner submission errors.
 
 No paid ad spend, boosts, fees, or other cash outflow may be initiated without Ross's explicit approval.
 
-## Shopify App Store listing completion matrix — September 23
+## Shopify App Store listing completion matrix — September 24
 
 Use the following values and assets for the remaining submission fields. The Partner Dashboard is the source of truth for the live issue count.
 
@@ -217,7 +219,21 @@ Resources:
 
 Shopify Admin API lookup for production client ID `6ad1f2ea53500a6202c9a046f6be56df` returned app handle **`syncstock-productionn`** on September 21, 2026. Use this exact handle for Shopify Admin deep links and hosted App Pricing URLs. The previous `syncstock-production` assumption was incorrect and causes Shopify Admin 404s.
 
-## Current capture state — September 23
+## Current submission state — September 24
+
+The Shopify Partner listing currently reports exactly **2 issues to fix**:
+1. **App testing information: Test account**
+2. **Screencast URL**
+
+Already complete in the live listing:
+- Feature media image uploaded.
+- Desktop screenshots 1, 2, and 3 uploaded.
+- Screenshot 3 represents the successful current-production sync.
+- All other listing sections are currently clear of submission-form errors.
+
+Ross deferred creation of the dedicated QuickBooks reviewer login until later. Do not send him back through completed screenshot, feature-media, Cloudflare email-routing, or generic testing-information steps.
+
+## Verified production capture state — September 23
 
 Current-production acceptance is now verified.
 
@@ -239,7 +255,7 @@ Verified production evidence:
 
 Order **#1006** remains a useful recovery example: it is safely blocked with `skipped_no_mapping` for **The Hidden Snowboard**, and an embedded retry was accepted after the recovery controls shipped.
 
-The remaining capture work is human-visible media:
-1. Capture screenshot 3 from the embedded App Home with **#1007** visible as successful.
-2. Record the reviewer screencast using the verified flow.
+The remaining human-visible submission work is:
+1. Create/activate a dedicated QuickBooks sandbox reviewer login and enter it in **Test account**.
+2. Record the reviewer screencast using the verified flow, host it at a URL that opens without reviewer sign-in, and enter that URL.
 3. Do not create or approve any real merchant charge during capture. Development-store plan selection may proceed only when Shopify clearly shows **$0 due**.
