@@ -104,6 +104,80 @@ const configuredTip = reconcileShopifyOrder(
 assert.equal(configuredTip.matches, true);
 assert.equal(configuredTip.actualTotal, "23.00");
 
+
+const combinedAdjustments = reconcileShopifyOrder(
+  {
+    currency: "USD",
+    total_price: "122.00",
+    total_tax: "8.00",
+    total_discounts: "5.00",
+    total_shipping_price_set: { shop_money: { amount: "10.00" } },
+    current_total_duties_set: { shop_money: { amount: "2.00" } },
+    current_total_additional_fees_set: { shop_money: { amount: "3.00" } },
+    total_tip_received: "4.00",
+    line_items: [{ title: "Bundle", quantity: 2, price: "50.00" }],
+  },
+  {
+    includeShipping: true,
+    includeDiscounts: true,
+    includeDuties: true,
+    includeAdditionalFees: true,
+    includeTips: true,
+  }
+);
+assert.equal(combinedAdjustments.matches, true);
+assert.equal(combinedAdjustments.actualTotal, "122.00");
+assert.equal(combinedAdjustments.adjustments.shipping, "10.00");
+assert.equal(combinedAdjustments.adjustments.discounts, "5.00");
+assert.equal(combinedAdjustments.adjustments.duties, "2.00");
+assert.equal(combinedAdjustments.adjustments.additionalFees, "3.00");
+assert.equal(combinedAdjustments.adjustments.tips, "4.00");
+
+const editedOrderCurrentTotals = reconcileShopifyOrder(
+  {
+    currency: "USD",
+    total_price: "55.00",
+    current_total_price: "45.00",
+    total_tax: "5.00",
+    current_total_tax: "4.00",
+    total_discounts: "0.00",
+    current_total_discounts: "9.00",
+    line_items: [{ title: "Edited order item", quantity: 1, price: "50.00" }],
+  },
+  { includeDiscounts: true }
+);
+assert.equal(editedOrderCurrentTotals.matches, true);
+assert.equal(editedOrderCurrentTotals.expectedTotal, "45.00");
+assert.equal(editedOrderCurrentTotals.actualTotal, "45.00");
+assert.equal(editedOrderCurrentTotals.taxTotal, "4.00");
+assert.equal(editedOrderCurrentTotals.adjustments.discounts, "9.00");
+
+const shippingLineFallback = reconcileShopifyOrder(
+  {
+    currency: "USD",
+    total_price: "24.00",
+    total_tax: "1.00",
+    shipping_lines: [{ discounted_price: "3.00", price: "5.00" }],
+    line_items: [{ title: "Fallback shipping item", quantity: 1, price: "20.00" }],
+  },
+  { includeShipping: true }
+);
+assert.equal(shippingLineFallback.matches, true);
+assert.equal(shippingLineFallback.adjustments.shipping, "3.00");
+assert.equal(shippingLineFallback.actualTotal, "24.00");
+
+const unmappedExtendedAdjustments = reconcileShopifyOrder({
+  currency: "USD",
+  total_price: "26.00",
+  total_tax: "1.00",
+  current_total_duties_set: { shop_money: { amount: "2.00" } },
+  current_total_additional_fees_set: { shop_money: { amount: "3.00" } },
+  line_items: [{ title: "Extended adjustment item", quantity: 1, price: "20.00" }],
+});
+assert.equal(unmappedExtendedAdjustments.matches, false);
+assert.deepEqual(unmappedExtendedAdjustments.unsupportedAdjustments, ["duties", "additional fees"]);
+assert.match(unmappedExtendedAdjustments.message ?? "", /Missing accounting mappings: duties, additional fees/);
+
 const withinTolerance = compareMoneyTotals("20.00", "20.009");
 assert.equal(withinTolerance.matches, true);
 
