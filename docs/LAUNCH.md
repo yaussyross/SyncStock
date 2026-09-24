@@ -1,10 +1,22 @@
 # SyncStock launch record
 
-Last checked: **September 21, 2026**
+Last checked: **September 24, 2026**
 
 Canonical repository: https://github.com/yaussyross/SyncStock
 Production app: https://sync-stock-six.vercel.app
 Founding pricing: **Solo $8/month**, **Scale $29/month**, **Empire $49/month**. New accounts receive 20 synced orders free with no card required.
+
+## September 24 live submission checkpoint
+
+- The Shopify Partner English listing currently reports exactly **2 issues to fix**: **App testing information → Test account** and **Screencast URL**.
+- Feature media is uploaded.
+- Three desktop screenshots are uploaded, including the successful-order-sync screenshot.
+- QuickBooks sandbox transaction **147** was visually re-verified in the sandbox UI: Sales Receipt **SS-7420505915673**, dated September 23, amount **$10.00**, product/service **Services**, description **SyncStock Test Product**, quantity 1, rate $10.00.
+- The current-production acceptance remains TEST order **#1007** with Shopify **$10.00** → QuickBooks **$10.00**, difference **$0.00**.
+- Canonical Vercel production deployment for main commit `d086e6f1b40a8087180385145aec9231208c18dc` is READY. The canonical `sync-stock` status is successful; the obsolete duplicate `sync-stock-s5j9` project still contributes an irrelevant failed legacy status.
+- No current Vercel runtime error clusters were found in the checked 24-hour window.
+- Ross deferred the dedicated QuickBooks reviewer account until later. Do not repeat completed screenshot/media work or the abandoned Cloudflare Email Routing path.
+- No paid spend is authorized by this checkpoint.
 
 ## September 21 Shopify App Pricing checkpoint
 
@@ -103,7 +115,7 @@ These are the items that are **not yet verified** and must not be described as c
 
 ### 1. Shopify App Store submission
 
-The production public app is registered and currently in Draft. App icon, emergency contact, English primary language, protected-customer-data declaration, and initial listing content are in progress/complete. Finish the real app screenshots, automated checks, capability selection, pricing configuration, review instructions, and remaining listing fields before submission. Do not describe the app as App Store approved until Shopify approves it.
+The production public app remains in Draft. The live Partner listing currently has only two form blockers: **Test account** and **Screencast URL**. Feature media and three desktop screenshots are already uploaded. Do not reopen completed listing/media work unless Shopify reports a new validation error. Do not describe the app as App Store approved until Shopify approves it.
 
 Developer dashboard: https://dev.shopify.com/dashboard
 
