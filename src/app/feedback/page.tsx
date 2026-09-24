@@ -13,10 +13,10 @@ export default async function FeedbackPage() {
         <a className="wordmark feedback-wordmark" href="/" aria-label="SyncStock home">Sync<span>Stock</span></a>
         <section className="feedback-shell">
           <div className="feedback-copy">
-            <p className="section-kicker">FOUNDING BETA FEEDBACK</p>
+            <p className="section-kicker">INITIAL RELEASE FEEDBACK</p>
             <h1>Tell us what slows you down.</h1>
             <p>
-              Bugs, confusing setup, missing controls, ugly details — send it. Beta feedback is reviewed as product input, not buried in a generic support inbox.
+              Bugs, confusing setup, missing controls, ugly details — send it. Feedback is reviewed as product input, not buried in a generic support inbox.
             </p>
             <div className="feedback-promise">
               <span>01</span><p><strong>Specific beats polite.</strong><br />Screens, steps, expected behavior, and friction are useful.</p>
