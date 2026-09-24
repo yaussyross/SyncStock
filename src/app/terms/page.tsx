@@ -4,11 +4,11 @@ export default function TermsPage() {
   return (
     <main className="container legal-doc">
       <h1>Terms of Service</h1>
-      <p className="updated">Last updated: September 19, 2026</p>
+      <p className="updated">Last updated: September 24, 2026</p>
       <p>These Terms govern your access to and use of SyncStock. By installing, creating an account for, or using SyncStock, you agree to these Terms.</p>
 
       <h2>1. Service</h2>
-      <p>SyncStock connects Shopify with QuickBooks Online and automates supported accounting records. The founding beta is intentionally limited to supported workflows. SyncStock may block, queue, or require review of an order when it cannot safely reproduce the expected accounting result.</p>
+      <p>SyncStock connects Shopify with QuickBooks Online and automates supported accounting records. The initial release is intentionally limited to supported workflows. SyncStock may block, queue, or require review of an order when it cannot safely reproduce the expected accounting result.</p>
 
       <h2>2. Your responsibilities</h2>
       <p>You are responsible for your Shopify and QuickBooks accounts, the accuracy of product mappings and business information you provide, reviewing records created by the service, maintaining appropriate backups and accounting controls, and complying with laws and third-party platform terms that apply to your business.</p>
@@ -25,8 +25,8 @@ export default function TermsPage() {
       <h2>6. Accounting and tax responsibility</h2>
       <p>SyncStock is an automation tool, not accounting, tax, or legal advice. You remain responsible for deciding whether the records and workflow are appropriate for your business and for obtaining professional advice when needed.</p>
 
-      <h2>7. Beta service and availability</h2>
-      <p>SyncStock is currently offered as a founding beta. Features, supported accounting cases, plan limits, and availability may change as the service is improved. We do not guarantee uninterrupted or error-free operation, and we may suspend a sync or the service when needed to prevent data corruption, address security risk, perform maintenance, or respond to a third-party outage.</p>
+      <h2>7. Initial release and availability</h2>
+      <p>SyncStock is currently offered as an initial release. Features, supported accounting cases, plan limits, and availability may change as the service is improved. We do not guarantee uninterrupted or error-free operation, and we may suspend a sync or the service when needed to prevent data corruption, address security risk, perform maintenance, or respond to a third-party outage.</p>
 
       <h2>8. Data and privacy</h2>
       <p>Our Privacy Policy explains how SyncStock handles information. You authorize us to process connected-store and QuickBooks data as needed to provide the service.</p>
