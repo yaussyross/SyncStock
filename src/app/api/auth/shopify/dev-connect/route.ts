@@ -87,10 +87,14 @@ export async function GET(_req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.redirect(`${process.env.APP_URL}/login?error=session_expired`);
 
-  const clientId = process.env.SHOPIFY_DEV_CLIENT_ID;
-  const clientSecret = process.env.SHOPIFY_DEV_CLIENT_SECRET;
+  // Prefer a dedicated internal Dev Dashboard app when configured. For the
+  // SyncStock-owned dev store, the primary app credentials are also valid for
+  // the client-credentials grant once that app is installed on the store and
+  // both resources belong to the same Shopify organization.
+  const clientId = process.env.SHOPIFY_DEV_CLIENT_ID || process.env.SHOPIFY_API_KEY;
+  const clientSecret = process.env.SHOPIFY_DEV_CLIENT_SECRET || process.env.SHOPIFY_API_SECRET;
   if (!clientId || !clientSecret) {
-    console.error("[shopify dev-connect] missing dedicated dev-store credentials");
+    console.error("[shopify dev-connect] missing Shopify client credentials");
     return NextResponse.redirect(`${process.env.APP_URL}/dashboard?shopify_dev_error=missing_dev_credentials`);
   }
 
