@@ -1,6 +1,6 @@
 # Astra handoff — SyncStock
 
-Last updated: 2026-09-24 America/Chicago
+Last updated: 2026-09-24 17:29 America/Chicago
 
 Canonical repo: https://github.com/yaussyross/SyncStock  
 Canonical production: https://sync-stock-six.vercel.app  
@@ -10,139 +10,235 @@ Shopify App Store submission: https://apps.shopify.com/services/partner-app-subm
 
 - Ross wants SyncStock taken as far as possible autonomously.
 - Only stop for genuine human-only barriers.
-- Always give Ross direct links and short, precise instructions.
-- Any advertising spend, boost, paid service, fee, or other cash outflow requires Ross's explicit approval.
+- Always give Ross direct links and short, exact instructions.
+- Any advertising spend, boost, paid service, fee, infrastructure upgrade, or other cash outflow requires Ross's explicit approval.
 - Keep SyncStock separate from Forged Studios, Extra Social Club, and unrelated social accounts.
-- Solo is $8/month. New public-app merchant billing uses Shopify App Pricing, not Stripe.
-- Do not fabricate customers, revenue, capabilities, approvals, or production verification.
+- Solo is $8/month.
+- New public-app merchant billing uses Shopify App Pricing, not Stripe.
+- Do not fabricate customers, revenue, approvals, capabilities, test results, or production verification.
 
-## Current verified product state
+## Current production state
 
-- Canonical GitHub repository access is working with admin permission.
-- Canonical Vercel project is `raus2/sync-stock`.
-- Production main commit before this docs PR: `d086e6f1b40a8087180385145aec9231208c18dc`.
-- That production deployment was READY and had no runtime error clusters in the checked prior 24-hour window.
-- The obsolete duplicate Vercel project `sync-stock-s5j9` can emit a failed/pending status. Do not treat it as canonical production.
-- PR #45, “Recognize Shopify no-charge test plan entitlements,” is merged.
-- Current-production TEST order #1007 passed Shopify -> queue -> worker -> QuickBooks sandbox.
-- Verified reconciliation: Shopify $10.00 -> QuickBooks $10.00; difference $0.00.
-- Verified QuickBooks transaction ID: 147.
-- Ross visually opened QBO transaction 147 on Sep 24. It showed:
-  - Sales Receipt # SS-7420505915673
-  - Date 09/23/2026
-  - Product/service: Services
-  - Description: SyncStock Test Product
-  - Qty 1
-  - Rate $10.00
-  - Amount $10.00
-- QuickBooks Sales transactions also showed three SyncStock-created $10 paid sales receipts, with the latest on 9/23/26.
+- Canonical GitHub repo: `yaussyross/SyncStock`.
+- Current main commit: `eed9f032d560d339eb90192b3c066abf179f0988`.
+- Current canonical Vercel deployment: `dpl_FKTgRjF1ADAMxGSK92VF9gE1ucMw`.
+- Canonical production deployment is **READY**.
+- `https://sync-stock-six.vercel.app` is attached to the current production deployment.
+- Vercel runtime error check for the latest hour returned **no runtime error clusters**.
+- Public production routes checked successfully with HTTP 200:
+  - /
+  - /signup
+  - /docs
+  - /support
+  - /privacy
+  - /terms
+  - /tools/bookkeeping-cost
+- Production queue health endpoint returns HTTP 200 with `{"ok":true,"queueBridge":"authenticated"}`.
+
+## Railway / worker state
+
+Railway project: `SyncStock`.
+
+Production services:
+- `worker`: latest deployment **SUCCESS**
+- `redis`: latest deployment **SUCCESS**
+- `sandbox-24h`: latest deployment **SUCCESS**
+
+Worker configuration:
+- source repo: `yaussyross/SyncStock`
+- branch: `main`
+- one production replica
+- start command: `npm run worker`
+- healthcheck: `/health`
+- worker and queue bridge are currently healthy
+
+Important reliability follow-up:
+- Redis currently has **no Railway volume mount**.
+- Redis AOF is enabled, but Railway local filesystem is not durable across a service redeploy/replacement.
+- Do not attach a paid volume without Ross's explicit approval.
+- Tracked in issue #51:
+  https://github.com/yaussyross/SyncStock/issues/51
+
+## Database / Supabase state
+
+Supabase project `shopify-qbo-sync` is **ACTIVE_HEALTHY**.
+
+Sep 24 checks:
+- Supabase security advisor returned no lints.
+- Performance advisor only reported unused indexes at INFO level.
+- Table inventory warns RLS is disabled, but SyncStock does not use the Supabase anon/authenticated Data API for application database access.
+- Migration `20260911192500_revoke_supabase_data_api_access` revokes all table privileges from `anon` and `authenticated`.
+- Direct checks confirmed both roles currently have no SELECT/INSERT/UPDATE/DELETE privileges on all current public tables.
+- Do not enable RLS blindly; that could break server-side Prisma access.
+- Defense-in-depth review is tracked in issue #49:
+  https://github.com/yaussyross/SyncStock/issues/49
+
+## Verified Shopify → QuickBooks acceptance
+
+Current-production TEST order **#1007** passed the complete Shopify → queue → worker → QuickBooks sandbox path.
+
+Verified accounting:
+- Shopify total: **$10.00 USD**
+- QuickBooks total: **$10.00 USD**
+- reconciliation difference: **$0.00**
+- QuickBooks transaction ID: **147**
+
+Ross visually opened transaction 147 on Sep 24:
+- Sales Receipt: `SS-7420505915673`
+- Date: 09/23/2026
+- Product/service: `Services`
+- Description: `SyncStock Test Product`
+- Quantity: 1
+- Rate: $10.00
+- Amount: $10.00
+
+QuickBooks Sales transactions also visibly showed three SyncStock-created $10 paid receipts, with the latest on 9/23/26.
+
+Do not confuse the Sales Receipt document number with QBO entity transaction ID 147.
 
 ## Live Shopify App Store submission state
 
-Ross supplied the live Shopify Partner submission screen on Sep 24. It reports exactly **2 issues to fix**:
+Ross supplied the live Shopify Partner submission screen on Sep 24.
 
-1. **App testing information: Test account**
+It reports exactly **2 issues to fix**:
+1. **App testing information → Test account**
 2. **Screencast URL**
 
-Already complete in the live listing:
-- Feature media image uploaded.
+Already complete:
+- Feature media uploaded.
 - Desktop Screenshot 1 uploaded.
 - Desktop Screenshot 2 uploaded.
 - Desktop Screenshot 3 uploaded.
-- Screenshot 3 is the successful-order-sync image.
-- Other listing sections were clear of form errors at the time of the screenshot.
+- Screenshot 3 is the successful-order-sync screenshot.
+- All other listing sections were clear of validation errors at the time of the live screenshot.
 
-Do **not** send Ross back through screenshots, feature media, basic listing content, or generic testing-info screenshots unless Shopify reports a new validation error.
+Do **not** send Ross back through:
+- listing screenshots
+- feature media
+- generic listing content
+- generic App testing information screenshots
+- Cloudflare Email Routing
+
+unless Shopify reports a new explicit validation error.
 
 ## Deferred human-only work
 
-### 1. Dedicated QuickBooks reviewer test account
+### Dedicated QuickBooks reviewer account
 
-Ross started QuickBooks Sandbox -> Manage users -> Add user and reached the role picker.
+Ross reached QuickBooks Sandbox → Manage users → Add user → role picker.
 
-Recommended role: **Standard all access**, not Company admin.
+Recommended role:
+- **Standard all access**
+- not Company admin
 
-Ross explicitly said: **skip this till later**.
+Ross explicitly said to **skip this until later**.
 
-When he resumes:
-- Create/accept a dedicated reviewer account.
-- It must not require Ross's personal Intuit credentials.
-- Enter the reviewer username/password directly into Shopify App testing information.
-- Do not ask Ross to paste the password into ChatGPT.
+When resumed:
+- create/accept a dedicated reviewer account
+- do not use Ross's personal Intuit credentials
+- enter username/password directly into Shopify App testing information
+- never ask Ross to paste the password into ChatGPT
 
-### 2. Reviewer screencast
+### Reviewer screencast
 
-Still required by the Shopify form.
+Still required.
 
-Runbook: `docs/APP_STORE_SCREENCAST.md`
+Runbook:
+`docs/APP_STORE_SCREENCAST.md`
 
-Use the proven flow:
-- Open SyncStock in TEST Shopify Admin.
-- Show QuickBooks connected.
-- Show saved mapping: SyncStock Test Product / SKU SYNCSTOCK-TEST-10 -> QuickBooks Services.
-- If showing Shopify plan selection, proceed only if development-store price due is $0.
-- Show paid TEST order and successful Recent sync activity.
-- Anchor to verified order #1007 and $10 -> $10 reconciliation.
-- No real payment, personal credentials, unrelated tabs, or PII.
-- Host at a URL Shopify reviewers can open without sign-in and paste that URL into Screencast URL.
+Capture sequence:
+1. Open SyncStock inside the TEST Shopify Admin.
+2. Show QuickBooks connected.
+3. Show saved mapping for SyncStock Test Product / SKU `SYNCSTOCK-TEST-10` → QuickBooks `Services`.
+4. If showing plan selection, proceed only when Shopify shows $0 due for the development store.
+5. Show successful order #1007 in Recent sync activity.
+6. Show Shopify $10.00 → QuickBooks $10.00 / difference $0.00.
+7. Avoid passwords, personal Intuit data, unrelated tabs, and PII.
+8. Host the screencast at a URL reviewers can open without sign-in.
+9. Paste that URL into Shopify's Screencast URL field.
 
 ## Support email
 
-Cloudflare Email Routing for `support@syncstock.app` was a dead end and Ross explicitly said Astra already tried it. Do not reopen that path unless Ross asks.
+`support@syncstock.app` custom-domain routing remains unverified.
 
-The current Shopify listing does **not** show support email as one of its two submission errors. Treat support-mail routing as a separate operational follow-up, not the immediate App Store blocker.
+Ross explicitly said the Cloudflare Email Routing route was a dead end and should be skipped.
 
-GitHub issue #46 tracks this separately:
+Current Shopify listing does **not** show support email as one of the two form blockers.
+
+Treat this as an operational follow-up, not the immediate submission blocker:
 https://github.com/yaussyross/SyncStock/issues/46
 
-A Sep 24 comment was added to issue #46 clarifying that the current live listing only reports Test account and Screencast URL.
+Do not retry Cloudflare routing unless Ross asks.
+Do not buy a paid mail product without explicit approval.
 
-## Work completed in this handoff session
+## Work completed Sep 24
 
-Created branch:
-`docs/refresh-app-store-live-state-2026-09-24`
-
-Opened PR #47:
+### PR #47 — merged
 https://github.com/yaussyross/SyncStock/pull/47
 
-PR title: **Refresh live App Store submission state**
+Recorded:
+- exact live App Store submission state
+- verified QBO transaction 147
+- current screenshot/media completion
+- initial Astra handoff
 
-Updated:
-- `docs/APP_STORE_SUBMISSION.md`
-- `docs/LAUNCH.md`
+### PR #48 — merged
+https://github.com/yaussyross/SyncStock/pull/48
 
-Changes record:
-- Live listing now has only two form blockers.
-- Feature media and all 3 desktop screenshots are already uploaded.
-- QuickBooks transaction 147 was re-verified visually.
-- Cloudflare Email Routing should not be reopened as the current listing blocker.
-- Current Vercel canonical/duplicate-project distinction remains documented.
+Removed stale “founding beta” wording from:
+- Terms
+- Billing
+- Feedback surfaces
 
-At the moment of this handoff:
-- PR #47 is **open and mergeable**.
-- SyncStock CI run #250 is **in progress**.
-- Canonical Vercel preview status for PR #47 is **pending**.
-- Duplicate `sync-stock-s5j9` preview is also pending and is not canonical.
+Added regression coverage so stale beta labels do not reappear.
 
-Before merging PR #47:
-1. Wait for SyncStock CI to finish successfully.
-2. Verify the canonical Vercel `sync-stock` preview is READY/success.
-3. Ignore the duplicate `sync-stock-s5j9` result unless it reveals a real code problem also present in canonical.
-4. Then merge PR #47 if checks are clean.
+Current production `/terms` now shows:
+- Last updated September 24, 2026
+- “Initial release” wording instead of beta wording
 
-## Best next autonomous actions for Astra
+### PR #50 — merged
+https://github.com/yaussyross/SyncStock/pull/50
 
-1. Check PR #47 CI and canonical Vercel preview; merge when clean.
-2. Re-check canonical production after merge and confirm no runtime error clusters.
-3. Do not ask Ross for the deferred QuickBooks reviewer account until needed to finish submission.
-4. Prepare the exact screencast capture sequence and the final testing instructions so Ross only has to record/upload when ready.
-5. Keep the next human ask to one concise barrier at a time with a direct link.
+Expanded reconciliation regression tests for:
+- combined shipping + discounts + tax + duties + additional fees + tips
+- edited-order current totals
+- shipping-line fallback values
+- blocking unmapped duties/additional fees
 
-## Links
+CI passed before merge.
 
-- GitHub repo: https://github.com/yaussyross/SyncStock
-- PR #47: https://github.com/yaussyross/SyncStock/pull/47
-- Production app: https://sync-stock-six.vercel.app
+## Known open GitHub follow-ups
+
+- #46 — operational support-email follow-up
+  https://github.com/yaussyross/SyncStock/issues/46
+- #49 — Supabase RLS defense-in-depth review
+  https://github.com/yaussyross/SyncStock/issues/49
+- #51 — Railway Redis persistence / volume decision
+  https://github.com/yaussyross/SyncStock/issues/51
+
+These are not evidence that production is down.
+
+## Best next actions for Astra
+
+1. Re-verify canonical production after taking over:
+   - Vercel `raus2/sync-stock`
+   - runtime errors
+   - `/api/health/queue`
+   - Railway worker + Redis status
+2. Check the Shopify submission page before asking Ross to act. The last verified blockers are only **Test account** and **Screencast URL**.
+3. Continue autonomous code/launch hardening that does not require spending or Ross's credentials.
+4. Do not ask Ross to resume the reviewer QuickBooks user until it is the next unavoidable submission action.
+5. When that time comes, ask for only one human action at a time with a direct link.
+6. Do not reopen completed screenshot/media work or Cloudflare routing.
+7. Keep issue #51 visible before production merchant volume increases because Redis is currently non-durable across redeploys.
+
+## Key links
+
+- Repo: https://github.com/yaussyross/SyncStock
+- Production: https://sync-stock-six.vercel.app
 - Shopify submission: https://apps.shopify.com/services/partner-app-submissions/6ad1f2ea53500a6202c9a046f6be56df/en
 - Shopify developer dashboard: https://dev.shopify.com/dashboard
 - QuickBooks sandbox: https://sandbox.qbo.intuit.com/
+- Issue #46: https://github.com/yaussyross/SyncStock/issues/46
+- Issue #49: https://github.com/yaussyross/SyncStock/issues/49
+- Issue #51: https://github.com/yaussyross/SyncStock/issues/51
