@@ -90,6 +90,15 @@ jobs:
       - name: Check migrated database matches schema
         run: npx prisma migrate diff --from-schema-datasource prisma/schema.prisma --to-schema-datamodel prisma/schema.prisma --exit-code
 
+      - name: Verify Data API roles have no app-table privileges
+        env:
+          PGPASSWORD: syncstock
+        shell: bash
+        run: |
+          forbidden_grants="$(psql -h 127.0.0.1 -U syncstock -d syncstock -At -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM information_schema.role_table_grants WHERE grantee IN ('anon','authenticated') AND table_schema = 'public';")"
+          echo "anon/authenticated public-table grants: $forbidden_grants"
+          test "$forbidden_grants" = "0"
+
       - name: Reconciliation smoke tests
         run: npm run test:reconciliation
 
