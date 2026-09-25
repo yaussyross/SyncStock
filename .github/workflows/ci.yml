@@ -123,6 +123,9 @@ jobs:
       - name: Embedded sync recovery UX
         run: npm run test:embedded-sync-recovery
 
+      - name: Durable queue recovery
+        run: npm run test:queue-recovery
+
       - name: Production build
         run: npm run build
 

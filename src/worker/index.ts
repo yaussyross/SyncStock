@@ -112,6 +112,60 @@ function signWorkerRequest(body: string, timestamp: string) {
     .toString("base64url");
 }
 
+type RecoverableJob = {
+  userId: string;
+  syncLogId: string;
+  attempts: number;
+  status: string;
+};
+
+async function recoverDurableJobs() {
+  try {
+    const body = JSON.stringify({ limit: 500 });
+    const timestamp = Date.now().toString();
+    const signature = signWorkerRequest(body, timestamp);
+
+    const response = await fetch(`${appUrl}/api/internal/recover-pending`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-syncstock-worker-timestamp": timestamp,
+        "x-syncstock-worker-signature": signature,
+      },
+      body,
+      signal: AbortSignal.timeout(30_000),
+    });
+
+    if (!response.ok) {
+      const responseBody = await response.text().catch(() => "");
+      throw new Error(
+        `Recovery endpoint returned ${response.status}${responseBody ? `: ${responseBody.slice(0, 500)}` : ""}`
+      );
+    }
+
+    const payload = await response.json() as { jobs?: RecoverableJob[] };
+    const jobs = Array.isArray(payload.jobs) ? payload.jobs : [];
+    let recovered = 0;
+
+    for (const job of jobs) {
+      const priorAttempts = Number.isFinite(job.attempts) ? Math.max(0, job.attempts) : 0;
+      const remainingAttempts = Math.max(1, 5 - priorAttempts);
+      await syncQueue.add(
+        "sync-order",
+        { userId: String(job.userId), syncLogId: String(job.syncLogId) },
+        { jobId: `sync-${job.syncLogId}`, attempts: remainingAttempts }
+      );
+      recovered += 1;
+    }
+
+    if (recovered > 0) {
+      console.log(`[worker] Recovered ${recovered} durable sync job(s) from Postgres state`);
+    }
+  } catch (error: any) {
+    console.error("[worker] Durable queue recovery failed:", error?.message || error);
+  }
+}
+
 const worker = new Worker(
   "order-sync",
   async (job) => {
@@ -188,10 +242,17 @@ const server = createServer(async (req, res) => {
 
 server.listen(port, "0.0.0.0", () => {
   console.log(`Sync worker started on port ${port}, waiting for jobs...`);
+  void recoverDurableJobs();
 });
+
+const recoveryTimer = setInterval(() => {
+  void recoverDurableJobs();
+}, 5 * 60 * 1000);
+recoveryTimer.unref();
 
 async function shutdown(signal: string) {
   console.log(`[worker] ${signal} received, shutting down`);
+  clearInterval(recoveryTimer);
   server.close();
   await worker.close();
   await syncQueue.close();

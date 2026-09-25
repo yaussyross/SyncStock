@@ -27,7 +27,8 @@
     "test:qbo-reconnect": "tsx scripts/qbo-reconnect-smoke.ts",
     "test:qbo-return-handle": "tsx scripts/qbo-return-handle-smoke.ts",
     "test:embedded-retry": "tsx scripts/embedded-retry-smoke.ts",
-    "test:embedded-sync-recovery": "tsx scripts/embedded-sync-recovery-smoke.ts"
+    "test:embedded-sync-recovery": "tsx scripts/embedded-sync-recovery-smoke.ts",
+    "test:queue-recovery": "tsx scripts/queue-recovery-smoke.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",
