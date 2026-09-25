@@ -15,6 +15,8 @@ const terms = read("src/app/terms/page.tsx");
 const billing = read("src/app/dashboard/billing/page.tsx");
 const feedback = read("src/app/feedback/page.tsx");
 const feedbackForm = read("src/components/FeedbackForm.tsx");
+const calculator = read("src/components/BookkeepingCalculator.tsx");
+const calculatorPage = read("src/app/tools/bookkeeping-cost/page.tsx");
 
 for (const p of [
   "src/app/privacy/page.tsx",
@@ -36,6 +38,8 @@ for (const [name, source] of [
   ["billing", billing],
   ["feedback", feedback],
   ["feedback form", feedbackForm],
+  ["bookkeeping calculator", calculator],
+  ["bookkeeping calculator page", calculatorPage],
 ] as const) {
   assert.doesNotMatch(
     source,
@@ -43,6 +47,8 @@ for (const [name, source] of [
     `stale beta copy found in ${name}`
   );
 }
+assert.match(calculator, /Start with 20 free orders/);
+assert.doesNotMatch(calculator, /still being verified before broad release/i);
 assert.match(signup, /Start with 20 free orders/);
 assert.match(login, /AbortController/);
 assert.match(embedded, /Ready to sync paid orders/);
