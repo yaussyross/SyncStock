@@ -4,7 +4,7 @@ import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
   title: "Shopify bookkeeping cost calculator | SyncStock",
-  description: "Estimate the time you spend entering Shopify orders and compare its value with SyncStock's founding subscription pricing. Free, no sign-in required.",
+  description: "Estimate the time you spend entering Shopify orders and compare its value with SyncStock's launch subscription pricing. Free, no sign-in required.",
 };
 
 export default function BookkeepingCostPage() {
