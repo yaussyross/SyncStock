@@ -4,7 +4,7 @@ export default function PrivacyPage() {
   return (
     <main className="container legal-doc">
       <h1>Privacy Policy</h1>
-      <p className="updated">Last updated: September 19, 2026</p>
+      <p className="updated">Last updated: September 28, 2026</p>
       <p>This Privacy Policy explains how SyncStock ("we," "us," "our") handles information when you use the SyncStock Shopify-to-QuickBooks service.</p>
 
       <h2>Information we process</h2>
@@ -42,7 +42,7 @@ export default function PrivacyPage() {
       <p>We may update this policy as the service changes. The current version and its effective date will remain available on this page.</p>
 
       <h2>Contact</h2>
-      <p>Privacy or data questions: support@syncstock.app</p>
+      <p>Privacy or data questions: yaussyross@gmail.com</p>
     </main>
   );
 }
