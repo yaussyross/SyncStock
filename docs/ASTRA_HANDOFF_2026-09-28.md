@@ -206,7 +206,7 @@ Outreach facts:
 
 Latest manual mailbox check: **no replies from these 11 prospects**.
 
-An hourly automation named **SyncStock Reply Watch** is enabled to watch replies, bounces, and opt-outs and respond to genuine interested prospects using verified product facts.
+An hourly automation named **SyncStock Reply Watch** exists but was **paused for the Astra handoff on Sep 28** so two agents do not operate the same inbox concurrently. Astra should explicitly re-enable or replace it when taking control.
 
 ## Latest completed PRs
 
