@@ -137,7 +137,7 @@ Supported narrow acceptance case: one paid order with mapped products. Refunds/c
 - [x] Three desktop screenshots are uploaded, including the successful #1007 sync.
 - [x] Feature media image is uploaded.
 - Reviewer screencast URL is provided.
-- Dedicated QuickBooks sandbox reviewer test-account credentials are provided.
+- QuickBooks sandbox reviewer invitation has been sent; activation and reviewer credentials still need to be completed and entered in Shopify.
 - The live Partner submission currently reports exactly two remaining issues: **Test account** and **Screencast URL**.
 - [x] Public support now uses the monitored `yaussyross@gmail.com` inbox; the previously non-delivering `support@syncstock.app` address has been removed from the public support/privacy/terms surfaces.
 
@@ -231,7 +231,7 @@ Already complete in the live listing:
 - Screenshot 3 represents the successful current-production sync.
 - All other listing sections are currently clear of submission-form errors.
 
-Ross deferred creation of the dedicated QuickBooks reviewer login until later. Do not send him back through completed screenshot, feature-media, Cloudflare email-routing, or generic testing-information steps. The public support route is now resolved through the monitored Gmail inbox.
+QuickBooks confirmed on September 24 that **Tessa** was invited as a regular user to **Sandbox Company US bd50**. The remaining reviewer-account work is to accept/activate that invitation with the dedicated reviewer login and enter the working credentials in Shopify. Do not send Ross back through completed screenshot, feature-media, Cloudflare email-routing, or generic testing-information steps. The public support route is now resolved through the monitored Gmail inbox.
 
 ## Verified production capture state — September 23
 
@@ -256,6 +256,6 @@ Verified production evidence:
 Order **#1006** remains a useful recovery example: it is safely blocked with `skipped_no_mapping` for **The Hidden Snowboard**, and an embedded retry was accepted after the recovery controls shipped.
 
 The remaining human-visible submission work is:
-1. Create/activate a dedicated QuickBooks sandbox reviewer login and enter it in **Test account**.
+1. Accept/activate the already-sent **Tessa** QuickBooks sandbox reviewer invitation and enter the working dedicated credentials in **Test account**.
 2. Record the reviewer screencast using the verified flow, host it at a URL that opens without reviewer sign-in, and enter that URL.
 3. Do not create or approve any real merchant charge during capture. Development-store plan selection may proceed only when Shopify clearly shows **$0 due**.
