@@ -1,6 +1,6 @@
 # Shopify App Store submission working sheet
 
-Last updated: September 24, 2026.
+Last updated: September 28, 2026.
 
 This file records factual listing copy and reviewer instructions for the public **SyncStock Production** app. It is a working sheet only; Shopify Partner Dashboard remains the source of truth for submission state.
 
@@ -139,7 +139,7 @@ Supported narrow acceptance case: one paid order with mapped products. Refunds/c
 - Reviewer screencast URL is provided.
 - Dedicated QuickBooks sandbox reviewer test-account credentials are provided.
 - The live Partner submission currently reports exactly two remaining issues: **Test account** and **Screencast URL**.
-- Support-mail routing is a separate operational follow-up and is not one of the current Partner submission errors.
+- [x] Public support now uses the monitored `yaussyross@gmail.com` inbox; the previously non-delivering `support@syncstock.app` address has been removed from the public support/privacy/terms surfaces.
 
 No paid ad spend, boosts, fees, or other cash outflow may be initiated without Ross's explicit approval.
 
@@ -210,7 +210,7 @@ Resources:
 
 - Privacy policy exists at `/privacy`.
 - Terms exist at `/terms`.
-- Merchant support exists at `/support`.
+- Merchant support exists at `/support` and routes to the monitored `yaussyross@gmail.com` inbox.
 - Setup documentation exists at `/docs`.
 - Public marketing copy describes an initial release rather than a beta to avoid submitting a product explicitly labeled as a beta.
 
@@ -231,7 +231,7 @@ Already complete in the live listing:
 - Screenshot 3 represents the successful current-production sync.
 - All other listing sections are currently clear of submission-form errors.
 
-Ross deferred creation of the dedicated QuickBooks reviewer login until later. Do not send him back through completed screenshot, feature-media, Cloudflare email-routing, or generic testing-information steps.
+Ross deferred creation of the dedicated QuickBooks reviewer login until later. Do not send him back through completed screenshot, feature-media, Cloudflare email-routing, or generic testing-information steps. The public support route is now resolved through the monitored Gmail inbox.
 
 ## Verified production capture state — September 23
 
