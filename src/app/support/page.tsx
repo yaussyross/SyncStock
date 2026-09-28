@@ -11,7 +11,7 @@ export default function SupportPage() {
 
       <h2>Get help</h2>
       <p>
-        Email <a href="mailto:support@syncstock.app">support@syncstock.app</a> with your store domain,
+        Email <a href="mailto:yaussyross@gmail.com">yaussyross@gmail.com</a> with your store domain,
         the order number involved, and a short description of what you expected to happen. Do not send
         passwords, access tokens, API secrets, payment-card numbers, or other credentials by email.
       </p>
