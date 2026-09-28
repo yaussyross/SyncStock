@@ -4,7 +4,7 @@ export default function TermsPage() {
   return (
     <main className="container legal-doc">
       <h1>Terms of Service</h1>
-      <p className="updated">Last updated: September 24, 2026</p>
+      <p className="updated">Last updated: September 28, 2026</p>
       <p>These Terms govern your access to and use of SyncStock. By installing, creating an account for, or using SyncStock, you agree to these Terms.</p>
 
       <h2>1. Service</h2>
@@ -41,7 +41,7 @@ export default function TermsPage() {
       <p>We may update these Terms as SyncStock changes. The current version and its effective date will remain available on this page. Material changes that affect active paid users will be communicated through a reasonable service channel when required.</p>
 
       <h2>12. Contact</h2>
-      <p>Questions about these Terms: support@syncstock.app</p>
+      <p>Questions about these Terms: yaussyross@gmail.com</p>
     </main>
   );
 }
