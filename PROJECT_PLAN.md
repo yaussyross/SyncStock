@@ -32,6 +32,16 @@ Ship a reliable public embedded Shopify app where one supported paid Shopify ord
 - [x] QuickBooks sandbox OAuth reconnected from the embedded public app after registering the canonical Vercel callback.
 - [x] Production TEST-store product mapping saved for `SYNCSTOCK-TEST-10` → QuickBooks `Services`.
 
+## September 29 reviewer preparation
+
+- Tessa sandbox reviewer login is active in Sandbox Company US bd50; Shopify test credentials saved and password confirmed by owner.
+- Shopify listing live recheck: only screencast URL remained missing. Existing listing media preserved; privacy URL corrected to the SyncStock policy.
+- TEST order #1009 recorded as Synced with Shopify $10.00 and QuickBooks $10.00 after QuickBooks reconnection.
+- Shopify-hosted plan selector shows Free to test, Solo current, and $0 for this development store; no new plan or charge approved.
+- Three-minute English-captioned reviewer video added at `public/review/syncstock-reviewer-2026-09-29.mp4`. Sign-in screens and unrelated tabs omitted.
+- Reply Watch re-enabled. No paid services purchased.
+- Submission itself remains pending until the hosted video URL is verified and Shopify checks are complete.
+
 ## Remaining public-launch gates
 
 ### 1. Shopify-controlled configuration
