@@ -10,8 +10,11 @@ export async function POST(req: NextRequest) {
   const topic = req.headers.get("x-shopify-topic");
   const deliveryId = req.headers.get("x-shopify-webhook-id") || crypto.randomUUID();
   const shopDomain = req.headers.get("x-shopify-shop-domain");
+  const hmac = req.headers.get("x-shopify-hmac-sha256");
+  const hmacValid = verifyShopifyWebhook(rawBodyBytes, hmac);
+  console.info("[shopify webhook diagnostic]", { route: "compliance", topic, shopDomain, hasHmac: Boolean(hmac), hmacValid });
 
-  if (!await verifyShopifyWebhook(rawBodyBytes, req.headers.get("x-shopify-hmac-sha256"))) {
+  if (!hmacValid) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
   if (!topic || !shopDomain) return NextResponse.json({ error: "Missing Shopify metadata" }, { status: 400 });
