@@ -26,3 +26,17 @@ Shopify preliminary/common-error and embedded-app checks are recorded complete. 
 The remaining live billing decline/cancel-return edge case is now verified: Solo was Current, Scale opened Shopify's free-to-test approval screen, Cancel returned to the plan selector, and Solo remained Current with no plan change or charge. Existing state-transition CI coverage also passes.
 
 The owner-controlled Shopify submission still requires final requirements attestations and the Submit for review action. Existing screenshots, media, reviewer setup, infrastructure, and successful sync acceptance should not be repeated unless Shopify presents a new explicit error.
+
+
+## Shopify configuration release — September 30
+
+- Shopify automated App Store checks were rerun and failed on mandatory compliance webhooks and webhook HMAC verification.
+- Active Shopify app version 6 was inspected in Dev Dashboard and contained only webhook API version `2026-07`; it did not contain the required compliance subscription configuration present in the repository.
+- Added controlled GitHub Actions workflow `.github/workflows/shopify-deploy.yml` in PR #65.
+- Owner created a Shopify App Automation Token and stored it in GitHub as repository secret `SHOPIFY_APP_AUTOMATION_TOKEN`; token value was not exposed in chat.
+- Re-ran deployment workflow attempt 2 successfully.
+- Shopify CLI confirmed: **New version released to users**.
+- Released Shopify version: `syncstock-productionn-5`.
+- Shopify Dev Dashboard version URL: https://dev.shopify.com/dashboard/233299512/apps/424848261121/versions/1150375559169
+- Release message: `Release mandatory compliance webhooks and canonical SyncStock configuration`.
+- Next verification gate: rerun Shopify Partner automated common-error checks and confirm compliance webhook + HMAC checks turn green before final requirements attestation/submission.
