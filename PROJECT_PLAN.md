@@ -46,11 +46,13 @@ Ship a reliable public embedded Shopify app where one supported paid Shopify ord
 
 September 30 update: hosted reviewer video is deployed and saved in the listing;
 the listing has zero reported issues and embedded capability is selected.
-Automated checks were started, but their final result is not yet verified.
+Owner-provided September 30 Partner screenshots show automated common-error checks and Embedded app checks completed with green checks.
 Live canonical AI self-review requirements were retrieved with owner-authorized
 web lookup after Shopify CLI fetch failed. See `docs/SHOPIFY_SELF_REVIEW_2026-09-30.md`.
 The review found and fixed manual domain entry and retained-account reinstall
-failures. Billing verification and Partner sign-in remain open; the app is Draft.
+failures. Shopify preliminary checks now appear complete. One local self-review
+item remains: live cancel/decline billing behavior. The app is still Draft until
+the final requirements attestations and Submit for review action are completed.
 The completed reviewer account, screencast, screenshots, and paid-test sync do
 not need to be repeated. Older unchecked items below are historical gates,
 not instructions to repeat completed work.
@@ -59,7 +61,7 @@ not instructions to repeat completed work.
 - [x] Shopify App Store developer registration completed; production public app is in Draft submission state.
 - [x] App icon, emergency developer contact, English primary listing language, and protected customer data declaration completed.
 - [x] App Store listing content, feature media, reviewer credentials, and required screenshots completed.
-- [ ] Run Shopify automated submission checks after listing/configuration is complete.
+- [x] Shopify automated common-error checks and Embedded app checks completed in the Partner dashboard.
 - [x] Embedded app capability selected. Final requirements attestations still need to be completed in Shopify before submission.
 - [x] Shopify App Pricing enabled with three public monthly plans: Solo $8/mo, Scale $29/mo, Empire $49/mo; all allow free use on partner/development stores.
 - [x] Production Shopify App Pricing catalog and Partner/API billing path verified for the current development-store flow.
