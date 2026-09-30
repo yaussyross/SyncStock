@@ -30,6 +30,17 @@ Goal: prepare qualified Shopify merchant prospects for outreach once App Store r
 | B | Cane Creek Cycling Components | canecreek.com | 42 employees / $5M–$10M | Contact not yet verified | Shopify retail + manufacturing; likely order/accounting reconciliation burden |
 | B | Dave's Guitar Shop | davesguitar.com | ~19 employees / $1M–$5M | Contact not yet verified | Independent Shopify retailer with broad SKU catalog |
 
+## No-cost public contact routes
+
+- Autobrush: customercare@autobrush.com
+- Naked & Thriving: hello@nakedandthriving.com
+- The Earthling Co.: hello@theearthlingco.com
+- A3 MERCH: hey@a3merch.com
+- First Lite: info@firstlite.com
+- Absolute Merch: no reliable public inbox found yet; use decision-maker LinkedIn/public site contact path after launch
+
+These are public business contact routes. Do not send install-focused outreach until the Shopify review blocker is cleared.
+
 ## Public profile links captured
 
 - Andrea Vargas: https://www.linkedin.com/in/andreajeaninevargas/
