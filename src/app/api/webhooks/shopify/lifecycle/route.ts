@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
   const topic = req.headers.get("x-shopify-topic");
 
   if (!await verifyShopifyWebhook(rawBodyBytes, hmac)) {
-    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
   if (!shopDomain || !deliveryId || !topic) {
     return NextResponse.json({ error: "Missing Shopify delivery metadata" }, { status: 400 });
