@@ -1,4 +1,4 @@
-import { verifyShopifyWebhook } from "@/lib/shopify-signatures";
+import { verifyShopifyWebhook } from "@/lib/shopify-webhook-signatures";
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
@@ -46,14 +46,15 @@ function refundDetails(payload: any) {
 }
 
 export async function POST(req: NextRequest) {
-  const rawBody = await req.text();
+  const rawBodyBytes = new Uint8Array(await req.arrayBuffer());
+  const rawBody = new TextDecoder().decode(rawBodyBytes);
   const hmac = req.headers.get("x-shopify-hmac-sha256");
   const shopDomain = req.headers.get("x-shopify-shop-domain");
   const deliveryId = req.headers.get("x-shopify-webhook-id");
   const eventId = req.headers.get("x-shopify-event-id");
   const topic = req.headers.get("x-shopify-topic");
 
-  if (!await verifyShopifyWebhook(rawBody, hmac)) {
+  if (!await verifyShopifyWebhook(rawBodyBytes, hmac)) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
   if (!shopDomain || !deliveryId || !topic) {
