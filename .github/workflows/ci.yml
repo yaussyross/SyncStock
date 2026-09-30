@@ -117,6 +117,9 @@ jobs:
       - name: Shopify webhook and OAuth signature verification
         run: npm run test:shopify-signatures
 
+      - name: Shopify App Store webhook contract
+        run: npx tsx scripts/shopify-app-review-webhooks-smoke.ts
+
       - name: Shopify reinstall account and token regression
         run: node --import tsx scripts/shopify-reinstall-smoke.ts
 

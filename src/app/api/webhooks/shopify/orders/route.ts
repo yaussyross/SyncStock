@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   const topic = req.headers.get("x-shopify-topic");
 
   if (!await verifyShopifyWebhook(rawBodyBytes, hmacHeader)) {
-    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
   if (!shopDomain || !shopDomain.endsWith(".myshopify.com") || !deliveryId) {
