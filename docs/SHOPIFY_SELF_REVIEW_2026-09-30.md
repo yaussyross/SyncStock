@@ -111,13 +111,17 @@ This is not a live Shopify uninstall/reinstall test.
 
 ## Submission state
 
-Reviewer credentials and public screencast are saved. Listing had zero issues,
-embedded capability was saved, and automated checks were started September 29.
-Their final result is not verified. September 30 Shopify account selection
-returned a generic sign-in error; no automatic retry loop was attempted.
-Self-review and final requirements attestations have not been checked and the
-app remains Draft. Existing screenshots, video, QBO production verification,
-Railway recovery, and reviewer account must not be needlessly repeated.
+Reviewer credentials and public screencast are saved. Listing has zero reported
+issues. Owner-provided Partner screenshots from September 30 show the
+Preliminary steps page with green checks for automated common-error checks,
+immediate authentication, immediate redirect to app UI, mandatory compliance
+webhooks, HMAC verification, valid TLS, the embedded capability, and Embedded
+app checks. The **Submit for review** action is visible.
+
+The app remains Draft because the final requirements attestations / submit
+action have not yet been completed. Existing screenshots, video, QBO production
+verification, Railway recovery, reviewer account, and automated checks must not
+be needlessly repeated.
 
 ## Resources
 
