@@ -44,6 +44,17 @@ Ship a reliable public embedded Shopify app where one supported paid Shopify ord
 
 ## Remaining public-launch gates
 
+September 30 update: hosted reviewer video is deployed and saved in the listing;
+the listing has zero reported issues and embedded capability is selected.
+Automated checks were started, but their final result is not yet verified.
+Live canonical AI self-review requirements were retrieved with owner-authorized
+web lookup after Shopify CLI fetch failed. See `docs/SHOPIFY_SELF_REVIEW_2026-09-30.md`.
+The review found and fixed manual domain entry and retained-account reinstall
+failures. Billing verification and Partner sign-in remain open; the app is Draft.
+The completed reviewer account, screencast, screenshots, and paid-test sync do
+not need to be repeated. Older unchecked items below are historical gates,
+not instructions to repeat completed work.
+
 ### 1. Shopify-controlled configuration
 - [x] Shopify App Store developer registration completed; production public app is in Draft submission state.
 - [x] App icon, emergency developer contact, English primary listing language, and protected customer data declaration completed.
