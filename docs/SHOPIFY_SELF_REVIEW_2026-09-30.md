@@ -7,9 +7,9 @@ on September 30. Owner explicitly authorized web lookup after CLI fetch failed.
 
 ## Summary
 
-- Likely passing: 29
+- Likely passing: 30
 - Likely failing after these fixes: 0
-- Needs review: 2
+- Needs review: 1
 - Groups skipped: 10
 
 This is the Shopify-selected subset checkable against local code, not official
@@ -19,16 +19,6 @@ uninstall was performed for this review.
 
 ## Requirements that need review
 
-### 1.2.1 Use Shopify App Pricing or the Shopify Billing API
-
-New embedded subscriptions use Shopify-hosted pricing. Stripe checkout defaults
-to HTTP 410 unless `BILLING_PROVIDER=stripe_legacy`. However, existing active
-Stripe subscriptions are explicitly preserved in `src/lib/shopify-billing.ts`,
-and the legacy portal remains available to accounts with Stripe customer IDs.
-The code does not prove whether any such paying merchants exist or whether an
-exception covers them. Confirm the live provider setting and legacy subscriber
-population before declaring compliance; do not cancel or migrate charges blindly.
-
 ### 1.2.2 Implement Shopify billing correctly
 
 Hosted pricing, active-subscription lookup, inactive handling, and plan mapping
@@ -36,6 +26,24 @@ exist. Prior no-charge development-store evidence shows Solo current. A live
 decline/cancel-and-return flow and resubscription after reinstall were not
 observed in this review. Check in a development store without accepting a paid
 charge. Do not uninstall the existing acceptance store merely to repeat tests.
+
+## Billing verification completed September 30
+
+### 1.2.1 Use Shopify App Pricing or the Shopify Billing API
+
+Production data was checked directly before changing code:
+- 3 total SyncStock user rows
+- 0 rows with a Stripe customer ID
+- 0 rows with a Stripe subscription ID
+- 0 potentially-live legacy Stripe subscriptions
+
+Because there is no legacy paying population to preserve, the public
+`/api/stripe/checkout` route is now permanently retired and always returns
+HTTP 410. It no longer contains Stripe Checkout session creation or a
+`BILLING_PROVIDER` override. New paid plans continue through Shopify-hosted App
+Pricing only. Historical Stripe webhook/portal support remains isolated for
+defensive handling of any recovered legacy metadata, but the current production
+database contains no such customer/subscription records.
 
 ## Fixed likely failures
 
@@ -69,7 +77,7 @@ This is not a live Shopify uninstall/reinstall test.
 | 1.1.14 | Likely passing | Direct app support, no freelancer marketplace. |
 | 1.1.15 | Likely passing | Refund events create review records; no alternative buyer refund processor. |
 | 1.1.16 | Likely passing | No capital lending feature. |
-| 1.2.1 | Needs review | Legacy billing population/configuration requires live confirmation. |
+| 1.2.1 | Likely passing | New subscriptions use Shopify App Pricing. Production DB audit on Sep 30 found 3 users, 0 Stripe customer IDs, 0 Stripe subscription IDs, and 0 potentially-live legacy subscriptions. The legacy Stripe checkout route is now permanently retired with HTTP 410 and CI guards against restoring Stripe checkout creation. |
 | 1.2.2 | Needs review | Live decline/cancel/reinstall billing behavior remains unobserved. |
 | 1.2.3 | Likely passing | In-app billing action opens Shopify-hosted plan selector. |
 | 2.2.1 | Likely passing | Shopify catalog, webhooks, token exchange and shop APIs used. |
