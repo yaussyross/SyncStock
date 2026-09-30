@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { ActiveShopifySubscription, planTierForShopifySubscription, shopifyPricingUrl } from "../src/lib/shopify-billing";
+import { ActiveShopifySubscription, planTierForShopifySubscription, shopifyBillingPatch, shopifyPricingUrl } from "../src/lib/shopify-billing";
 
 function subscription(
   amount: string,
@@ -92,3 +92,66 @@ assert.doesNotMatch(legacyCheckoutSource, /checkout\.sessions\.create/);
 assert.doesNotMatch(legacyCheckoutSource, /BILLING_PROVIDER/);
 
 console.log("Legacy Stripe checkout retirement guard passed.");
+
+
+const trialState = {
+  planTier: "trial",
+  subscriptionStatus: "trial",
+  quotaPeriodStart: null,
+  quotaPeriodEnd: null,
+  orderQuotaUsed: 7,
+};
+assert.equal(
+  shopifyBillingPatch(trialState, null),
+  null,
+  "declining or leaving Shopify pricing without a paid contract must preserve the free trial"
+);
+
+const paidState = {
+  planTier: "starter",
+  subscriptionStatus: "active",
+  quotaPeriodStart: new Date("2026-08-01T00:00:00Z"),
+  quotaPeriodEnd: new Date("2026-09-01T00:00:00Z"),
+  orderQuotaUsed: 42,
+};
+assert.deepEqual(
+  shopifyBillingPatch(paidState, null),
+  { subscriptionStatus: "inactive" },
+  "a paid user without an active Shopify subscription must lose paid entitlement"
+);
+
+const nextSolo = subscription("0.00", { handle: "solo" });
+const nextPatch = shopifyBillingPatch(paidState, nextSolo)!;
+assert.equal(nextPatch.planTier, "starter");
+assert.equal(nextPatch.subscriptionStatus, "active");
+assert.equal(nextPatch.orderQuotaUsed, 0, "a new billing period should reset paid usage");
+assert.equal(nextPatch.quotaPeriodStart?.toISOString(), "2026-09-01T00:00:00.000Z");
+assert.equal(nextPatch.quotaPeriodEnd?.toISOString(), "2026-10-01T00:00:00.000Z");
+
+const samePeriodState = {
+  ...paidState,
+  quotaPeriodStart: new Date("2026-09-01T00:00:00Z"),
+  quotaPeriodEnd: new Date("2026-10-01T00:00:00Z"),
+  orderQuotaUsed: 17,
+};
+const samePatch = shopifyBillingPatch(samePeriodState, nextSolo)!;
+assert.equal(
+  Object.prototype.hasOwnProperty.call(samePatch, "orderQuotaUsed"),
+  false,
+  "refreshing the same Shopify billing cycle must not reset consumed usage"
+);
+
+const cancelAtEnd = subscription("0.00", { handle: "solo" });
+cancelAtEnd.cancelAtEndOfCycle = true;
+const cancelPatch = shopifyBillingPatch(samePeriodState, cancelAtEnd)!;
+assert.equal(
+  cancelPatch.subscriptionStatus,
+  "active",
+  "cancel-at-end remains active through the current Shopify billing cycle"
+);
+
+const trialing = subscription("0.00", { handle: "solo" });
+trialing.trialEndsAt = "2026-10-15T00:00:00Z";
+assert.equal(shopifyBillingPatch(trialState, trialing)?.subscriptionStatus, "trialing");
+
+console.log("Shopify billing decline, cancellation, renewal, and resubscription state tests passed.");
