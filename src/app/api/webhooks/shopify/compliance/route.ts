@@ -1,16 +1,17 @@
-import { verifyShopifyWebhook } from "@/lib/shopify-signatures";
+import { verifyShopifyWebhook } from "@/lib/shopify-webhook-signatures";
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
 
 export async function POST(req: NextRequest) {
-  const rawBody = await req.text();
+  const rawBodyBytes = new Uint8Array(await req.arrayBuffer());
+  const rawBody = new TextDecoder().decode(rawBodyBytes);
   const topic = req.headers.get("x-shopify-topic");
   const deliveryId = req.headers.get("x-shopify-webhook-id") || crypto.randomUUID();
   const shopDomain = req.headers.get("x-shopify-shop-domain");
 
-  if (!await verifyShopifyWebhook(rawBody, req.headers.get("x-shopify-hmac-sha256"))) {
+  if (!await verifyShopifyWebhook(rawBodyBytes, req.headers.get("x-shopify-hmac-sha256"))) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
   if (!topic || !shopDomain) return NextResponse.json({ error: "Missing Shopify metadata" }, { status: 400 });
