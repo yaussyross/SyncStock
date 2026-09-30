@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import { ActiveShopifySubscription, planTierForShopifySubscription, shopifyPricingUrl } from "../src/lib/shopify-billing";
 
 function subscription(
@@ -82,3 +83,12 @@ assert.equal(
 );
 if (previousHandle === undefined) delete process.env.SHOPIFY_APP_HANDLE;
 else process.env.SHOPIFY_APP_HANDLE = previousHandle;
+
+
+const legacyCheckoutSource = fs.readFileSync("src/app/api/stripe/checkout/route.ts", "utf8");
+assert.match(legacyCheckoutSource, /status:\s*410/, "legacy Stripe checkout must remain retired");
+assert.match(legacyCheckoutSource, /billed through Shopify/i);
+assert.doesNotMatch(legacyCheckoutSource, /checkout\.sessions\.create/);
+assert.doesNotMatch(legacyCheckoutSource, /BILLING_PROVIDER/);
+
+console.log("Legacy Stripe checkout retirement guard passed.");
