@@ -170,9 +170,14 @@ export async function bootstrapEmbeddedShopifyInstall(idToken: string) {
   let userId = existingConnection?.userId;
 
   if (!userId) {
-    const user = await db.user.create({
-      data: {
-        email: syntheticShopEmail(shopDomain),
+    // Uninstall removes the connection, but retains the account until privacy
+    // redaction. Reuse it after a fresh verified token exchange on reinstall.
+    const email = syntheticShopEmail(shopDomain);
+    const user = await db.user.upsert({
+      where: { email },
+      update: {},
+      create: {
+        email,
         passwordHash: null,
       },
     });

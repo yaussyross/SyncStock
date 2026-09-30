@@ -114,6 +114,9 @@ jobs:
       - name: Shopify embedded ID token validation
         run: npm run test:shopify-auth
 
+      - name: Shopify reinstall account and token regression
+        run: node --import tsx scripts/shopify-reinstall-smoke.ts
+
       - name: Shopify API error payload normalization
         run: npm run test:shopify-errors
 
