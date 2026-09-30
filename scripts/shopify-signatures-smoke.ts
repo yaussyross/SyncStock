@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
-import { buildShopifyOAuthMessage, verifyShopifySignature, verifyShopifyWebhook } from "../src/lib/shopify-signatures";
+import { buildShopifyOAuthMessage, verifyShopifySignature } from "../src/lib/shopify-signatures";
+import { verifyShopifyWebhook } from "../src/lib/shopify-webhook-signatures";
 
 async function main() {
   process.env.SHOPIFY_API_SECRET = "  test-current  ";
@@ -9,7 +10,7 @@ async function main() {
   for (const secret of ["test-current", "test-previous"]) {
     const signature = createHmac("sha256", secret).update(message).digest();
     assert.equal(await verifyShopifySignature(message, signature), true);
-    assert.equal(await verifyShopifyWebhook(message, signature.toString("base64")), true);
+    assert.equal(verifyShopifyWebhook(Buffer.from(message, "utf8"), signature.toString("base64")), true);
     assert.equal(await verifyShopifySignature(message + "tampered", signature), false);
   }
 
@@ -26,7 +27,12 @@ async function main() {
   );
 
   assert.equal(await verifyShopifySignature(message, createHmac("sha256", "untrusted").update(message).digest()), false);
-  assert.equal(await verifyShopifyWebhook(message, "invalid"), false);
+  assert.equal(verifyShopifyWebhook(Buffer.from(message, "utf8"), "invalid"), false);
+
+  const rawWebhook = Buffer.from('{"note":"café","line":"a\\r\\nb"}\\r\\n', "utf8");
+  const rawWebhookHmac = createHmac("sha256", "test-current").update(rawWebhook).digest("base64");
+  assert.equal(verifyShopifyWebhook(rawWebhook, rawWebhookHmac), true);
+  assert.equal(verifyShopifyWebhook(Buffer.concat([rawWebhook, Buffer.from(" ")]), rawWebhookHmac), false);
   delete process.env.SHOPIFY_API_SECRET_PREVIOUS;
   assert.equal(await verifyShopifySignature(message, createHmac("sha256", "test-previous").update(message).digest()), false);
   delete process.env.SHOPIFY_API_SECRET;
