@@ -76,6 +76,51 @@ export function planTierForShopifySubscription(subscription: ActiveShopifySubscr
   return null;
 }
 
+
+export interface ShopifyBillingUserState {
+  planTier: string;
+  subscriptionStatus: string;
+  quotaPeriodStart: Date | null;
+  quotaPeriodEnd: Date | null;
+  orderQuotaUsed: number;
+}
+
+export interface ShopifyBillingPatch {
+  planTier?: ShopifyPlanTier;
+  subscriptionStatus?: string;
+  quotaPeriodStart?: Date | null;
+  quotaPeriodEnd?: Date | null;
+  orderQuotaUsed?: number;
+}
+
+export function shopifyBillingPatch(
+  current: ShopifyBillingUserState,
+  subscription: ActiveShopifySubscription | null,
+): ShopifyBillingPatch | null {
+  if (!subscription) {
+    return current.planTier === "trial" ? null : { subscriptionStatus: "inactive" };
+  }
+
+  const planTier = planTierForShopifySubscription(subscription);
+  if (!planTier) {
+    throw new Error("Active Shopify subscription does not match the SyncStock $8/$29/$49 monthly catalog");
+  }
+
+  const periodStart = subscription.currentBillingCycle ? new Date(subscription.currentBillingCycle.startTime) : null;
+  const periodEnd = subscription.currentBillingCycle ? new Date(subscription.currentBillingCycle.endTime) : null;
+  const periodAdvanced = Boolean(
+    periodStart && (!current.quotaPeriodStart || periodStart.getTime() > current.quotaPeriodStart.getTime())
+  );
+
+  return {
+    planTier,
+    subscriptionStatus: subscription.trialEndsAt ? "trialing" : "active",
+    quotaPeriodStart: periodStart ?? current.quotaPeriodStart,
+    quotaPeriodEnd: periodEnd ?? current.quotaPeriodEnd,
+    ...(periodAdvanced ? { orderQuotaUsed: 0 } : {}),
+  };
+}
+
 export async function fetchActiveShopifySubscription(shopId: string): Promise<ActiveShopifySubscription | null> {
   const config = requiredPartnerConfig();
   if (!config) throw new Error("Shopify Partner API billing credentials are not configured");
@@ -153,34 +198,21 @@ export async function refreshShopifyBillingForUser(userId: string) {
   const subscription = await fetchActiveShopifySubscription(shopId);
 
   if (!subscription) {
-    if (user.planTier !== "trial") {
-      await db.user.update({ where: { id: userId }, data: { subscriptionStatus: "inactive" } });
-    }
+    const patch = shopifyBillingPatch(user, null);
+    if (patch) await db.user.update({ where: { id: userId }, data: patch });
     return { configured: true as const, source: "shopify" as const, active: false as const };
   }
 
   const planTier = planTierForShopifySubscription(subscription);
   if (!planTier) throw new Error("Active Shopify subscription does not match the SyncStock $8/$29/$49 monthly catalog");
-
   const periodStart = subscription.currentBillingCycle ? new Date(subscription.currentBillingCycle.startTime) : null;
   const periodEnd = subscription.currentBillingCycle ? new Date(subscription.currentBillingCycle.endTime) : null;
-  const status = subscription.trialEndsAt ? "trialing" : "active";
 
   await db.$transaction(async (tx) => {
     const current = await tx.user.findUniqueOrThrow({ where: { id: userId } });
-    const periodAdvanced = Boolean(
-      periodStart && (!current.quotaPeriodStart || periodStart.getTime() > current.quotaPeriodStart.getTime())
-    );
-    await tx.user.update({
-      where: { id: userId },
-      data: {
-        planTier,
-        subscriptionStatus: status,
-        quotaPeriodStart: periodStart ?? current.quotaPeriodStart,
-        quotaPeriodEnd: periodEnd ?? current.quotaPeriodEnd,
-        ...(periodAdvanced ? { orderQuotaUsed: 0 } : {}),
-      },
-    });
+    const patch = shopifyBillingPatch(current, subscription);
+    if (!patch) throw new Error("Active Shopify subscription did not produce a billing update");
+    await tx.user.update({ where: { id: userId }, data: patch });
   });
 
   return {

@@ -22,7 +22,7 @@ Ship a reliable public embedded Shopify app where one supported paid Shopify ord
 - [x] Product-mapping removal regression fixed.
 - [x] Shopify lifecycle/compliance handlers for uninstall and required redaction/data-request topics.
 - [x] Refund/cancellation events captured for merchant review.
-- [x] Shopify-hosted App Pricing architecture for new merchants; Stripe retained only for legacy compatibility.
+- [x] Shopify-hosted App Pricing architecture for new merchants; public Stripe checkout permanently retired after production DB verified zero legacy Stripe customers/subscriptions.
 - [x] CI covers database migration, reconciliation, security/quota, billing ordering, Shopify billing mapping, Shopify auth, API error normalization, mapping removal, and production build.
 - [x] Public Terms/Privacy and Shopify embedded config updated for the current architecture.
 - [x] Embedded App Home separated from the public dark marketing theme and restyled for a familiar Shopify-admin surface.
@@ -46,11 +46,13 @@ Ship a reliable public embedded Shopify app where one supported paid Shopify ord
 
 September 30 update: hosted reviewer video is deployed and saved in the listing;
 the listing has zero reported issues and embedded capability is selected.
-Automated checks were started, but their final result is not yet verified.
+Owner-provided September 30 Partner screenshots show automated common-error checks and Embedded app checks completed with green checks.
 Live canonical AI self-review requirements were retrieved with owner-authorized
 web lookup after Shopify CLI fetch failed. See `docs/SHOPIFY_SELF_REVIEW_2026-09-30.md`.
 The review found and fixed manual domain entry and retained-account reinstall
-failures. Billing verification and Partner sign-in remain open; the app is Draft.
+failures. Shopify preliminary checks now appear complete. One local self-review
+item remains: live cancel/decline billing behavior. The app is still Draft until
+the final requirements attestations and Submit for review action are completed.
 The completed reviewer account, screencast, screenshots, and paid-test sync do
 not need to be repeated. Older unchecked items below are historical gates,
 not instructions to repeat completed work.
@@ -58,12 +60,12 @@ not instructions to repeat completed work.
 ### 1. Shopify-controlled configuration
 - [x] Shopify App Store developer registration completed; production public app is in Draft submission state.
 - [x] App icon, emergency developer contact, English primary listing language, and protected customer data declaration completed.
-- [ ] Finish App Store listing content and required real app screenshots.
-- [ ] Run Shopify automated submission checks after listing/configuration is complete.
-- [ ] Select the app capabilities required by Shopify review and complete the final App Store requirements self-review.
+- [x] App Store listing content, feature media, reviewer credentials, and required screenshots completed.
+- [x] Shopify automated common-error checks and Embedded app checks completed in the Partner dashboard.
+- [x] Embedded app capability selected. Final requirements attestations still need to be completed in Shopify before submission.
 - [x] Shopify App Pricing enabled with three public monthly plans: Solo $8/mo, Scale $29/mo, Empire $49/mo; all allow free use on partner/development stores.
-- [ ] Verify production Partner/App Pricing identifiers and Partner API permission.
-- [ ] Run an authorized no-charge development-store flow: embedded App Home → QuickBooks connect → mapping → Shopify-hosted plan selection → paid test order → QuickBooks reconciliation. Embedded App Home, QuickBooks connection, one product mapping, and the public plan catalog are verified; plan selection and paid-order reconciliation remain.
+- [x] Production Shopify App Pricing catalog and Partner/API billing path verified for the current development-store flow.
+- [x] Authorized no-charge development-store flow completed: embedded App Home → QuickBooks connect → mapping → Shopify-hosted plan selector showing $0/free-to-test → paid TEST order #1009 → $10.00/$10.00 reconciliation.
 - [ ] Submit for Shopify App Store review only after the automated checks and billing flow pass.
 
 ### 2. Broader accounting acceptance
@@ -77,7 +79,7 @@ not instructions to repeat completed work.
 - [ ] Refund/cancellation review workflow.
 
 ### 3. Operational readiness
-- [ ] Confirm `support@syncstock.app` is actually monitored.
+- [x] Public support route uses the monitored `yaussyross@gmail.com` inbox. The non-delivering `support@syncstock.app` address is no longer shown on public support/legal surfaces.
 - [ ] Remove or unlink obsolete duplicate Vercel project `sync-stock-s5j9` when practical; it is non-production status noise, not a runtime blocker.
 - [ ] Review encryption/key rotation history before broader launch.
 - [ ] Add broader structured monitoring as beta volume increases.
