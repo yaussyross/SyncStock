@@ -53,8 +53,10 @@ export async function POST(req: NextRequest) {
   const deliveryId = req.headers.get("x-shopify-webhook-id");
   const eventId = req.headers.get("x-shopify-event-id");
   const topic = req.headers.get("x-shopify-topic");
+  const hmacValid = verifyShopifyWebhook(rawBodyBytes, hmac);
+  console.info("[shopify webhook diagnostic]", { route: "lifecycle", topic, shopDomain, hasHmac: Boolean(hmac), hmacValid });
 
-  if (!await verifyShopifyWebhook(rawBodyBytes, hmac)) {
+  if (!hmacValid) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
   if (!shopDomain || !deliveryId || !topic) {
