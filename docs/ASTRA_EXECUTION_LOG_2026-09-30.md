@@ -23,6 +23,6 @@ Canonical execution chat takeover checkpoint.
 
 Shopify preliminary/common-error and embedded-app checks are recorded complete. Listing assets, reviewer credentials, screencast, and the no-charge development-store paid-order acceptance are complete.
 
-One local self-review item remains unobserved live: billing decline/cancel-and-return / resubscription edge behavior. Code-level state-transition coverage is present and CI passes.
+The remaining live billing decline/cancel-return edge case is now verified: Solo was Current, Scale opened Shopify's free-to-test approval screen, Cancel returned to the plan selector, and Solo remained Current with no plan change or charge. Existing state-transition CI coverage also passes.
 
 The owner-controlled Shopify submission still requires final requirements attestations and the Submit for review action. Existing screenshots, media, reviewer setup, infrastructure, and successful sync acceptance should not be repeated unless Shopify presents a new explicit error.
