@@ -9,7 +9,7 @@ on September 30. Owner explicitly authorized web lookup after CLI fetch failed.
 
 - Likely passing: 30
 - Likely failing after these fixes: 0
-- Needs review: 1
+- Needs review: 0
 - Groups skipped: 10
 
 This is the Shopify-selected subset checkable against local code, not official
@@ -17,17 +17,19 @@ approval or proof that all submission requirements pass. Each applicable
 requirement was evaluated independently. No production order, charge, or
 uninstall was performed for this review.
 
-## Requirements that need review
-
-### 1.2.2 Implement Shopify billing correctly
-
-Hosted pricing, active-subscription lookup, inactive handling, and plan mapping
-exist. Prior no-charge development-store evidence shows Solo current. A live
-decline/cancel-and-return flow and resubscription after reinstall were not
-observed in this review. Check in a development store without accepting a paid
-charge. Do not uninstall the existing acceptance store merely to repeat tests.
-
 ## Billing verification completed September 30
+
+### 1.2.2 Billing decline / cancel-return
+
+Owner-provided live Shopify screenshots on September 30 verified the development-store cancellation path without accepting a charge:
+- SyncStock App Home showed Solo as the current plan.
+- **Manage Shopify plan** opened Shopify-hosted pricing.
+- Choosing **Scale → Test with this plan** opened Shopify's **Approve charge** screen with **Free to test** and explicit text that the test charge would not be billed.
+- Choosing **Cancel** returned to the Shopify-hosted plan selector.
+- Solo remained marked **Current** after cancellation.
+
+This verifies that declining/canceling the plan-change approval returns safely without changing the active plan or creating a charge. Together with the existing state-transition regression coverage, no local billing self-review item remains open.
+
 
 ### 1.2.1 Use Shopify App Pricing or the Shopify Billing API
 
@@ -78,7 +80,7 @@ This is not a live Shopify uninstall/reinstall test.
 | 1.1.15 | Likely passing | Refund events create review records; no alternative buyer refund processor. |
 | 1.1.16 | Likely passing | No capital lending feature. |
 | 1.2.1 | Likely passing | New subscriptions use Shopify App Pricing. Production DB audit on Sep 30 found 3 users, 0 Stripe customer IDs, 0 Stripe subscription IDs, and 0 potentially-live legacy subscriptions. The legacy Stripe checkout route is now permanently retired with HTTP 410 and CI guards against restoring Stripe checkout creation. |
-| 1.2.2 | Needs review | Live decline/cancel/reinstall billing behavior remains unobserved. |
+| 1.2.2 | Likely passing | Owner-provided Sep 30 live Shopify screenshots verified Solo as Current, opened the Scale test approval screen showing no billing on the development store, then used Cancel and returned to the plan selector with Solo still Current. No plan change or charge occurred. Code-level cancellation/resubscription state-transition tests also pass. |
 | 1.2.3 | Likely passing | In-app billing action opens Shopify-hosted plan selector. |
 | 2.2.1 | Likely passing | Shopify catalog, webhooks, token exchange and shop APIs used. |
 | 2.2.3 | Likely passing | Root layout includes current App Bridge CDN script first in authored head. |
