@@ -5,7 +5,7 @@ Ship a reliable public embedded Shopify app where one supported paid Shopify ord
 
 ## Source of truth
 - GitHub repository `yaussyross/SyncStock` is canonical.
-- `docs/LAUNCH.md` is the current launch record.
+- This plan and the latest dated self-review/submission evidence are the current launch record; `docs/LAUNCH.md` contains historical milestones.
 - Older handoffs, screenshots, and temporary notes are reference material only.
 
 ## Completed core path
@@ -40,33 +40,34 @@ Ship a reliable public embedded Shopify app where one supported paid Shopify ord
 - Shopify-hosted plan selector shows Free to test, Solo current, and $0 for this development store; no new plan or charge approved.
 - Three-minute English-captioned reviewer video added at `public/review/syncstock-reviewer-2026-09-29.mp4`. Sign-in screens and unrelated tabs omitted.
 - Reply Watch re-enabled. No paid services purchased.
-- Submission itself remains pending until the hosted video URL is verified and Shopify checks are complete.
+- September 29 status was pending; the October 1 submission update below supersedes it.
 
 ## Remaining public-launch gates
 
-September 30 update: hosted reviewer video is deployed and saved in the listing;
-the listing has zero reported issues and embedded capability is selected.
-Owner-provided September 30 Partner screenshots show automated common-error checks and Embedded app checks completed with green checks.
-Live canonical AI self-review requirements were retrieved with owner-authorized
-web lookup after Shopify CLI fetch failed. See `docs/SHOPIFY_SELF_REVIEW_2026-09-30.md`.
-The review found and fixed manual domain entry and retained-account reinstall
-failures. Shopify preliminary checks now appear complete. One local self-review
-item remains: live cancel/decline billing behavior. The app is still Draft until
-the final requirements attestations and Submit for review action are completed.
-The completed reviewer account, screencast, screenshots, and paid-test sync do
-not need to be repeated. Older unchecked items below are historical gates,
-not instructions to repeat completed work.
+October 1 update: Shopify's live HMAC checker reported HTTP 404 at
+`/app/api/webhooks/shopify/compliance`, although the handler lives at
+`/api/webhooks/shopify/compliance`. PR #72 changed the app-specific webhook
+subscriptions to absolute production HTTPS URLs and updated the contract guard.
+CI passed, and the controlled Shopify configuration release workflow succeeded.
+The rerun of automated checks passed in Partners. The September 30 local
+self-review (`docs/SHOPIFY_SELF_REVIEW_2026-09-30.md`) found no remaining local
+failures after live billing cancel-return verification. The self-review
+acknowledgment was completed, and Shopify accepted the App Store submission on
+October 1. Live status: **Submitted — assigning a reviewer**. Approval and
+publication remain pending Shopify review; monitor the submission contact inbox
+for reviewer questions. Reviewer account, screencast, media, screenshots,
+production QBO sync, and infrastructure work are complete and need not be redone.
 
 ### 1. Shopify-controlled configuration
-- [x] Shopify App Store developer registration completed; production public app is in Draft submission state.
+- [x] Shopify App Store developer registration completed; production public app was submitted for review on October 1.
 - [x] App icon, emergency developer contact, English primary listing language, and protected customer data declaration completed.
 - [x] App Store listing content, feature media, reviewer credentials, and required screenshots completed.
 - [x] Shopify automated common-error checks and Embedded app checks completed in the Partner dashboard.
-- [x] Embedded app capability selected. Final requirements attestations still need to be completed in Shopify before submission.
+- [x] Embedded app capability selected; local self-review and requirements acknowledgment completed.
 - [x] Shopify App Pricing enabled with three public monthly plans: Solo $8/mo, Scale $29/mo, Empire $49/mo; all allow free use on partner/development stores.
 - [x] Production Shopify App Pricing catalog and Partner/API billing path verified for the current development-store flow.
 - [x] Authorized no-charge development-store flow completed: embedded App Home → QuickBooks connect → mapping → Shopify-hosted plan selector showing $0/free-to-test → paid TEST order #1009 → $10.00/$10.00 reconciliation.
-- [ ] Submit for Shopify App Store review only after the automated checks and billing flow pass.
+- [x] Submitted for Shopify App Store review after the automated checks and billing flow passed; awaiting reviewer assignment.
 
 ### 2. Broader accounting acceptance
 - [ ] Shipping / discount / tax combinations.
