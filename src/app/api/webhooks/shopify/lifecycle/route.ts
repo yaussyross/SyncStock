@@ -106,7 +106,9 @@ export async function POST(req: NextRequest) {
         create: { shopDomain, userId: connection.userId },
       }),
       db.productMapping.deleteMany({ where: { userId: connection.userId } }),
-      db.shopifyConnection.delete({ where: { id: connection.id } }),
+      // Another uninstall delivery can remove this installation after our read.
+      // Treat an already-deleted row as success without deleting a newer install.
+      db.shopifyConnection.deleteMany({ where: { id: connection.id } }),
       db.webhookDelivery.update({
         where: { deliveryId },
         data: { status: "ignored", processedAt: new Date(), error: "Shopify app uninstalled; access token and mappings removed" },
