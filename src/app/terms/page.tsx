@@ -4,7 +4,7 @@ export default function TermsPage() {
   return (
     <main className="container legal-doc">
       <h1>Terms of Service</h1>
-      <p className="updated">Last updated: September 28, 2026</p>
+      <p className="updated">Last updated: October 3, 2026</p>
       <p>These Terms govern your access to and use of SyncStock. By installing, creating an account for, or using SyncStock, you agree to these Terms.</p>
 
       <h2>1. Service</h2>
@@ -14,7 +14,7 @@ export default function TermsPage() {
       <p>You are responsible for your Shopify and QuickBooks accounts, the accuracy of product mappings and business information you provide, reviewing records created by the service, maintaining appropriate backups and accounting controls, and complying with laws and third-party platform terms that apply to your business.</p>
 
       <h2>3. Plans, trial, and billing</h2>
-      <p>New accounts begin with the published free-order allowance. New paid Shopify app subscriptions are billed through Shopify using the plan and billing interval shown before approval. You can manage or cancel the app subscription through Shopify. Any legacy SyncStock subscription previously created through Stripe may remain on its existing billing arrangement until it is migrated or cancelled. SyncStock does not charge a new paid plan without the approval required by the applicable billing platform.</p>
+      <p>New accounts receive their first 20 successful order syncs free, once per account. This free allowance does not renew or reset after cancellation. Each successfully synced order counts once; duplicate deliveries and retries do not count again. New paid plans are Solo ($9 for up to 100 orders), Scale ($19 for up to 250 orders), and Empire ($29 for up to 1,000 orders), each per Shopify 30-day billing cycle. Sync pauses when the applicable order cap is reached; there are no overage charges. Paid allowances reset with the next billing cycle. New paid Shopify app subscriptions are billed through Shopify using the plan and billing interval shown before approval. You can manage or cancel the app subscription through Shopify. Existing Shopify and legacy Stripe subscriptions retain their approved entitlements until an approved plan change or migration, or cancellation. Legacy Stripe subscriptions may remain on their existing billing arrangement. SyncStock does not charge a new paid plan without the approval required by the applicable billing platform.</p>
 
       <h2>4. Third-party services</h2>
       <p>SyncStock depends on Shopify, QuickBooks Online, and infrastructure providers. Their services, availability, APIs, and terms are outside our control. You authorize SyncStock to exchange the data needed to provide the integration after you connect those services.</p>

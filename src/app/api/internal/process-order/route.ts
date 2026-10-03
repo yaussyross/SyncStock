@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { processOrderSync } from "@/lib/sync";
 import { db } from "@/lib/db";
 import { ensureFreshShopifyConnection, fetchShopifyOrderForRetry } from "@/lib/shopify";
+import { ensureCurrentBillingPeriod } from "@/lib/shopify-billing";
+import { isReservedRecovery } from "@/lib/quota";
 
 const WORKER_SIGNING_PUBLIC_KEY_PEM = `-----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEAG9flPogWlcoP1emNdR4o0KtjvuqQPONcUpYQqydWYag=
@@ -73,9 +75,19 @@ export async function POST(req: NextRequest) {
 
   const log = await db.syncLog.findFirst({
     where: { id: String(syncLogId), userId: String(userId) },
-    select: { shopifyOrderId: true },
+    select: { shopifyOrderId: true, quotaReserved: true, qboWriteState: true },
   });
   if (!log) return NextResponse.json({ error: "Sync log not found" }, { status: 404 });
+
+  // A queued job can cross the monthly boundary while no merchant is online.
+  const user = await db.user.findUnique({ where: { id: String(userId) } });
+  if (!user) return NextResponse.json({ error: "Account not found" }, { status: 404 });
+  try {
+    if (!isReservedRecovery(log)) await ensureCurrentBillingPeriod(user);
+  } catch (error) {
+    console.warn("[processor billing] Could not verify renewal", error);
+    return NextResponse.json({ error: "Temporary billing verification failure" }, { status: 503 });
+  }
 
   const connection = await ensureFreshShopifyConnection(String(userId));
 

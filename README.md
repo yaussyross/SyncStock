@@ -18,12 +18,18 @@ SyncStock is a reliability-first Shopify → QuickBooks Online micro-SaaS. The i
 
 ## Pricing
 
-- **Solo — $8/mo:** up to 200 orders/month
-- **Scale — $29/mo:** up to 1,000 orders/month
-- **Empire — $49/mo:** unlimited orders
-- Trial: first 20 synced orders, no card required
+Approved catalog for the pending coordinated rollout:
 
-New public-app merchants are billed through Shopify. The legacy Stripe plan keys remain in the codebase only for backward compatibility and migration safety.
+- **Solo — $9 per Shopify 30-day billing cycle:** up to 100 orders
+- **Scale — $19 per Shopify 30-day billing cycle:** up to 250 orders
+- **Empire — $29 per Shopify 30-day billing cycle:** up to 1,000 orders
+- Trial: first 20 successful order syncs free, once per account, with no card required
+- Each successfully synced order counts once; duplicate deliveries and retries do not count again.
+- Sync pauses at the cap, with no overage charges. Paid allowances reset with the next billing cycle; cancellation does not reset the one-time trial.
+
+**Rollout status:** These repository changes are draft work, not evidence of a production or billing-provider update. The last verified Shopify catalog remains Solo $8/200 orders, Scale $29/1,000 orders, and Empire $49/unlimited. Coordinate Shopify App Pricing, deployed application behavior, and listing copy before making the new catalog live. Verify fresh provider state before rollout.
+
+New public-app merchants are billed through Shopify. Existing legacy plan keys and their entitlements remain for backward compatibility and migration safety; this catalog change does not silently convert existing subscriptions.
 
 ## Stack
 

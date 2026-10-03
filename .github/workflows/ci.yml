@@ -111,6 +111,19 @@ jobs:
       - name: Shopify App Pricing catalog mapping
         run: npm run test:shopify-billing
 
+      - name: Repricing and unattended renewal regression
+        run: npm run test:repricing
+
+      - name: Atomic quota concurrency and recovery
+        env:
+          QUOTA_TEST_DATABASE_URL: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public
+        run: npm run test:quota-concurrency
+
+      - name: Retained queue quota recovery with Redis
+        env:
+          QUOTA_TEST_REDIS_URL: redis://127.0.0.1:6379
+        run: npm run test:queue-quota
+
       - name: Shopify embedded ID token validation
         run: npm run test:shopify-auth
 

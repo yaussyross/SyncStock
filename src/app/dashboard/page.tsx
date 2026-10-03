@@ -35,6 +35,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   );
   const readyForMappings = Boolean(shopifyConn && qboConn);
   const paidPlan = user.planTier !== "trial";
+  const usagePeriodLabel = paidPlan
+    ? user.stripeSubscriptionId ? "successful order syncs this billing period" : "successful order syncs this Shopify 30-day billing cycle"
+    : "successful order syncs in your one-time trial";
   const billingHealthy = !paidPlan || isSubscriptionActive(user.subscriptionStatus);
 
   return (
@@ -86,7 +89,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         <div className="card">
           <div className="section-kicker">PLAN</div>
           <strong style={{ display: "block", fontSize: 20, marginTop: 8 }}>{PLAN_LABELS[user.planTier] ?? user.planTier}</strong>
-          <div style={{ color: "var(--paper-dim)", marginTop: 4 }}>{user.orderQuotaUsed} / {limit === Infinity ? "∞" : limit} orders synced this billing period</div>
+          <div style={{ color: "var(--paper-dim)", marginTop: 4 }}>{user.orderQuotaUsed} / {limit === Infinity ? "∞" : limit} {usagePeriodLabel}</div>
+          <div style={{ color: "var(--paper-dim)", marginTop: 4, fontSize: 13 }}>Each order counts once, including duplicate deliveries and retries. Sync pauses at the cap with no overage charges.</div>
           {paidPlan && user.quotaPeriodEnd && (
             <div style={{ color: "var(--paper-dim)", marginTop: 4, fontSize: 13 }}>Current period ends {user.quotaPeriodEnd.toLocaleDateString()}</div>
           )}
