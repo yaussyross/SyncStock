@@ -19,7 +19,7 @@ export default function BookkeepingCostPage() {
       <BookkeepingCalculator />
       <section className="section" style={{ maxWidth: 800 }}>
         <h2>How the estimate works</h2>
-        <p>Monthly hours = orders × minutes per order ÷ 60. Potential time recovered = monthly hours × the percentage you enter. We multiply that time by your hourly value, then subtract the plan price for your order volume.</p>
+        <p>Hours per Shopify 30-day billing cycle = orders × minutes per order ÷ 60. Potential time recovered = those hours × the percentage you enter. We multiply that time by your hourly value, then subtract the plan price when a plan covers your order volume. Above 1,000 orders per cycle, no available plan or subscription-adjusted estimate is shown.</p>
         <p>The calculator runs in your browser and does not ask for store or customer data. It does not inspect your books, validate your accounting, or predict product performance.</p>
       </section>
     </main>

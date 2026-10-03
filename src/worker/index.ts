@@ -3,6 +3,7 @@ import { createServer } from "node:http";
 import { Worker } from "bullmq";
 import { createRemoteJWKSet, decodeJwt, jwtVerify } from "jose";
 import { connection, syncQueue } from "../lib/worker-queue";
+import { retryRetainedQueueJob } from "../lib/recover-queue-job";
 
 function requireEnv(name: string) {
   const value = process.env[name];
@@ -148,6 +149,10 @@ async function recoverDurableJobs() {
     let recovered = 0;
 
     for (const job of jobs) {
+      if (await retryRetainedQueueJob(syncQueue, `sync-${job.syncLogId}`)) {
+        recovered += 1;
+        continue;
+      }
       const priorAttempts = Number.isFinite(job.attempts) ? Math.max(0, job.attempts) : 0;
       const remainingAttempts = Math.max(1, 5 - priorAttempts);
       await syncQueue.add(

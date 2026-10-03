@@ -56,8 +56,12 @@ export default function DocsPage() {
 
       <h2>Billing</h2>
       <p>
-        New paid subscriptions use Shopify-hosted App Pricing. Current plan information and plan changes are
-        managed through Shopify.
+        New paid subscriptions use Shopify-hosted App Pricing: Solo is $9 for up to 100 orders, Scale is
+        $19 for up to 250 orders, and Empire is $29 for up to 1,000 orders per Shopify 30-day billing cycle.
+        Your first 20 successful order syncs are free, once per account. Each successfully synced order
+        counts once; duplicate deliveries and retries do not count again. Sync pauses at the cap with no
+        overage charges. Paid allowances reset with the next billing cycle; the free allowance does not
+        renew or reset after cancellation. Manage your plan through Shopify.
       </p>
 
       <h2>Privacy</h2>

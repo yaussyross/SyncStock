@@ -56,11 +56,18 @@ Do not change unrelated mappings solely for the recording.
 
 If the store is eligible for no-charge development testing, click **Manage Shopify plan** and briefly show the Shopify-hosted plan selector.
 
-Show:
-- Solo — $8/month
-- Scale — $29/month
-- Empire — $49/month
-- Development-store/no-charge state if Shopify displays it.
+Show the actual provider state and development-store/no-charge status. The last verified catalog was Solo $8/month, Scale $29/month, and Empire $49/month. Do not narrate the approved replacement catalog as live before rollout is verified.
+
+After the coordinated repricing rollout, the intended capture is:
+- Solo — $9 per Shopify 30-day billing cycle, up to 100 orders
+- Scale — $19 per Shopify 30-day billing cycle, up to 250 orders
+- Empire — $29 per Shopify 30-day billing cycle, up to 1,000 orders
+- First 20 successful order syncs free, once per account
+- Each successfully synced order counts once; duplicate deliveries and retries do not count again
+- Sync pauses at the cap with no overage charges; paid allowances reset with the next billing cycle
+- Development-store/no-charge state if Shopify displays it
+
+If the provider, app, and listing show different pricing or allowances, resolve that rollout mismatch before recording pricing for submission. Cancellation must not be described as restarting the trial.
 
 Do not approve a real charge. If Shopify displays any amount due now, stop this step and return to App Home.
 

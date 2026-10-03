@@ -20,11 +20,12 @@ model User {
   stripeCustomerId     String?
   stripeSubscriptionId String?  @unique
   subscriptionStatus   String   @default("trial")
-  planTier             String   @default("trial") // trial | starter | growth | unlimited
+  planTier             String   @default("trial") // trial | solo_100 | scale_250 | empire_1000 | legacy: starter | growth | unlimited
   orderQuotaUsed       Int      @default(0)
   quotaResetAt         DateTime @default(now())
   quotaPeriodStart     DateTime?
   quotaPeriodEnd       DateTime?
+  shopifyBillingCheckedAt DateTime?
 
   shopifyConnection  ShopifyConnection?
   qboConnection      QboConnection?
@@ -103,6 +104,11 @@ model SyncLog {
   shopifyOrderId           String
   orderNumber              String?
   qboInvoiceId             String?
+  // A reservation survives uncertain QBO writes and is counted across renewals.
+  quotaReserved            Boolean  @default(false)
+  syncLeaseToken           String?
+  syncLeaseExpiresAt       DateTime?
+  qboWriteState            String?  // creating | rollback; null means no uncertain write
   status                   String   // pending | success | failed | skipped_no_mapping | blocked_reconciliation | reconciliation_failed_qbo | queue_failed | skipped_quota_exceeded
   errorMessage             String?
   currency                 String?
@@ -115,6 +121,7 @@ model SyncLog {
   updatedAt                DateTime @updatedAt
 
   @@index([userId, status])
+  @@index([userId, quotaReserved])
   @@unique([userId, shopifyOrderId])
 }
 
