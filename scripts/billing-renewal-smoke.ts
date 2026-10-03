@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 async function main() {
   process.env.ENCRYPTION_KEY = "billing-renewal-test-encryption-only";
   process.env.SHOPIFY_PARTNER_API_ACCESS_TOKEN = "billing-renewal-test-token";
+  delete process.env.SHOPIFY_PARTNER_ORG_ID;
+  delete process.env.SHOPIFY_APP_GID;
   const RealDate = Date;
   let clock = RealDate.parse("2026-10-03T00:00:00Z");
   class TestDate extends RealDate {
@@ -40,8 +42,11 @@ async function main() {
       finally { locked = false; release(); }
     },
   };
-  globalThis.fetch = async (input) => {
+  globalThis.fetch = async (input, init) => {
     if (String(input).startsWith("https://partners.shopify.com/")) {
+      assert.equal(String(input), "https://partners.shopify.com/5151473/api/2026-07/graphql.json", "fallback must target the verified SyncStock Partner organization");
+      const payload = JSON.parse(String(init?.body));
+      assert.equal(payload.variables.appId, "gid://shopify/App/424848261121", "fallback must target the verified SyncStock Production app");
       providerCalls++;
       if (providerUnavailable) return new Response("Unavailable", { status: 503 });
       const snapshot = structuredClone(subscription);

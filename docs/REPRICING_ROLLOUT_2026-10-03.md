@@ -18,6 +18,19 @@ Paid usage resets only when the provider confirms a later billing-cycle start. I
 
 Recheck active provider contracts immediately before rollout; do not infer current membership from an earlier database snapshot. The hosted catalog was previously recorded at $8/200, $29/1,000 and $49/unlimited in the launch record. This document does not claim those plans have already been changed. Production account records and credentials are not included in this implementation.
 
+## Verified hosted configuration access — October 3, 2026
+
+Read-only inspection of the signed-in Partner Dashboard confirmed SyncStock Production app `424848261121` in Partner organization `5151473`. Its App Store status remains **Submitted**, with a reviewer being assigned. The English listing **Edit** control is disabled and has no destination link. Nothing was withdrawn or changed.
+
+Current official Shopify guidance explicitly keeps App Pricing in Partner Dashboard, not Dev Dashboard, and reaches it through **Distribution → listing → locale Edit → Pricing content → Manage**. No separate supported editor was documented. Preserve the existing review; stage this release until that path becomes available or Shopify provides another supported path. Do not bypass the disabled control.
+
+The development-store hosted selector currently displays **Solo $8/30 days, 200 orders; Scale $29/30 days, 1,000 orders; Empire $49/30 days, unlimited**. It states these plans are **$0 to test**, with Solo current. No plan was selected. The rendered controls do not expose item handles, so neither existing handles nor the proposed new handles were independently verified during this inspection.
+
+- Partner review page: https://partners.shopify.com/5151473/apps/424848261121/distribution/app-store
+- Shopify configuration guidance: https://shopify.dev/docs/apps/launch/billing/shopify-app-pricing
+
+The source fallback Partner organization was corrected from `511473` to verified `5151473`; environment overrides are retained. Tests assert both the correct fallback organization and app ID without using credentials.
+
 ## Compatibility and enforcement
 
 - Existing internal `starter`, `growth`, and `unlimited` keys, original Shopify `solo`/`scale`/`empire` handles, and historical Stripe price IDs retain their original entitlements. No existing subscription is migrated or charged by this patch.

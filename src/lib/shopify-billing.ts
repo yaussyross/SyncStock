@@ -5,7 +5,7 @@ import type { User } from "@prisma/client";
 
 const PARTNER_API_VERSION = "2026-07";
 const DEFAULT_SHOPIFY_APP_HANDLE = "syncstock-productionn";
-const DEFAULT_SHOPIFY_PARTNER_ORG_ID = "511473";
+const DEFAULT_SHOPIFY_PARTNER_ORG_ID = "5151473";
 const DEFAULT_SHOPIFY_APP_GID = "gid://shopify/App/424848261121";
 export const SHOPIFY_BILLING_MAX_AGE_MS = 60_000;
 
