@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Footer from "@/components/Footer";
+import { PUBLIC_PLANS } from "@/lib/plans";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
@@ -12,32 +13,25 @@ const proofPoints = [
   ["04", "Reconcile or stop", "If the accounting total cannot be reproduced safely, SyncStock blocks the write."],
 ];
 
-const plans = [
-  {
-    name: "Solo",
-    price: "$8",
+const planPresentation = {
+  solo_100: {
     description: "For owner-operated stores",
-    orders: "Up to 200 orders / month",
     features: ["Automatic paid-order sync", "Product mapping", "Sync history + retries", "Email support"],
     featured: false,
   },
-  {
-    name: "Scale",
-    price: "$29",
+  scale_250: {
     description: "For stores with steady volume",
-    orders: "Up to 1,000 orders / month",
-    features: ["Everything in Solo", "Higher monthly volume", "Reconciliation audit trail", "Email support"],
+    features: ["Everything in Solo", "Room for more orders", "Reconciliation audit trail", "Email support"],
     featured: true,
   },
-  {
-    name: "Empire",
-    price: "$49",
-    description: "For high-volume operators",
-    orders: "Unlimited orders",
-    features: ["Everything in Scale", "Unlimited order volume", "Advanced controls as released", "Email support"],
+  empire_1000: {
+    description: "For growing order volume",
+    features: ["Everything in Scale", "Our highest order allowance", "Visible usage limits", "Email support"],
     featured: false,
   },
-];
+};
+
+const plans = PUBLIC_PLANS.map((plan) => ({ ...plan, ...planPresentation[plan.tier] }));
 
 export default function LandingPage() {
   return (
@@ -172,23 +166,23 @@ export default function LandingPage() {
                 <p className="section-kicker">LAUNCH PRICING</p>
                 <h2>Simple pricing that scales with order volume.</h2>
               </div>
-              <p>Every account starts with 20 free synced orders. No card required to test the workflow.</p>
+              <p>Your first 20 successful order syncs are free, once per account. No card required to test the workflow.</p>
             </div>
             <div className="pricing-grid">
               {plans.map((plan) => (
-                <article className={`pricing-card${plan.featured ? " featured" : ""}`} key={plan.name}>
+                <article className={`pricing-card${plan.featured ? " featured" : ""}`} key={plan.tier}>
                   {plan.featured && <div className="popular-tag">SCALE PLAN</div>}
                   <div className="plan-top">
-                    <div><h3>{plan.name}</h3><p>{plan.description}</p></div>
-                    <div className="price"><strong>{plan.price}</strong><span>/mo</span></div>
+                    <div><h3>{plan.label}</h3><p>{plan.description}</p></div>
+                    <div className="price"><strong>${plan.monthlyPriceUsd}</strong><span>/30 days</span></div>
                   </div>
-                  <div className="order-limit">{plan.orders}</div>
+                  <div className="order-limit">Up to {plan.orderLimit.toLocaleString("en-US")} orders per Shopify 30-day billing cycle</div>
                   <ul>{plan.features.map((item) => <li key={item}><span>✓</span>{item}</li>)}</ul>
                   <a className={plan.featured ? "btn pricing-button" : "btn btn-secondary pricing-button"} href="/signup">Start free</a>
                 </article>
               ))}
             </div>
-            <p className="pricing-note">Launch pricing may change as the product expands. Existing paid customers receive advance notice of pricing changes.</p>
+            <p className="pricing-note">Prices are in USD. Sync pauses at your order cap, with no overage charges. Each successfully synced order counts once; duplicate deliveries and retries do not count again. Paid allowances reset with your Shopify 30-day billing cycle.</p>
           </div>
         </section>
 
@@ -199,7 +193,8 @@ export default function LandingPage() {
           <div className="faq-grid">
             <div><h3>What does SyncStock focus on?</h3><p>Paid Shopify orders → QuickBooks Online sales receipts, explicit product mapping, reconciliation checks, retry safety, and visible sync history.</p></div>
             <div><h3>What happens if the totals do not match?</h3><p>The order is blocked rather than forced into QuickBooks. The goal is to make unsupported or questionable accounting visible instead of silently writing it.</p></div>
-            <div><h3>Can I try it before paying?</h3><p>Yes. New accounts start with 20 free synced orders and do not require a card to create the account.</p></div>
+            <div><h3>Can I try it before paying?</h3><p>Yes. Your first 20 successful order syncs are free, once per account, with no card required. The allowance does not renew or reset when a plan is cancelled.</p></div>
+            <div><h3>What happens at my order cap?</h3><p>New order syncs pause without overage charges. Choose a larger available plan or wait for your next paid billing cycle. For more than 1,000 orders per cycle, <a href="/support">contact us about higher-volume needs</a>.</p></div>
             <div><h3>Can I send product feedback?</h3><p>Yes. Signed-in users can submit bugs, feature requests, onboarding friction, and ratings through the in-product feedback page.</p></div>
           </div>
         </section>

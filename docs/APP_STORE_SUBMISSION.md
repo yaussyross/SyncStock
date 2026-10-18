@@ -1,6 +1,6 @@
 # Shopify App Store submission working sheet
 
-Last updated: September 28, 2026.
+Last updated: October 3, 2026.
 
 This file records factual listing copy and reviewer instructions for the public **SyncStock Production** app. It is a working sheet only; Shopify Partner Dashboard remains the source of truth for submission state.
 
@@ -70,12 +70,14 @@ Integrations:
 
 ## Pricing
 
-Monthly catalog:
-- **Solo — $8/month — up to 200 orders/month**
-- **Scale — $29/month — up to 1,000 orders/month**
-- **Empire — $49/month — unlimited orders**
+Approved catalog for the pending coordinated rollout:
+- **Solo — $9 per Shopify 30-day billing cycle — up to 100 orders**
+- **Scale — $19 per Shopify 30-day billing cycle — up to 250 orders**
+- **Empire — $29 per Shopify 30-day billing cycle — up to 1,000 orders**
 
-New accounts receive the first **20 synced orders free** with no card required.
+New accounts receive their first **20 successful order syncs free, once per account**, with no card required. The allowance does not renew or reset after cancellation. Each successfully synced order counts once; duplicate deliveries and retries do not count again. Sync pauses at the cap with no overage charges. Paid allowances reset with the next billing cycle.
+
+**Not live yet:** Repository changes do not update Shopify App Pricing or the listing. The last verified provider catalog below remains the historical baseline. Before rollout, coordinate provider configuration, deployed enforcement/UI, listing copy, and reviewer capture; verify they agree. Existing legacy subscriptions retain their existing entitlements until an explicitly approved migration.
 
 New public merchants must use **Shopify-hosted App Pricing**. Do not configure new public subscriptions through legacy Stripe.
 
@@ -129,7 +131,8 @@ Supported narrow acceptance case: one paid order with mapped products. Refunds/c
 
 ## Do not submit until these gates are verified
 
-- [x] Shopify App Pricing is configured for $8/$29/$49 monthly public plans with free development-store testing.
+- [x] Historical verification on September 21: Shopify App Pricing was configured for $8/$29/$49 monthly public plans with free development-store testing.
+- [ ] Before the approved repricing goes live, verify the new $9/$19/$29 catalog with 100/250/1,000-order caps, matching Shopify 30-day cycle enforcement, public/listing copy, one-time trial handling, and safe legacy entitlements.
 - Partner/App Pricing environment values are configured and the Partner API token has the required app-management permission.
 - Shopify automated submission checks pass.
 - Required app capabilities are selected.

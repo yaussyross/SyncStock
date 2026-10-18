@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
 import { db } from "@/lib/db";
+import { PLAN_LIMITS } from "@/lib/plans";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -12,8 +13,7 @@ export async function GET() {
     db.syncLog.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 50 }),
   ]);
 
-  const quotaLimits: Record<string, number> = { trial: 20, starter: 200, growth: 1000, unlimited: Infinity };
-  const limit = quotaLimits[user.planTier] ?? 20;
+  const limit = PLAN_LIMITS[user.planTier] ?? PLAN_LIMITS.trial;
 
   return NextResponse.json({
     shopifyConnected: !!shopifyConn,

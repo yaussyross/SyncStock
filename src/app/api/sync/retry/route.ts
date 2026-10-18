@@ -1,19 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
-import { getQuotaState } from "@/lib/quota";
+import { getQuotaState, isReservedRecovery } from "@/lib/quota";
 import { db } from "@/lib/db";
 import { syncQueue } from "@/lib/queue";
 import { ensureFreshShopifyConnection, fetchShopifyOrderForRetry } from "@/lib/shopify";
+import { ensureCurrentBillingPeriod } from "@/lib/shopify-billing";
 
 export async function POST(req: NextRequest) {
-  const user = await getCurrentUser();
+  let user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   const { syncLogId } = await req.json().catch(() => ({}));
   if (typeof syncLogId !== "string") return NextResponse.json({ error: "A sync log ID is required" }, { status: 400 });
-  if (!getQuotaState(user).allowed) return NextResponse.json({ error: "Update your subscription or wait for your next paid billing period before retrying." }, { status: 403 });
   const log = await db.syncLog.findFirst({ where: { id: syncLogId, userId: user.id } });
   if (!log) return NextResponse.json({ error: "Sync log not found" }, { status: 404 });
+
+  if (!isReservedRecovery(log)) {
+    try {
+      user = await ensureCurrentBillingPeriod(user);
+    } catch {
+      return NextResponse.json({ error: "Could not verify the current billing period. Please retry." }, { status: 503 });
+    }
+    if (!getQuotaState(user).allowed) return NextResponse.json({ error: "Update your subscription or wait for your next paid billing period before retrying." }, { status: 403 });
+  }
 
   if (log.status === "success") {
     return NextResponse.json({ error: "This order has already synced successfully" }, { status: 409 });
