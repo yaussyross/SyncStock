@@ -69,7 +69,7 @@ export default function DocsPage() {
       <h2>Need help?</h2>
       <p>
         Visit <a href="/support">Support</a> or email
-        <a href="mailto:support@syncstock.app"> support@syncstock.app</a>.
+        <a href="mailto:yaussyross@gmail.com"> yaussyross@gmail.com</a>.
       </p>
     </main>
   );

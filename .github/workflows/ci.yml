@@ -123,6 +123,9 @@ jobs:
       - name: Shopify reinstall account and token regression
         run: node --import tsx scripts/shopify-reinstall-smoke.ts
 
+      - name: Shopify uninstall idempotency regression
+        run: node --import tsx scripts/shopify-uninstall-smoke.ts
+
       - name: Shopify API error payload normalization
         run: npm run test:shopify-errors
 
