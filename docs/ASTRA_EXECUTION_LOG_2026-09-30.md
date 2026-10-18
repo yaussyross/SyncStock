@@ -26,3 +26,14 @@ Shopify preliminary/common-error and embedded-app checks are recorded complete. 
 The remaining live billing decline/cancel-return edge case is now verified: Solo was Current, Scale opened Shopify's free-to-test approval screen, Cancel returned to the plan selector, and Solo remained Current with no plan change or charge. Existing state-transition CI coverage also passes.
 
 The owner-controlled Shopify submission still requires final requirements attestations and the Submit for review action. Existing screenshots, media, reviewer setup, infrastructure, and successful sync acceptance should not be repeated unless Shopify presents a new explicit error.
+
+
+## Shopify HMAC automated-check escalation — September 30
+
+- After releasing the canonical Shopify app configuration, **Provides mandatory compliance webhooks** changed from failing to passing.
+- **Verifies webhooks with HMAC signatures** remained failing.
+- PR #67 changed Shopify HTTPS webhook verification to HMAC-SHA256 over the exact raw request bytes with Node `crypto.createHmac` and `timingSafeEqual`, preserving secret rotation support.
+- CI passed the new signature regression coverage, including raw-byte, multibyte, and tamper cases.
+- PR #67 merged as `8c8cbf63d581d2ee9a758d2eb868b8c70360fcf1`; canonical Vercel production deployment reached READY on that commit.
+- Shopify Dev Dashboard Logs were inspected immediately after rerunning the Partner automated check. The most recent activity showed GraphQL requests on Sep 30, but the most recent webhook deliveries remained Sep 29 (`orders/paid` / `app/uninstalled`). No Sep 30 automated-check webhook delivery was visible.
+- Current conclusion: the app configuration and production HMAC verifier are aligned with Shopify guidance, but the automated checker is not producing a visible delivery. Escalate to Shopify Partner/API support for backend checker diagnostics before making further webhook code changes.
