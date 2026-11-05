@@ -18,6 +18,7 @@ const feedbackForm = read("src/components/FeedbackForm.tsx");
 const calculator = read("src/components/BookkeepingCalculator.tsx");
 const calculatorPage = read("src/app/tools/bookkeeping-cost/page.tsx");
 const support = read("src/app/support/page.tsx");
+const docs = read("src/app/docs/page.tsx");
 const privacy = read("src/app/privacy/page.tsx");
 
 for (const p of [
@@ -59,5 +60,7 @@ assert.match(support, /yaussyross@gmail\.com/);
 assert.match(privacy, /yaussyross@gmail\.com/);
 assert.doesNotMatch(support, /support@syncstock\.app/);
 assert.doesNotMatch(privacy, /support@syncstock\.app/);
+assert.match(docs, /mailto:yaussyross@gmail\.com/);
+assert.doesNotMatch(docs, /support@syncstock\.app/);
 
 console.log("Public/embedded launch surfaces passed.");
