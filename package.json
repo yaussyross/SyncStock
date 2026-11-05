@@ -39,7 +39,7 @@
     "ioredis": "^5.4.1",
     "jose": "^6.2.12",
     "jsonwebtoken": "^9.0.2",
-    "next": "15.5.24",
+    "next": "15.5.28",
     "node-quickbooks": "^2.0.44",
     "prisma": "^5.20.0",
     "react": "^18.3.1",
