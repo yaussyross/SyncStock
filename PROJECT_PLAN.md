@@ -1,5 +1,12 @@
 # SyncStock — Engineering Plan
 
+## October 3 repricing preparation (not deployed)
+
+- User approved Solo $9/100, Scale $19/250, Empire $29/1,000 per Shopify 30-day billing cycle, with the first 20 synced orders free once and a hard pause without overage charges.
+- Local implementation covers versioned catalog compatibility, atomic quota reservations, unattended Shopify renewal, pricing surfaces, and regression tests.
+- Production rollout and Shopify hosted catalog changes remain separate gates. See [repricing rollout](docs/REPRICING_ROLLOUT_2026-10-03.md).
+
+
 ## Goal
 Ship a reliable public embedded Shopify app where one supported paid Shopify order produces exactly one correct QuickBooks Online transaction.
 

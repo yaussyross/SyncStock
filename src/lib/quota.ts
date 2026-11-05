@@ -7,6 +7,13 @@ export interface QuotaState {
   reason: "ok" | "quota_exceeded" | "subscription_inactive" | "billing_period_expired";
 }
 
+// Reconcile an already-attempted external write even after cancellation or a
+// downgrade. This is not permission to create a new receipt; sync-quota fences
+// that action separately and sync.ts queries the existing DocNumber only.
+export function isReservedRecovery(log: { quotaReserved: boolean; qboWriteState: string | null }) {
+  return log.quotaReserved && log.qboWriteState === "creating";
+}
+
 export function getQuotaState(user: User, now = new Date()): QuotaState {
   const limit = PLAN_LIMITS[user.planTier] ?? PLAN_LIMITS.trial;
 
@@ -23,7 +30,7 @@ export function getQuotaState(user: User, now = new Date()): QuotaState {
   }
 
   if (!user.quotaPeriodEnd || now.getTime() >= user.quotaPeriodEnd.getTime()) {
-    // Usage only resets after Stripe confirms the next invoice was paid.
+    // Reset only after the billing provider confirms the next paid cycle.
     return { allowed: false, limit, reason: "billing_period_expired" };
   }
 

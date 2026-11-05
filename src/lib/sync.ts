@@ -1,4 +1,4 @@
-import { getQuotaState } from "./quota";
+import { withOrderQuota, SyncLeaseLostError } from "./sync-quota";
 import { db } from "./db";
 import {
   getQboClientForUser,
@@ -54,238 +54,198 @@ function positiveAmount(value: string) {
 /** Runs one order sync end-to-end with mapping, reconciliation, and retry-safe QBO creation. */
 export async function processOrderSync(userId: string, order: ShopifyOrder) {
   const shopifyOrderId = String(order.id);
-  const log = await db.syncLog.findUnique({
-    where: { userId_shopifyOrderId: { userId, shopifyOrderId } },
-  });
+  return withOrderQuota(db, userId, shopifyOrderId, async (lease) => {
+    const [mappings, accountingSettings] = await Promise.all([
+      db.productMapping.findMany({ where: { userId } }),
+      db.accountingSettings.findUnique({ where: { userId } }),
+    ]);
 
-  // A duplicate BullMQ job must never recreate an already-synced receipt.
-  if (log?.status === "success" && log.qboInvoiceId) return;
+    const mappingByVariantId = new Map(
+      mappings
+        .filter((mapping) => !mapping.shopifyVariantId.startsWith("legacy:"))
+        .map((mapping) => [mapping.shopifyVariantId, mapping.qboItemId] as const)
+    );
+    const legacyMappingBySku = new Map(
+      mappings
+        .filter((mapping) => mapping.shopifySku)
+        .map((mapping) => [mapping.shopifySku!, mapping.qboItemId] as const)
+    );
 
-  // Jobs can wait past cancellation or period expiry. Recheck at execution time.
-  const user = await db.user.findUnique({ where: { id: userId } });
-  if (!user || !getQuotaState(user).allowed) {
-    if (log) await db.syncLog.update({ where: { id: log.id }, data: {
-      status: "skipped_quota_exceeded", errorMessage: "Sync paused: subscription or order allowance is unavailable.",
-    } });
-    return;
-  }
+    const unmapped: string[] = [];
+    const lineItems = order.line_items.map((li) => {
+      const variantId = li.variant_id == null ? null : String(li.variant_id);
+      const sku = li.sku?.trim() || null;
+      const qboItemId =
+        (variantId ? mappingByVariantId.get(variantId) : undefined) ||
+        (sku ? legacyMappingBySku.get(sku) : undefined);
 
-  const [mappings, accountingSettings] = await Promise.all([
-    db.productMapping.findMany({ where: { userId } }),
-    db.accountingSettings.findUnique({ where: { userId } }),
-  ]);
+      if (!qboItemId) {
+        unmapped.push(sku ? `${li.title} (${sku})` : `${li.title} (no SKU)`);
+      }
 
-  const mappingByVariantId = new Map(
-    mappings
-      .filter((mapping) => !mapping.shopifyVariantId.startsWith("legacy:"))
-      .map((mapping) => [mapping.shopifyVariantId, mapping.qboItemId] as const)
-  );
-  const legacyMappingBySku = new Map(
-    mappings
-      .filter((mapping) => mapping.shopifySku)
-      .map((mapping) => [mapping.shopifySku!, mapping.qboItemId] as const)
-  );
+      return {
+        qboItemId: qboItemId!,
+        quantity: li.quantity,
+        unitPrice: parseFloat(li.price),
+        description: li.title,
+      };
+    });
 
-  const unmapped: string[] = [];
-  const lineItems = order.line_items.map((li) => {
-    const variantId = li.variant_id == null ? null : String(li.variant_id);
-    const sku = li.sku?.trim() || null;
-    const qboItemId =
-      (variantId ? mappingByVariantId.get(variantId) : undefined) ||
-      (sku ? legacyMappingBySku.get(sku) : undefined);
-
-    if (!qboItemId) {
-      unmapped.push(sku ? `${li.title} (${sku})` : `${li.title} (no SKU)`);
+    if (unmapped.length > 0) {
+      await lease.update({
+          status: "skipped_no_mapping",
+          errorMessage: `Map these Shopify variants before retrying: ${unmapped.join(", ")}.`,
+        });
+      return;
     }
 
-    return {
-      qboItemId: qboItemId!,
-      quantity: li.quantity,
-      unitPrice: parseFloat(li.price),
-      description: li.title,
+    const reconciliationOptions = {
+      includeShipping: Boolean(accountingSettings?.shippingQboItemId),
+      // QuickBooks supports a native transaction-level discount line, so discounts
+      // do not require a merchant-selected accounting item.
+      includeDiscounts: true,
+      includeDuties: Boolean(accountingSettings?.dutiesQboItemId),
+      includeAdditionalFees: Boolean(accountingSettings?.additionalFeeQboItemId),
+      includeTips: Boolean(accountingSettings?.tipsQboItemId),
     };
-  });
 
-  if (unmapped.length > 0) {
-    await db.syncLog.update({
-      where: { userId_shopifyOrderId: { userId, shopifyOrderId } },
-      data: {
-        status: "skipped_no_mapping",
-        errorMessage: `Map these Shopify variants before retrying: ${unmapped.join(", ")}.`,
-      },
-    });
-    return;
-  }
-
-  const reconciliationOptions = {
-    includeShipping: Boolean(accountingSettings?.shippingQboItemId),
-    // QuickBooks supports a native transaction-level discount line, so discounts
-    // do not require a merchant-selected accounting item.
-    includeDiscounts: true,
-    includeDuties: Boolean(accountingSettings?.dutiesQboItemId),
-    includeAdditionalFees: Boolean(accountingSettings?.additionalFeeQboItemId),
-    includeTips: Boolean(accountingSettings?.tipsQboItemId),
-  };
-
-  let preflight;
-  try {
-    preflight = reconcileShopifyOrder(order, reconciliationOptions);
-  } catch (error: any) {
-    await db.syncLog.update({
-      where: { userId_shopifyOrderId: { userId, shopifyOrderId } },
-      data: {
-        status: "blocked_reconciliation",
-        currency: order.currency?.trim() || null,
-        errorMessage: `Reconciliation blocked before QuickBooks creation: ${error?.message || "Shopify totals could not be validated"}.`,
-      },
-    });
-    return;
-  }
-
-  await db.syncLog.update({
-    where: { userId_shopifyOrderId: { userId, shopifyOrderId } },
-    data: {
-      currency: preflight.currency === "shop currency" ? null : preflight.currency,
-      shopifyTotal: preflight.expectedTotal,
-      qboDraftTotal: preflight.actualTotal,
-      qboActualTotal: null,
-      reconciliationDifference: preflight.difference,
-    },
-  });
-
-  if (!preflight.matches) {
-    await db.syncLog.update({
-      where: { userId_shopifyOrderId: { userId, shopifyOrderId } },
-      data: {
-        status: "blocked_reconciliation",
-        qboInvoiceId: null,
-        errorMessage: preflight.message,
-      },
-    });
-    return;
-  }
-
-  const adjustmentLines: ReceiptAdjustmentLine[] = [];
-  const addAdjustment = (qboItemId: string | null | undefined, amount: string, description: string) => {
-    const numericAmount = positiveAmount(amount);
-    if (qboItemId && numericAmount > 0) {
-      adjustmentLines.push({ qboItemId, amount: numericAmount, description });
+    let preflight;
+    try {
+      preflight = reconcileShopifyOrder(order, reconciliationOptions);
+    } catch (error: any) {
+      await lease.update({
+          status: "blocked_reconciliation",
+          currency: order.currency?.trim() || null,
+          errorMessage: `Reconciliation blocked before QuickBooks creation: ${error?.message || "Shopify totals could not be validated"}.`,
+        });
+      return;
     }
-  };
 
-  addAdjustment(accountingSettings?.shippingQboItemId, preflight.adjustments.shipping, "Shopify shipping");
-  addAdjustment(accountingSettings?.dutiesQboItemId, preflight.adjustments.duties, "Shopify duties");
-  addAdjustment(accountingSettings?.additionalFeeQboItemId, preflight.adjustments.additionalFees, "Shopify additional fees");
-  addAdjustment(accountingSettings?.tipsQboItemId, preflight.adjustments.tips, "Shopify tips");
+    await lease.update({
+        currency: preflight.currency === "shop currency" ? null : preflight.currency,
+        shopifyTotal: preflight.expectedTotal,
+        qboDraftTotal: preflight.actualTotal,
+        qboActualTotal: null,
+        reconciliationDifference: preflight.difference,
+      });
 
-  try {
-    const qbo = await getQboClientForUser(userId);
-    const docNumber = quickBooksDocNumber(order.id);
-    let receipt = await findSalesReceiptByDocNumber(qbo, docNumber);
+    if (!preflight.matches) {
+      await lease.update({
+          status: "blocked_reconciliation",
+          qboInvoiceId: null,
+          errorMessage: preflight.message,
+        });
+      return;
+    }
 
-    if (receipt) {
-      // Recovery path: never delete a receipt that existed before this attempt.
-      const verified = await receiptWithTotal(qbo, receipt);
-      const comparison = compareMoneyTotals(preflight.expectedTotal, verified.total);
+    const adjustmentLines: ReceiptAdjustmentLine[] = [];
+    const addAdjustment = (qboItemId: string | null | undefined, amount: string, description: string) => {
+      const numericAmount = positiveAmount(amount);
+      if (qboItemId && numericAmount > 0) {
+        adjustmentLines.push({ qboItemId, amount: numericAmount, description });
+      }
+    };
 
-      if (!comparison.matches) {
-        await db.syncLog.update({
-          where: { userId_shopifyOrderId: { userId, shopifyOrderId } },
-          data: {
-            status: "reconciliation_failed_qbo",
-            qboInvoiceId: String(verified.receipt.Id),
+    addAdjustment(accountingSettings?.shippingQboItemId, preflight.adjustments.shipping, "Shopify shipping");
+    addAdjustment(accountingSettings?.dutiesQboItemId, preflight.adjustments.duties, "Shopify duties");
+    addAdjustment(accountingSettings?.additionalFeeQboItemId, preflight.adjustments.additionalFees, "Shopify additional fees");
+    addAdjustment(accountingSettings?.tipsQboItemId, preflight.adjustments.tips, "Shopify tips");
+
+    try {
+      const qbo = await getQboClientForUser(userId);
+      const docNumber = quickBooksDocNumber(order.id);
+      let receipt = await findSalesReceiptByDocNumber(qbo, docNumber);
+
+      if (lease.priorWriteState === "rollback") {
+        throw new Error("A previous QuickBooks rollback has an uncertain outcome. Manual review is required before retrying this order.");
+      }
+
+      if (receipt) {
+        // Recovery path: never delete a receipt that existed before this attempt.
+        const verified = await receiptWithTotal(qbo, receipt);
+        const comparison = compareMoneyTotals(preflight.expectedTotal, verified.total);
+
+        if (!comparison.matches) {
+          await lease.update({
+              status: "reconciliation_failed_qbo",
+              qboInvoiceId: String(verified.receipt.Id),
+              qboActualTotal: comparison.actualTotal,
+              reconciliationDifference: comparison.difference,
+              errorMessage: `QuickBooks already contains ${docNumber} with total ${comparison.actualTotal}, but Shopify total is ${comparison.expectedTotal}. SyncStock did not modify or delete the existing QuickBooks transaction. Manual review is required.`,
+            });
+          return;
+        }
+
+        receipt = verified.receipt;
+        await lease.update({
             qboActualTotal: comparison.actualTotal,
             reconciliationDifference: comparison.difference,
-            errorMessage: `QuickBooks already contains ${docNumber} with total ${comparison.actualTotal}, but Shopify total is ${comparison.expectedTotal}. SyncStock did not modify or delete the existing QuickBooks transaction. Manual review is required.`,
-          },
-        });
-        return;
-      }
-
-      receipt = verified.receipt;
-      await db.syncLog.update({
-        where: { userId_shopifyOrderId: { userId, shopifyOrderId } },
-        data: {
-          qboActualTotal: comparison.actualTotal,
-          reconciliationDifference: comparison.difference,
-        },
-      });
-    } else {
-      const created = await createSalesReceipt(
-        qbo,
-        docNumber,
-        lineItems,
-        parseFloat(order.current_total_tax ?? order.total_tax ?? "0"),
-        {
-          adjustmentLines,
-          discountAmount: positiveAmount(preflight.adjustments.discounts),
-          taxesIncluded: preflight.taxesIncluded,
+          });
+      } else {
+        if (lease.priorWriteState) {
+          throw new Error("A previous QuickBooks creation has an uncertain outcome and no receipt was found yet. The allowance remains reserved; retry reconciliation later or request manual review. No second receipt was created.");
         }
-      );
-      const verified = await receiptWithTotal(qbo, created);
-      const comparison = compareMoneyTotals(preflight.expectedTotal, verified.total);
+        // Commit intent BEFORE the remote write. A timeout/crash can then only
+        // take the query-and-reconcile recovery path, never blindly create again.
+        await lease.beginMutation("creating");
+        const created = await createSalesReceipt(
+          qbo,
+          docNumber,
+          lineItems,
+          parseFloat(order.current_total_tax ?? order.total_tax ?? "0"),
+          {
+            adjustmentLines,
+            discountAmount: positiveAmount(preflight.adjustments.discounts),
+            taxesIncluded: preflight.taxesIncluded,
+          }
+        );
+        const verified = await receiptWithTotal(qbo, created);
+        const comparison = compareMoneyTotals(preflight.expectedTotal, verified.total);
 
-      if (!comparison.matches) {
-        const createdId = verified.receipt?.Id ? String(verified.receipt.Id) : null;
+        if (!comparison.matches) {
+          const createdId = verified.receipt?.Id ? String(verified.receipt.Id) : null;
 
-        try {
-          // This receipt was created by the current attempt and has already failed
-          // reconciliation, so remove it immediately instead of leaving bad books.
-          await deleteSalesReceipt(qbo, verified.receipt);
-          await db.syncLog.update({
-            where: { userId_shopifyOrderId: { userId, shopifyOrderId } },
-            data: {
-              status: "blocked_reconciliation",
-              qboInvoiceId: null,
-              qboActualTotal: comparison.actualTotal,
-              reconciliationDifference: comparison.difference,
-              errorMessage: `QuickBooks recalculated ${docNumber} to ${comparison.actualTotal}, but Shopify total is ${comparison.expectedTotal}. SyncStock rolled back the newly created QuickBooks Sales Receipt and stopped the sync.`,
-            },
-          });
-        } catch (rollbackError: any) {
-          await db.syncLog.update({
-            where: { userId_shopifyOrderId: { userId, shopifyOrderId } },
-            data: {
-              status: "reconciliation_failed_qbo",
-              qboInvoiceId: createdId,
-              qboActualTotal: comparison.actualTotal,
-              reconciliationDifference: comparison.difference,
-              errorMessage: `QuickBooks recalculated ${docNumber} to ${comparison.actualTotal}, but Shopify total is ${comparison.expectedTotal}. Automatic rollback failed: ${qboErrorMessage(rollbackError)}. Do not retry until the QuickBooks transaction is reviewed.`,
-            },
-          });
+          try {
+            // This receipt was created by the current attempt and has already failed
+            // reconciliation, so remove it immediately instead of leaving bad books.
+            await lease.beginMutation("rollback");
+            await deleteSalesReceipt(qbo, verified.receipt);
+            await lease.clearMutation();
+            await lease.update({
+                status: "blocked_reconciliation",
+                qboInvoiceId: null,
+                qboActualTotal: comparison.actualTotal,
+                reconciliationDifference: comparison.difference,
+                errorMessage: `QuickBooks recalculated ${docNumber} to ${comparison.actualTotal}, but Shopify total is ${comparison.expectedTotal}. SyncStock rolled back the newly created QuickBooks Sales Receipt and stopped the sync.`,
+              });
+          } catch (rollbackError: any) {
+            await lease.update({
+                status: "reconciliation_failed_qbo",
+                qboInvoiceId: createdId,
+                qboActualTotal: comparison.actualTotal,
+                reconciliationDifference: comparison.difference,
+                errorMessage: `QuickBooks recalculated ${docNumber} to ${comparison.actualTotal}, but Shopify total is ${comparison.expectedTotal}. Automatic rollback failed: ${qboErrorMessage(rollbackError)}. Do not retry until the QuickBooks transaction is reviewed.`,
+              });
+          }
+
+          return;
         }
 
-        return;
+        receipt = verified.receipt;
+        await lease.update({
+            qboActualTotal: comparison.actualTotal,
+            reconciliationDifference: comparison.difference,
+          });
       }
 
-      receipt = verified.receipt;
-      await db.syncLog.update({
-        where: { userId_shopifyOrderId: { userId, shopifyOrderId } },
-        data: {
-          qboActualTotal: comparison.actualTotal,
-          reconciliationDifference: comparison.difference,
-        },
-      });
+      await lease.succeed(String(receipt.Id));
+    } catch (err: any) {
+      if (err instanceof SyncLeaseLostError) throw err;
+      const message = qboErrorMessage(err);
+
+      await lease.update({ status: "failed", errorMessage: message, attempts: { increment: 1 } });
+
+      throw err;
     }
-
-    await db.syncLog.update({
-      where: { userId_shopifyOrderId: { userId, shopifyOrderId } },
-      data: {
-        status: "success",
-        qboInvoiceId: String(receipt.Id),
-        errorMessage: null,
-      },
-    });
-
-    await db.user.update({ where: { id: userId }, data: { orderQuotaUsed: { increment: 1 } } });
-  } catch (err: any) {
-    const message = qboErrorMessage(err);
-
-    await db.syncLog.update({
-      where: { userId_shopifyOrderId: { userId, shopifyOrderId } },
-      data: { status: "failed", errorMessage: message, attempts: { increment: 1 } },
-    });
-
-    throw err;
-  }
+  });
 }

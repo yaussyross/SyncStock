@@ -29,7 +29,10 @@
     "test:qbo-return-handle": "tsx scripts/qbo-return-handle-smoke.ts",
     "test:embedded-retry": "tsx scripts/embedded-retry-smoke.ts",
     "test:embedded-sync-recovery": "tsx scripts/embedded-sync-recovery-smoke.ts",
-    "test:queue-recovery": "tsx scripts/queue-recovery-smoke.ts"
+    "test:queue-recovery": "tsx scripts/queue-recovery-smoke.ts",
+    "test:repricing": "node --import tsx scripts/repricing-catalog-smoke.ts && node --import tsx scripts/billing-renewal-smoke.ts && node --import tsx scripts/pricing-surface-smoke.ts && node --import tsx scripts/reserved-recovery-routes-smoke.ts && node --import tsx scripts/sync-process-recovery-smoke.ts",
+    "test:quota-concurrency": "node --import tsx scripts/sync-quota-smoke.ts && node --import tsx scripts/sync-quota-db-smoke.ts",
+    "test:queue-quota": "node --import tsx scripts/queue-quota-redis-smoke.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",

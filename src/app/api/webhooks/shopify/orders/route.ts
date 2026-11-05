@@ -5,6 +5,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { syncQueue } from "@/lib/queue";
 import { getQuotaState } from "@/lib/quota";
+import { ensureCurrentBillingPeriod } from "@/lib/shopify-billing";
 
 
 function isUniqueConstraintError(error: unknown) {
@@ -84,7 +85,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid order payload" }, { status: 400 });
   }
 
-  const user = await db.user.findUnique({ where: { id: connection.userId } });
+  let user = await db.user.findUnique({ where: { id: connection.userId } });
   if (!user) {
     await db.webhookDelivery.update({
       where: { deliveryId },
@@ -106,20 +107,34 @@ export async function POST(req: NextRequest) {
   }
 
 
+  try {
+    user = await ensureCurrentBillingPeriod(user);
+  } catch (error) {
+    console.warn("[orders billing] Could not verify renewal", error);
+    // Do not mark the delivery ignored: Shopify can retry this temporary outage.
+    return NextResponse.json({ error: "Temporary billing verification failure" }, { status: 503 });
+  }
   const quota = getQuotaState(user);
   if (!quota.allowed) {
     const message = quotaMessage(quota.reason);
-    await db.syncLog.upsert({
-      where: { userId_shopifyOrderId: { userId: user.id, shopifyOrderId: String(order.id) } },
-      update: { status: "skipped_quota_exceeded", errorMessage: message },
-      create: {
+    if (existingLog) {
+      await db.syncLog.updateMany({
+        where: { id: existingLog.id, status: "queue_failed", qboInvoiceId: null },
+        data: { status: "skipped_quota_exceeded", errorMessage: message },
+      });
+    } else {
+      try {
+        await db.syncLog.create({ data: {
         userId: user.id,
         shopifyOrderId: String(order.id),
         orderNumber: order.name,
         status: "skipped_quota_exceeded",
         errorMessage: message,
-      },
-    });
+        } });
+      } catch (error) {
+        if (!isUniqueConstraintError(error)) throw error;
+      }
+    }
     await db.webhookDelivery.update({
       where: { deliveryId },
       data: { status: "ignored", processedAt: new Date(), error: message },
@@ -129,10 +144,11 @@ export async function POST(req: NextRequest) {
 
 
   if (existingLog) {
-    await db.syncLog.update({
-      where: { id: existingLog.id },
+    const claim = await db.syncLog.updateMany({
+      where: { id: existingLog.id, status: "queue_failed", qboInvoiceId: null },
       data: { status: "pending", errorMessage: null, orderNumber: order.name },
     });
+    if (!claim.count) return NextResponse.json({ received: true, duplicate: true });
   } else {
     try {
       await db.syncLog.create({
@@ -173,8 +189,8 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     const message = error?.message || "Could not enqueue order sync";
     await Promise.all([
-      db.syncLog.update({
-        where: { userId_shopifyOrderId: { userId: user.id, shopifyOrderId: String(order.id) } },
+      db.syncLog.updateMany({
+        where: { userId: user.id, shopifyOrderId: String(order.id), status: "pending", qboInvoiceId: null },
         data: { status: "queue_failed", errorMessage: message },
       }),
       db.webhookDelivery.update({ where: { deliveryId }, data: { status: "received", error: message } }),
