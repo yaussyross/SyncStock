@@ -2,7 +2,7 @@
  * app configuration or credentials. No routes, token persistence or real grants
  * are installed by this module. Outputs contain secrets: never log/serialize them.
  */
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { beginConsent, consumeConsent, validateCallback } from './oauth-guard.mjs';
 
 export class ProviderOAuthError extends Error {
@@ -155,7 +155,7 @@ export async function exchangeProviderCode(input, { client, store, ...transportO
   catch { fail('CONSENT_REJECTED', 'Consent expired, was used, declined or does not match this app and session.'); }
   if (app.provider === 'ebay' && grant.authorizationCode.length > 1024) fail('CONSENT_REJECTED', 'eBay authorization code exceeds its documented size.');
   const tokens = decodeTokens(await tokenRequest(app, { grant_type: 'authorization_code', code: grant.authorizationCode, redirect_uri: app.redirectUri }, transport), app);
-  return Object.freeze({ provider: app.provider, environment: app.environment, tenantId: grant.tenantId, clientId: app.clientId, authorizationBinding: app.authorizationBinding, status: 'account_binding_required', providerAccountId: null, customerReady: false, ...tokens });
+  return Object.freeze({ grantId: randomUUID(), provider: app.provider, environment: app.environment, tenantId: grant.tenantId, clientId: app.clientId, authorizationBinding: app.authorizationBinding, status: 'account_binding_required', providerAccountId: null, customerReady: false, ...tokens });
 }
 /** Refresh primitive for trusted server orchestration ONLY. The caller must hold
  * an exclusive durable claim, prevent parallel refresh and atomically encrypt/CAS

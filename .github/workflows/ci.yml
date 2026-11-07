@@ -107,6 +107,11 @@ jobs:
           SYNCSTOCK_EXPANSION_TEST_DATABASE_URL: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public
         run: node --import tsx scripts/expansion-consent-store-db-smoke.ts
 
+      - name: Expansion encrypted token storage and refresh concurrency
+        env:
+          SYNCSTOCK_EXPANSION_TEST_DATABASE_URL: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public
+        run: node --import tsx scripts/expansion-token-store-db-smoke.ts
+
       - name: Reconciliation smoke tests
         run: npm run test:reconciliation
 

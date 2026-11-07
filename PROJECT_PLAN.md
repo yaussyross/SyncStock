@@ -137,3 +137,10 @@ Unsupported accounting treatments stay blocked until explicitly modeled and sand
 - Bound encrypted single-use consent to the exact OAuth application configuration. Added an 11th PostgreSQL group for encrypted app binding and wrong-app rejection.
 - Added 68 provider transport tests; 434 offline tests now cover this branch. Token requests in all tests use synthetic mocked responses, never live credentials.
 - No deployed OAuth routes, bearer-token vault, durable refresh lock/CAS coordinator, provider-account binding or real grant has been installed. This closes the native transport gap, not the full connection lifecycle. Production remains unchanged.
+
+## November 7 encrypted token storage increment
+
+- Added encrypted unbound grant storage with stable exchange IDs, idempotent inserts and unique initial/current refresh fingerprints. No plaintext access/refresh token columns are used.
+- Added cross-worker atomic refresh claims and encrypted token-pair compare-and-swap. Unknown outcomes stay held; stale claims are never automatically stolen. Revocation/deletion invalidates late work.
+- 41 focused storage/coordinator tests and 475 total offline tests cover the increment. Added 12 real PostgreSQL acceptance groups for CI. Independent review found no remaining blocking issue after fixing caller credential override and duplicate-grant refresh contention.
+- The migration remains staged only. No live credentials, provider-account binding, customer acceptance or deployed OAuth routes have been added. Production is unchanged.
