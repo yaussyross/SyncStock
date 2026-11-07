@@ -36,6 +36,7 @@ model User {
   feedback           Feedback[]
   expansionOAuthConsents ExpansionOAuthConsent[]
   expansionOAuthGrants ExpansionOAuthGrant[]
+  expansionRouteLimits ExpansionRouteLimit[]
 }
 
 // Pending expansion consent only. No access/refresh token is stored here.
@@ -67,6 +68,10 @@ model ExpansionOAuthGrant {
   ciphertext           String?
   refreshFingerprint   String   @unique @db.VarChar(64)
   initialGrantFingerprint String @unique @db.VarChar(64)
+  providerAccountId    String?
+  providerConnectionId String?
+  accountVerifiedAt    DateTime?
+  accountBindingKey    String?  @unique @db.VarChar(64)
   claimHash            String?  @db.VarChar(64)
   claimStartedAt       DateTime?
   lastErrorCode        String?
@@ -75,6 +80,20 @@ model ExpansionOAuthGrant {
 
   @@index([tenantId, status])
   @@index([status, claimStartedAt])
+}
+
+// Shared fixed-window quotas for authenticated expansion route actions.
+// One bounded row per tenant/action; account deletion removes all buckets.
+model ExpansionRouteLimit {
+  tenantId        String
+  tenant          User     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  action          String
+  windowStartedAt DateTime @db.Timestamptz(3)
+  windowEndsAt    DateTime @db.Timestamptz(3)
+  usageCount      Int
+  updatedAt       DateTime @db.Timestamptz(3)
+
+  @@id([tenantId, action])
 }
 
 model ShopifyConnection {

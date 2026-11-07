@@ -21,7 +21,7 @@ const endpoints = Object.freeze({
 // This increment only requests the already implemented read surfaces. New scopes
 // require code review, fresh consent and provider-specific acceptance.
 const scopeAllowlist = {
-  ebay: new Set(['https://api.ebay.com/oauth/api_scope/sell.fulfillment.readonly']),
+  ebay: new Set(['https://api.ebay.com/oauth/api_scope/commerce.identity.readonly','https://api.ebay.com/oauth/api_scope/sell.fulfillment.readonly']),
   xero: new Set(['offline_access', 'accounting.settings.read']),
 };
 const safe = (s, max = 200) => typeof s === 'string' && s.length > 0 && s.length <= max && !/[\s\x00-\x1f\x7f]/.test(s);
@@ -30,6 +30,7 @@ function configuration(input, needsSecret = false) {
   if (!input || !endpoints[input.provider]?.[input.environment] || !safe(input.clientId, 512) || input.clientId.includes(':')) fail('APP_CONFIGURATION', 'A supported bound confidential app is required.');
   if (!Array.isArray(input.scopes) || input.scopes.length === 0 || input.scopes.length > 10 || new Set(input.scopes).size !== input.scopes.length || input.scopes.some(s => !scopeAllowlist[input.provider].has(s))) fail('SCOPE_REJECTED', 'Only explicit supported read scopes are permitted.');
   const scopes = [...input.scopes].sort();
+  if (input.provider === 'ebay' && scopes.length !== 2) fail('SCOPE_REJECTED', 'eBay requires explicit identity and fulfillment read scopes.');
   if (input.provider === 'xero' && (!scopes.includes('offline_access') || !scopes.includes('accounting.settings.read'))) fail('SCOPE_REJECTED', 'Xero account reads require settings and offline access consent.');
   let callback;
   try { callback = validateCallback(input.callbackUrl, input.allowedCallbacks); } catch { fail('APP_CONFIGURATION', 'An exact registered HTTPS callback is required.'); }
@@ -43,6 +44,8 @@ function configuration(input, needsSecret = false) {
   if (needsSecret) app.clientSecret = input.clientSecret;
   return Object.freeze(app);
 }
+/** Server-side app identity only; excludes the rotatable client secret. */
+export const authorizationBindingForClient = client => configuration(client).authorizationBinding;
 function contextFor(app, context) {
   if (!context || context.provider !== app.provider || context.environment !== app.environment) fail('CONTEXT_MISMATCH', 'Consent must match the configured provider and environment.');
   return { provider: context.provider, environment: context.environment, tenantId: context.tenantId, sessionId: context.sessionId };

@@ -144,3 +144,17 @@ Unsupported accounting treatments stay blocked until explicitly modeled and sand
 - Added cross-worker atomic refresh claims and encrypted token-pair compare-and-swap. Unknown outcomes stay held; stale claims are never automatically stolen. Revocation/deletion invalidates late work.
 - 41 focused storage/coordinator tests and 475 total offline tests cover the increment. Added 12 real PostgreSQL acceptance groups for CI. Independent review found no remaining blocking issue after fixing caller credential override and duplicate-grant refresh contention.
 - The migration remains staged only. No live credentials, provider-account binding, customer acceptance or deployed OAuth routes have been added. Production is unchanged.
+
+## November 7 provider identity and route increment
+
+- Added provider-verified Xero organization / eBay immutable seller identity discovery, opaque credential-bound proofs, explicit selected-account binding and a unique active account owner. Bound metadata is encrypted and survives token rotation; refresh/revoke/delete races fail closed.
+- Added default-off authenticated start/callback/status/accounts/bind HTTP routes and an isolated setup page. Current session, application fingerprint and same-origin writes are required; secrets never appear in responses.
+- 615 offline tests include 56 provider-account and 84 route-boundary tests. Added 10 PostgreSQL identity/binding groups and HTTP default-off checks to CI. Independent review found no remaining blocking safety issue. Browser visual/interactive QA and real grants remain unrun.
+- All migrations/configuration remain staged only. Rollout still requires approved credentials/migrations, shared rate/edge protection, log redaction and real acceptance. No active provider connection, accounting write or production change was made.
+
+## November 7 shared route protection and log safety
+
+- Added mandatory shared per-tenant/action PostgreSQL fixed-window limits, atomic overflow-safe counters, backward-clock protection and bounded DB/application waits. Failure never falls back to an in-memory allow; 429 includes Retry-After.
+- Added a default-failing infrastructure log-policy attestation gate. Routes remain silent; optional application log projection allows only code-owned enum metadata. Actual platform request/query capture remains an unverified rollout prerequisite, not something route code can scrub.
+- 737 offline tests pass, plus a local adapter/parameterization check. Added 10 real PostgreSQL limiter groups for later CI. Tests use synthetic users/tokens only. [Logging safety](docs/expansion/logging-safety.md) and OAuth setup docs describe boundaries.
+- Latest schema/routes/guardrails remain staged locally; no production configuration, credential or provider connection was changed.

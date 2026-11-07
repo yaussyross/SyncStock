@@ -2,6 +2,7 @@
  * reclaimed. "available" means refreshable, not account-verified or customer-ready.
  */
 import { randomBytes, createHash } from 'node:crypto';
+import {consumeAccountProof} from './provider-accounts.mjs';
 export class TokenStoreError extends Error {
   constructor(code, message) { super(message); this.name = 'TokenStoreError'; this.code = code; }
 }
@@ -12,16 +13,22 @@ const isHash = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value
 const safe = (value, max = 200) => typeof value === 'string' && value.length > 0 && value.length <= max && !/[\s\x00-\x1f\x7f]/.test(value);
 const fingerprint = c => hash(JSON.stringify([c.provider,c.environment,c.clientId,c.refreshToken]));
 const fields = ['provider','environment','tenantId','clientId','authorizationBinding'];
-const scopes = { xero: ['accounting.settings.read','offline_access'], ebay: ['https://api.ebay.com/oauth/api_scope/sell.fulfillment.readonly'] };
+const scopes = { xero: ['accounting.settings.read','offline_access'], ebay: ['https://api.ebay.com/oauth/api_scope/commerce.identity.readonly','https://api.ebay.com/oauth/api_scope/sell.fulfillment.readonly'] };
+const accountKey=(credential,account)=>hash(JSON.stringify([credential.provider,credential.environment,credential.clientId,account.accountId]));
+const accountData=(value,provider)=>{
+ if(value===undefined||value===null)return null;
+ if(!safe(value.accountId,256)||!Number.isSafeInteger(value.verifiedAt)||value.verifiedAt<0||!(value.providerConnectionId===null||safe(value.providerConnectionId,200))||(provider==='xero'&&!value.providerConnectionId)||(provider==='ebay'&&value.providerConnectionId!==null))fail('INVALID_ACCOUNT_BINDING','Invalid provider-account binding.');
+ return {accountId:value.accountId,providerConnectionId:value.providerConnectionId,verifiedAt:value.verifiedAt};
+};
 function binding(input) {
   if (!input || !safe(input.connectionId) || !safe(input.tenantId) || !Number.isSafeInteger(input.version) || input.version < 1 || input.version >= 2147483647) fail('INVALID_BINDING', 'An exact tenant, connection and revision are required.');
   return { connectionId: input.connectionId, tenantId: input.tenantId, version: input.version };
 }
 function tokens(input) {
-  if (!input || !scopes[input.provider] || !['production', ...(input.provider === 'ebay' ? ['sandbox'] : [])].includes(input.environment) || !safe(input.tenantId) || !safe(input.clientId,512) || !isHash(input.authorizationBinding) || !safe(input.accessToken,16384) || !safe(input.refreshToken,16384) || input.tokenType !== 'Bearer' || !Number.isSafeInteger(input.expiresAt) || input.expiresAt < 0 || !Number.isSafeInteger(input.refreshExpiresAt) || input.refreshExpiresAt < 0 || !Array.isArray(input.scopes) || input.scopes.join(' ') !== scopes[input.provider].join(' ')) fail('INVALID_CREDENTIAL', 'Grant does not match the supported encrypted credential contract.');
-  return { provider: input.provider, environment: input.environment, tenantId: input.tenantId, clientId: input.clientId, authorizationBinding: input.authorizationBinding, accessToken: input.accessToken, refreshToken: input.refreshToken, tokenType: 'Bearer', expiresAt: input.expiresAt, refreshExpiresAt: input.refreshExpiresAt, scopes: [...input.scopes] };
+  if (!input || !scopes[input.provider] || !['production', ...(input.provider === 'ebay' ? ['sandbox'] : [])].includes(input.environment) || !safe(input.tenantId) || !safe(input.clientId,512) || !isHash(input.authorizationBinding) || !safe(input.accessToken,16384) || !safe(input.refreshToken,16384) || input.tokenType !== 'Bearer' || !Number.isSafeInteger(input.expiresAt) || input.expiresAt < 0 || !Number.isSafeInteger(input.refreshExpiresAt) || input.refreshExpiresAt < 0 || !Array.isArray(input.scopes) || !(input.scopes.join(' ')===scopes[input.provider].join(' ')||(input.provider==='ebay'&&input.scopes.join(' ')==='https://api.ebay.com/oauth/api_scope/sell.fulfillment.readonly'))) fail('INVALID_CREDENTIAL', 'Grant does not match the supported encrypted credential contract.');
+  return { provider: input.provider, environment: input.environment, tenantId: input.tenantId, clientId: input.clientId, authorizationBinding: input.authorizationBinding, accessToken: input.accessToken, refreshToken: input.refreshToken, tokenType: 'Bearer', expiresAt: input.expiresAt, refreshExpiresAt: input.refreshExpiresAt, scopes: [...input.scopes], accountBinding:accountData(input.accountBinding,input.provider) };
 }
-const summary = row => Object.freeze({ connectionId: row.id, tenantId: row.tenantId, provider: row.provider, environment: row.environment, version: row.version, status: row.status, accountStatus: 'unbound', customerReady: false });
+const summary = row => Object.freeze({ connectionId: row.id, tenantId: row.tenantId, provider: row.provider, environment:row.environment,clientId:row.clientId,authorizationBinding:row.authorizationBinding,version: row.version, status: row.status, accountStatus:row.providerAccountId?'bound':'unbound',providerAccountId:row.providerAccountId??null,customerReady:false });
 const key = b => ({ id: b.connectionId, tenantId: b.tenantId, version: b.version });
 export function createTokenStore({ client, encrypt, decrypt, clock = Date.now }) {
   const table = client?.expansionOAuthGrant;
@@ -38,6 +45,8 @@ export function createTokenStore({ client, encrypt, decrypt, clock = Date.now })
     try {
       const e=JSON.parse(decrypt(row.ciphertext)), credential=tokens(e.credential);
       if(e.format!==1||!isHash(e.initialFingerprint)||e.initialFingerprint!==row.initialGrantFingerprint||e.connectionId!==row.id||e.version!==row.version||fields.some(k=>credential[k]!==row[k])||fingerprint(credential)!==row.refreshFingerprint) throw Error();
+      const account=credential.accountBinding;
+      if(account ? row.providerAccountId!==account.accountId||row.providerConnectionId!==account.providerConnectionId||new Date(row.accountVerifiedAt).valueOf()!==account.verifiedAt||row.accountBindingKey!==accountKey(credential,account) : row.providerAccountId!=null||row.providerConnectionId!=null||row.accountVerifiedAt!=null||row.accountBindingKey!=null)throw Error();
       return credential;
     } catch { fail('STORED_BINDING_INVALID','Encrypted grant identity or revision could not be verified.'); }
   }
@@ -49,9 +58,9 @@ export function createTokenStore({ client, encrypt, decrypt, clock = Date.now })
   return Object.freeze({
     async insertUnboundGrant(input) {
       const credential=tokens(input), current=now();
-      if(typeof input.grantId!=='string'||!/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(input.grantId)||input.status!=='account_binding_required'||input.providerAccountId!==null||input.customerReady!==false||credential.expiresAt<=current||credential.refreshExpiresAt<=current) fail('INVALID_CREDENTIAL','A current unbound grant from the trusted exchange is required.');
+      if(typeof input.grantId!=='string'||!/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(input.grantId)||input.status!=='account_binding_required'||input.providerAccountId!==null||input.customerReady!==false||credential.accountBinding!==null||credential.expiresAt<=current||credential.refreshExpiresAt<=current) fail('INVALID_CREDENTIAL','A current unbound grant from the trusted exchange is required.');
       const id=input.grantId, ciphertext=seal(id,1,credential);
-      const data={id,tenantId:credential.tenantId,provider:credential.provider,environment:credential.environment,clientId:credential.clientId,authorizationBinding:credential.authorizationBinding,version:1,status:'available',ciphertext,refreshFingerprint:fingerprint(credential),initialGrantFingerprint:fingerprint(credential),claimHash:null,claimStartedAt:null,lastErrorCode:null};
+      const data={id,tenantId:credential.tenantId,provider:credential.provider,environment:credential.environment,clientId:credential.clientId,authorizationBinding:credential.authorizationBinding,version:1,status:'available',ciphertext,refreshFingerprint:fingerprint(credential),initialGrantFingerprint:fingerprint(credential),providerAccountId:null,providerConnectionId:null,accountVerifiedAt:null,accountBindingKey:null,claimHash:null,claimStartedAt:null,lastErrorCode:null};
       try{return summary(await table.create({data}));}
       catch{
         // Retry persistence of the same exchange result safely, including when
@@ -67,7 +76,32 @@ export function createTokenStore({ client, encrypt, decrypt, clock = Date.now })
     async getSummary(input) {
       if(!input||!safe(input.connectionId)||!safe(input.tenantId)) fail('INVALID_BINDING','An exact tenant and connection are required.');
       const row=await query(()=>table.findFirst({where:{id:input.connectionId,tenantId:input.tenantId}}));
+      if(row&&row.status!=='revoked')open(row);
       return row?summary(row):null;
+    },
+    async getAccessCredential(input) {
+      const b=binding(input),current=now();
+      const row=await query(()=>table.findFirst({where:{...key(b),status:'available',claimHash:null}}));
+      if(!row)fail('CREDENTIAL_UNAVAILABLE','Connection is unavailable, changed, held or refreshing.');
+      const credential=open(row);if(credential.expiresAt<=current)fail('ACCESS_EXPIRED','Refresh or reconnect before reading provider identity.');
+      return Object.freeze({...credential,...b,scopes:Object.freeze([...credential.scopes]),accountBinding:credential.accountBinding?Object.freeze({...credential.accountBinding}):null});
+    },
+    async bindVerifiedAccount(input, selectedAccountId, proof) {
+      const b=binding(input),current=now();
+      if(b.version>=2147483646||!safe(selectedAccountId,256))fail('INVALID_ACCOUNT_BINDING','Invalid account selection or exhausted connection revision.');
+      const row=await query(()=>table.findFirst({where:{...key(b),status:'available',claimHash:null}}));
+      if(!row)fail('CREDENTIAL_UNAVAILABLE','Connection changed or cannot be bound.');
+      const credential=open(row);
+      const account=consumeAccountProof(proof,{...credential,...b},selectedAccountId,current);
+      if(credential.accountBinding){
+        if(credential.accountBinding.accountId!==account.accountId||credential.accountBinding.providerConnectionId!==account.providerConnectionId)fail('ACCOUNT_REBIND_REJECTED','Disconnect and obtain fresh consent to bind a different account.');
+        return summary(row);
+      }
+      const next={...credential,accountBinding:account},version=b.version+1,ciphertext=seal(b.connectionId,version,next,row.initialGrantFingerprint);
+      const data={ciphertext,version,providerAccountId:account.accountId,providerConnectionId:account.providerConnectionId,accountVerifiedAt:new Date(account.verifiedAt),accountBindingKey:accountKey(credential,account)};
+      const updated=await query(()=>table.updateMany({where:{...key(b),status:'available',claimHash:null,ciphertext:row.ciphertext},data}));
+      if(updated.count!==1)fail('STALE_BINDING','Connection changed while account ownership was being verified.');
+      return summary({...row,...data});
     },
     async claimRefresh(input) {
       const b=binding(input), current=now();
@@ -88,6 +122,8 @@ export function createTokenStore({ client, encrypt, decrypt, clock = Date.now })
       const row=await query(()=>table.findFirst({where}));
       if(!row) fail('STALE_CLAIM','Refresh claim is no longer current.');
       const prior=open(row);
+      if(next.accountBinding!==null&&JSON.stringify(next.accountBinding)!==JSON.stringify(prior.accountBinding))fail('REPLACEMENT_REJECTED','Refresh cannot change the provider-account binding.');
+      next.accountBinding=prior.accountBinding;
       if(fields.some(k=>prior[k]!==next[k])||prior.scopes.join(' ')!==next.scopes.join(' ')||(row.provider==='ebay'&&(next.refreshToken!==prior.refreshToken||next.refreshExpiresAt>prior.refreshExpiresAt))||(row.provider==='xero'&&next.refreshToken===prior.refreshToken)) fail('REPLACEMENT_REJECTED','Replacement changed the bound grant or invalidated refresh rotation.');
       const version=b.version+1, ciphertext=seal(b.connectionId,version,next,row.initialGrantFingerprint);
       // One atomic compare-and-swap stores the entire encrypted pair. A crash or
@@ -104,7 +140,7 @@ export function createTokenStore({ client, encrypt, decrypt, clock = Date.now })
     },
     async revoke(input) {
       const b=binding(input);
-      const result=await query(()=>table.updateMany({where:key(b),data:{ciphertext:null,status:'revoked',version:b.version+1,claimHash:null,claimStartedAt:null,lastErrorCode:'REVOKED'}}));
+      const result=await query(()=>table.updateMany({where:key(b),data:{ciphertext:null,providerAccountId:null,providerConnectionId:null,accountVerifiedAt:null,accountBindingKey:null,status:'revoked',version:b.version+1,claimHash:null,claimStartedAt:null,lastErrorCode:'REVOKED'}}));
       return result.count===1;
     },
     async holdStaleRefreshes({maxAgeMs=120000,limit=100}={}) {
