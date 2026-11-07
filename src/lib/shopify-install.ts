@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import { syntheticShopEmail } from "./shopify-shop-account";
 import { db } from "./db";
 import { encrypt } from "./crypto";
 import { shopDomainFromIdToken } from "./shopify-id-token";
@@ -149,11 +149,6 @@ async function ensureWebhooks(shop: string, accessToken: string) {
   }
 
   return ids;
-}
-
-function syntheticShopEmail(shop: string) {
-  const key = crypto.createHash("sha256").update(shop).digest("hex").slice(0, 24);
-  return `shopify-${key}@shops.syncstock.invalid`;
 }
 
 export async function bootstrapEmbeddedShopifyInstall(idToken: string) {

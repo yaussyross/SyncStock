@@ -2,6 +2,7 @@ import { verifyShopifyWebhook } from "@/lib/shopify-webhook-signatures";
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { redactShop, ShopRedactionOwnershipError } from "@/lib/shopify-shop-redaction";
 
 
 export async function POST(req: NextRequest) {
@@ -26,24 +27,33 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
   }
 
-  const connection = await db.shopifyConnection.findUnique({ where: { shopDomain } });
-  const tombstone = connection ? null : await db.shopTombstone.findUnique({ where: { shopDomain } });
-  const userId = connection?.userId ?? tombstone?.userId ?? null;
-
   if (topic === "shop/redact") {
-    if (userId) {
-      await db.$transaction([
-        db.productMapping.deleteMany({ where: { userId } }),
-        db.syncLog.deleteMany({ where: { userId } }),
-        db.orderAdjustment.deleteMany({ where: { userId } }),
-        db.complianceRequest.deleteMany({ where: { userId } }),
-        db.shopifyConnection.deleteMany({ where: { userId } }),
-        db.shopTombstone.deleteMany({ where: { shopDomain } }),
-        db.webhookDelivery.deleteMany({ where: { shopDomain } }),
-      ]);
+    // HMAC authenticates the body, not the routing headers. Bind destructive
+    // cleanup to the signed shop domain before resolving any account.
+    if (payload?.shop_domain !== shopDomain || !/^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(shopDomain)) {
+      return NextResponse.json({ error: "Invalid shop redaction domain" }, { status: 400 });
+    }
+    const triggeredAt = new Date(req.headers.get("x-shopify-triggered-at") ?? "");
+    if (!Number.isFinite(triggeredAt.getTime())) {
+      return NextResponse.json({ error: "Missing or invalid Shopify event timestamp" }, { status: 400 });
+    }
+    try {
+      const redacted = await redactShop(db, shopDomain, triggeredAt);
+      if (!redacted) {
+        return NextResponse.json({ received: true, ignored: true, reason: "newer_shop_lifecycle" });
+      }
+    } catch (error) {
+      console.error("[shopify shop redaction]", {
+        reason: error instanceof ShopRedactionOwnershipError ? "ownership_review_required" : "transaction_failed",
+      });
+      return NextResponse.json({ error: "Shop redaction incomplete" }, { status: 500 });
     }
     return NextResponse.json({ received: true, redacted: true });
   }
+
+  const connection = await db.shopifyConnection.findUnique({ where: { shopDomain } });
+  const tombstone = connection ? null : await db.shopTombstone.findUnique({ where: { shopDomain } });
+  const userId = connection?.userId ?? tombstone?.userId ?? null;
 
   // If Shopify requests customer data after the connection has already been
   // fully redacted, there is no Shopify-derived customer/order data left here.
