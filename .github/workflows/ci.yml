@@ -234,7 +234,8 @@ jobs:
   connection_browser:
     # Isolated synthetic QA only. No provider credentials, real database,
     # production settings, deployment or persisted fixture build artifacts.
-    runs-on: ubuntu-latest
+    # Playwright 1.57 supports Ubuntu 24.04, not the moving latest runner image.
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - name: Checkout
