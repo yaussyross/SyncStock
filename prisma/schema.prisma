@@ -34,6 +34,21 @@ model User {
   orderAdjustments   OrderAdjustment[]
   complianceRequests ComplianceRequest[]
   feedback           Feedback[]
+  expansionOAuthConsents ExpansionOAuthConsent[]
+}
+
+// Pending expansion consent only. No access/refresh token is stored here.
+// tenantId must be the authenticated User.id, never a browser-supplied account.
+model ExpansionOAuthConsent {
+  stateHash  String   @id @db.VarChar(64)
+  tenantId   String
+  tenant     User     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ciphertext String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([expiresAt])
+  @@index([tenantId, expiresAt])
 }
 
 model ShopifyConnection {

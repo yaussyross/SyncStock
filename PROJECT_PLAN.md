@@ -124,3 +124,9 @@ Unsupported accounting treatments stay blocked until explicitly modeled and sand
 - Fixed acceptance surviving account rebinding, replay provenance being silently discarded, unsupported balanced accounting directions, mutable-request token leakage across providers and unbounded async deadlines. Regression tests cover these cases.
 - 339 offline tests, production build and TypeScript check pass. Live provider acceptance remains unrun. See `docs/expansion/READINESS_2026-11-07.md` for exact remaining engineering and provider prerequisites.
 - The user's later request authorizes uploading the requested expansion code as a draft PR. Production remains unchanged; no merge or deployment is part of this increment.
+
+## November 7 durable consent-store increment
+
+- Added encrypted shared PostgreSQL pending-consent storage, atomic single-use consumption, bounded expiry cleanup and account-deletion cascade. No provider credentials, grants or public routes are created.
+- The additive migration is staged in the draft only. Production has not been migrated. Provider-specific OAuth exchange/refresh and credential lifecycle remain unfinished.
+- 363 offline tests pass. Added 10 real PostgreSQL acceptance groups covering independent-client races, expiry, tampering, tenant isolation and deletion cascade. These require exact-head remote CI before the increment is considered verified.

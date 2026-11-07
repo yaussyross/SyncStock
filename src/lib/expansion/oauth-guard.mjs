@@ -3,7 +3,7 @@ const sha=s=>createHash('sha256').update(s).digest('hex');
 const validContext=c=>c && ['amazon','shopify','ebay','etsy','walmart','tiktok_shop','paypal','qbo','xero'].includes(c.provider) && ['sandbox','production'].includes(c.environment) && typeof c.tenantId==='string' && c.tenantId.length>0 && c.tenantId.length<=200 && typeof c.sessionId==='string' && c.sessionId.length>0 && c.sessionId.length<=512;
 const fixedEqual=(a,b)=>typeof a==='string'&&typeof b==='string'&&Buffer.byteLength(a)===Buffer.byteLength(b)&&timingSafeEqual(Buffer.from(a),Buffer.from(b));
 export function validateCallback(url,allowedCallbacks){let u;try{u=new URL(url)}catch{throw new Error('Invalid callback URL')}if(u.protocol!=='https:'||u.username||u.password||u.hash||u.search||!allowedCallbacks.includes(u.href))throw new Error('Callback must be an exact permitted HTTPS callback without credentials, query or fragment');return u.href;}
-/** store.insert/hash and store.take must be transactional and shared in production. No store implementation is shipped here. */
+/** Production uses createPrismaConsentStore: encrypted shared records, atomic consume. */
 export async function beginConsent(context,{store,allowedCallbacks,callbackUrl,now=Date.now(),ttlMs=10*60*1000}){
  if(!validContext(context))throw new Error('Invalid consent binding');
  if(!Number.isFinite(now))throw new Error('Invalid clock');
@@ -15,7 +15,7 @@ export async function beginConsent(context,{store,allowedCallbacks,callbackUrl,n
  return {state,codeChallenge:createHash('sha256').update(verifier).digest('base64url'),codeChallengeMethod:'S256',callback,expiresAt:record.expiresAt};
 }
 /** Consumes state once even when binding is wrong. Provider token exchange is deliberately outside this module. */
-export async function consumeConsent({state,context,callbackUrl,providerError,authorizationCode},{store,allowedCallbacks,now=Date.now()}){
+export async function consumeConsent({state,context,callbackUrl,providerError=null,authorizationCode},{store,allowedCallbacks,now=Date.now()}){
  if(typeof state!=='string'||!/^[A-Za-z0-9_-]{43}$/.test(state))throw new Error('Invalid consent state');
  if(!validContext(context))throw new Error('Invalid consent binding');
  if(!Number.isFinite(now))throw new Error('Invalid clock');

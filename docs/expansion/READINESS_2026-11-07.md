@@ -18,7 +18,7 @@ Preflight deliberately exits 2 while the required trusted acceptance evidence is
 ### Implemented locally
 
 - Default-off 16-path registry. Acceptance binds environment, internal tenant, source account, destination account, mapping revision and, for multichannel, the exact channel membership. Reconnects or mapping changes invalidate prior acceptance.
-- Single-use state and PKCE helpers with a required injected atomic consent store. No in-memory store is installed for production.
+- Single-use state and PKCE helpers with an encrypted PostgreSQL consent store. `createPrismaConsentStore()` binds every encrypted record to its hashed state, authenticated User ID and expiry, consumes it atomically and cascades cleanup when its user is deleted. No in-memory store is installed for production. The additive migration is staged only, never applied to production by this change.
 - `read-client.mjs`: real GET-only HTTP transport for the existing eBay, QBO and Xero origin guards, with immutable credential binding across pages, no redirects, bounded retry/time/page/byte/record limits, strict JSON, explicit end-of-pages, error redaction and no partial result on failure. Token exchange, refresh and persistence are not provided.
 - `native-reads.mjs`: native Xero chart-of-accounts and eBay operational-order readers. Xero strips bank account numbers and balances and does not invent account mapping. eBay retains only order ID and operational status; it does not classify orders as settled revenue. The strict eBay decoder holds changes in totals, missing pages, warnings and changed query windows.
 - Seven readers for the internal SyncStock Evidence v1 schema. These are not seven native provider response parsers. The narrow PayPal T0006 report parser is separate and requires explicit financial-date, zero-tax and fee evidence.
@@ -46,7 +46,7 @@ The Xero organization must be explicitly selected from the authorized grant; its
 ### Not completed
 
 1. Provider account creation, approved app registrations, merchant grants and secured credential provisioning for the expansion.
-2. Real shared consent storage, provider-specific OAuth/token refresh routes and encrypted credential lifecycle.
+2. Provider-specific OAuth/token refresh routes and encrypted credential lifecycle. Shared encrypted consent storage is implemented, but its migration, expiration-cleanup schedule and authorized routes must be deployed deliberately before use.
 3. Native authenticated financial ingestion for Amazon, eBay, Etsy, Walmart and TikTok Shop. The existing Shopify financial path is separate. The eBay operational read is not a financial ingester.
 4. Verified mapping, tax/FX/period rules and authoritative source ownership from real merchant data.
 5. Durable cross-worker accounting intent, uniqueness, unknown-outcome reconciliation and destination write transport. In-memory comparisons are not durable deduplication.
@@ -57,10 +57,10 @@ Therefore **0 new expansion experiences are customer-ready**. The historical Sho
 
 ## Validation record
 
-- 339 offline tests pass, including provider-shaped fixtures, all 16 local pipeline paths, accounting safety, timeout bounds, replay provenance, account rebinding and cross-provider token-leak prevention.
+- 363 offline tests pass, including provider-shaped fixtures, all 16 local pipeline paths, accounting safety, timeout bounds, replay provenance, account rebinding, cross-provider token-leak prevention and encrypted consent-store tests.
 - Production build and TypeScript no-emit check pass with dummy local CI configuration.
 - No provider credential, customer record or accounting transaction was used in these tests.
-- Database migration/billing/redaction integration checks are not run locally because this workspace has no disposable PostgreSQL service; unchanged existing CI runs them on the draft PR.
+- Database migration/billing/redaction integration checks are not run locally because this workspace has no disposable PostgreSQL service. The earlier head passed these in remote CI. The new additive consent migration and 10-group separate-client concurrency/expiry/isolation/cascade suite must pass again in CI on the final head.
 - Two existing reviewer videos were absent from this local reconstructed snapshot. The remote tree retains them unchanged.
 
 ## References
@@ -72,3 +72,14 @@ Therefore **0 new expansion experiences are customer-ready**. The historical Sho
 - PayPal Transaction Search: https://developer.paypal.com/api/transaction-search/v1/search-get
 
 Provider-shaped fixture tests are not provider acceptance. Public documentation and schemas can change; verify the actual responses under the authorized account before enabling any financial path.
+
+## Encrypted consent-store integration
+
+`src/lib/expansion/prisma-consent-store.ts` supplies the existing authenticated-encryption implementation and shared Prisma client. It is a server adapter only, with no public route. Its table has a primary-key state hash, encrypted envelope, authenticated User ID and expiry. PKCE verifier and session hash are encrypted. Raw state, browser session ID, authorization code, access token and refresh token are not stored.
+
+- `insert` rejects expired, future-issued, malformed and overlong records and never overwrites an existing state.
+- `take` atomically deletes and returns a record. Missing or expired state returns null. Invalid ciphertext or changed owner/key/expiry is consumed and held, never retried as valid.
+- `cleanupExpired(limit)` removes at most 1000 expired records per call. There is no automatic scheduler in this increment; a production retention job remains required.
+- `revokeTenant(userId)` removes pending consents for exactly one user. The foreign key also cascades deletion with that user, including the existing verified shop-redaction path.
+
+The PostgreSQL smoke test refuses to use app credentials or a nonlocal database and needs explicit `SYNCSTOCK_EXPANSION_TEST_DATABASE_URL`. It checks two independent Prisma clients racing to consume one state, unique state keys, encrypted storage, wrong-owner rejection, metadata tampering, expiry, bounded cleanup, tenant revocation, account-deletion cascade and foreign-key enforcement. Only fictional test users and codes are used.
