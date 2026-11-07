@@ -90,3 +90,9 @@ test('multichannel acceptance expires when accepted channel membership changes',
   c.channelConfigs=[config('shopify'),config('etsy')];
   assert.equal(checkExperience('multichannel-qbo',c,NOW,()=>true).allowed,false);
 });
+test('consent snapshots context before awaiting atomic consumption',async()=>{
+ const {store,arg}=await started();const originalTake=store.take;const mutable={...arg.context};store.take=async k=>{const result=await originalTake(k);mutable.tenantId='attacker';mutable.sessionId='changed';return result;};const result=await consumeConsent({...arg,context:mutable},options(store));assert.equal(result.tenantId,'synthetic-tenant');
+});
+test('consent rejects authorization config change and consumes state',async()=>{
+ const store=consentStore();const b=await beginConsent(context,{...options(store),authorizationBinding:'a'.repeat(64)});await assert.rejects(()=>consumeConsent({state:b.state,context,callbackUrl:callback,authorizationCode:'SYNTHETIC-CODE'},{...options(store),authorizationBinding:'b'.repeat(64)}),/configuration changed/);assert.equal(store.map.size,0);
+});

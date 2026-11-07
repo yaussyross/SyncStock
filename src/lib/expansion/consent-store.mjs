@@ -11,11 +11,12 @@ const providers = new Set(['amazon','shopify','ebay','etsy','walmart','tiktok_sh
 
 function recordData(record) {
   if (!record || !providers.has(record.provider) || !['sandbox','production'].includes(record.environment) || !id(record.tenantId) || !hash(record.sessionHash) || typeof record.verifier !== 'string' || !/^[A-Za-z0-9_-]{43,128}$/.test(record.verifier)) fail('INVALID_RECORD', 'Invalid pending consent record.');
+  if (record.authorizationBinding !== undefined && !hash(record.authorizationBinding)) fail('INVALID_RECORD', 'Invalid authorization configuration binding.');
   let callback;
   try { callback = new URL(record.callback); } catch { fail('INVALID_RECORD', 'Invalid consent callback.'); }
   if (callback.protocol !== 'https:' || callback.username || callback.password || callback.search || callback.hash || callback.href !== record.callback || callback.href.length > 2048) fail('INVALID_RECORD', 'Invalid consent callback.');
   if (!Number.isSafeInteger(record.issuedAt) || !Number.isSafeInteger(record.expiresAt) || record.issuedAt < 0 || record.expiresAt - record.issuedAt < 1000 || record.expiresAt - record.issuedAt > 600000) fail('INVALID_RECORD', 'Invalid consent lifetime.');
-  return { provider: record.provider, environment: record.environment, tenantId: record.tenantId, sessionHash: record.sessionHash, callback: record.callback, issuedAt: record.issuedAt, expiresAt: record.expiresAt, verifier: record.verifier };
+  return { provider: record.provider, environment: record.environment, tenantId: record.tenantId, sessionHash: record.sessionHash, callback: record.callback, issuedAt: record.issuedAt, expiresAt: record.expiresAt, verifier: record.verifier, ...(record.authorizationBinding === undefined ? {} : { authorizationBinding: record.authorizationBinding }) };
 }
 
 export function createConsentStore({ client, encrypt, decrypt, clock = Date.now }) {

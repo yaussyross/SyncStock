@@ -39,6 +39,13 @@ async function main() {
     assert.equal(consumed.tenantId, owner.id);
     await assert.rejects(() => consume(first.state)); groups++;
 
+    const appBound = await beginConsent(context, { store: storeOne, allowedCallbacks: [callback], callbackUrl: callback, authorizationBinding: 'a'.repeat(64) });
+    const boundRecord = await storeTwo.take(hash(appBound.state));
+    assert.equal(boundRecord?.authorizationBinding, 'a'.repeat(64));
+    const wrongApp = await beginConsent(context, { store: storeOne, allowedCallbacks: [callback], callbackUrl: callback, authorizationBinding: 'a'.repeat(64) });
+    await assert.rejects(() => consumeConsent(args(wrongApp.state), { store: storeTwo, allowedCallbacks: [callback], authorizationBinding: 'b'.repeat(64) }), /Authorization configuration changed/);
+    assert.equal(await storeOne.take(hash(wrongApp.state)), null); groups++;
+
     const concurrent = await start();
     const races = await Promise.allSettled(Array.from({ length: 20 }, (_, i) => consume(concurrent.state, i % 2 ? storeOne : storeTwo)));
     assert.equal(races.filter(result => result.status === 'fulfilled').length, 1, 'Exactly one independent client must consume state'); groups++;

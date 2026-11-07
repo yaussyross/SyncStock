@@ -130,3 +130,10 @@ Unsupported accounting treatments stay blocked until explicitly modeled and sand
 - Added encrypted shared PostgreSQL pending-consent storage, atomic single-use consumption, bounded expiry cleanup and account-deletion cascade. No provider credentials, grants or public routes are created.
 - The additive migration is staged in the draft only. Production has not been migrated. Provider-specific OAuth exchange/refresh and credential lifecycle remain unfinished.
 - 363 offline tests pass. Added 10 real PostgreSQL acceptance groups covering independent-client races, expiry, tampering, tenant isolation and deletion cascade. These require exact-head remote CI before the increment is considered verified.
+
+## November 7 native OAuth transport increment
+
+- Added official-contract eBay/Xero confidential authorization, code exchange and refresh primitives. Provider-specific token types, RuName, expiry and rotation behavior are validated. Read scopes are fixed; no write scopes are requested.
+- Bound encrypted single-use consent to the exact OAuth application configuration. Added an 11th PostgreSQL group for encrypted app binding and wrong-app rejection.
+- Added 68 provider transport tests; 434 offline tests now cover this branch. Token requests in all tests use synthetic mocked responses, never live credentials.
+- No deployed OAuth routes, bearer-token vault, durable refresh lock/CAS coordinator, provider-account binding or real grant has been installed. This closes the native transport gap, not the full connection lifecycle. Production remains unchanged.

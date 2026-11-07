@@ -65,3 +65,6 @@ test('revocation affects exactly one tenant',async()=>{
 test('cleanup limits and tenant identifiers are validated',async()=>{
   const {store}=setup();for(const limit of [0,1001,1.5])await assert.rejects(()=>store.cleanupExpired(limit),code('INVALID_LIMIT'));await assert.rejects(()=>store.revokeTenant(''),code('INVALID_TENANT'));
 });
+test('authorization application binding is validated and preserved encrypted',async()=>{
+  const {store,rows}=setup();const bound=record({authorizationBinding:'c'.repeat(64)});await store.insert(HASH,bound);assert.equal(rows.get(HASH).ciphertext.includes(bound.authorizationBinding),false);assert.deepEqual(await store.take(HASH),bound);await assert.rejects(()=>store.insert(HASH,record({authorizationBinding:'raw-client-secret'})),code('INVALID_RECORD'));
+});
