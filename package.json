@@ -31,7 +31,9 @@
     "test:embedded-sync-recovery": "tsx scripts/embedded-sync-recovery-smoke.ts",
     "test:queue-recovery": "tsx scripts/queue-recovery-smoke.ts",
     "test:shop-redaction": "node --import tsx scripts/shopify-shop-redaction-smoke.ts",
-    "test:shopify-pricing-access": "node --import tsx scripts/shopify-pricing-access-smoke.ts"
+    "test:shopify-pricing-access": "node --import tsx scripts/shopify-pricing-access-smoke.ts",
+    "test:expansion": "node --test scripts/expansion/*.test.mjs src/lib/expansion/source-adapters/*.test.mjs src/lib/expansion/accounting-acceptance/*.test.mjs",
+    "expansion:preflight": "node scripts/expansion/preflight.mjs"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",

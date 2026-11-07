@@ -108,3 +108,19 @@ Unsupported accounting treatments stay blocked until explicitly modeled and sand
 - Do not ask Ross to repeat already-completed generic Shopify production/distribution screenshots.
 - Escalate only a specific human-only Shopify, credential, legal/business, or payment barrier.
 - Do not ask for secrets in normal chat when a secure connector/credential flow is available.
+
+## November 7 isolated expansion readiness work (not deployed)
+
+- Current canonical source was reconstructed read-only at 7b61a906, with 157 text/source assets matching GitHub blob hashes. Two reviewer video files are not materialized in this isolated copy.
+- Added a default-off 16-experience registry, tenant/environment-bound consent state and PKCE utilities, and read-only request guards. No provider app, credential, token exchange, account grant, live read or accounting write is performed by these modules.
+- The consent-state store is an injected interface; a real transactional shared store and provider-specific OAuth routes remain required. In-memory test storage is not a production implementation.
+- All expansion experiences remain blocked without current provider evidence, mapping/dedup/accounting/deletion acceptance and an approved cutover. Sandbox evidence cannot produce a customer-ready verdict. Multi-channel requires accepted constituent sources and a matching accounting destination.
+- These additions complement, but do not claim to recover or integrate, the unavailable October 27 expansion branch. No push or deployment is authorized by this checkpoint.
+
+## November 7 recovered expansion integration
+
+- Consolidated the source and accounting modules into `src/lib/expansion`; added a single tenant-scoped local preview pipeline for all 16 experiences and a CI test command.
+- Added executable bounded GET transport, a native eBay operational-order reader and a native Xero account-catalog reader. No account has been connected by this code, no credentials provisioned, and no remote accounting writes enabled.
+- Fixed acceptance surviving account rebinding, replay provenance being silently discarded, unsupported balanced accounting directions, mutable-request token leakage across providers and unbounded async deadlines. Regression tests cover these cases.
+- 339 offline tests, production build and TypeScript check pass. Live provider acceptance remains unrun. See `docs/expansion/READINESS_2026-11-07.md` for exact remaining engineering and provider prerequisites.
+- The user's later request authorizes uploading the requested expansion code as a draft PR. Production remains unchanged; no merge or deployment is part of this increment.

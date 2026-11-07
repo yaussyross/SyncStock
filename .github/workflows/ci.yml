@@ -99,6 +99,9 @@ jobs:
           echo "anon/authenticated public-table grants: $forbidden_grants"
           test "$forbidden_grants" = "0"
 
+      - name: Expansion offline safety and acceptance tests
+        run: npm run test:expansion
+
       - name: Reconciliation smoke tests
         run: npm run test:reconciliation
 
