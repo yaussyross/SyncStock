@@ -77,12 +77,13 @@ function callbackInput(url) {
   return { state, authorizationCode: code ?? undefined, providerError: error ?? null };
 }
 function publicSummary(summary) {
+  if(summary?.disconnectOutcome != null && !['local_only','outcome_unknown','disconnected'].includes(summary.disconnectOutcome)) rejectRoute(503, 'expansion_unavailable');
   if (!summary || !safeId(summary.connectionId) || !['xero', 'ebay'].includes(summary.provider) ||
-      !['production', 'sandbox'].includes(summary.environment) || !version(summary.version) ||
+      !['production', 'sandbox'].includes(summary.environment) || !(Number.isSafeInteger(summary.version) && summary.version >= 1 && summary.version <= 2147483647) ||
       !['available', 'refreshing', 'held', 'revoked'].includes(summary.status) || !['bound', 'unbound'].includes(summary.accountStatus) ||
       (summary.accountStatus === 'bound' ? !accountId(summary.providerAccountId) : summary.providerAccountId !== null)) rejectRoute(503, 'expansion_unavailable');
   return { connectionId: summary.connectionId, provider: summary.provider, environment: summary.environment, version: summary.version,
-    status: summary.status, accountStatus: summary.accountStatus, providerAccountId: summary.providerAccountId, customerReady: false };
+    status: summary.status, accountStatus: summary.accountStatus, providerAccountId: summary.providerAccountId, disconnectOutcome: summary.disconnectOutcome ?? null, customerReady: false };
 }
 function publicAccounts(accounts) {
   if (!Array.isArray(accounts) || accounts.length > 1000) rejectRoute(503, 'expansion_unavailable');
@@ -91,7 +92,7 @@ function publicAccounts(accounts) {
     return { accountId: account.accountId, label: account.label };
   });
 }
-export function createExpansionRoutes({ env, findUser, loadStores, listAccounts, bindAccount,
+export function createExpansionRoutes({ env, findUser, loadStores, listAccounts, bindAccount, disconnect,
   beginConsent = beginProviderConsent, exchangeCode = exchangeProviderCode, clock = Date.now, rateLimit = /** @type {null|((action:string,tenantId:string)=>Promise<{allowed:boolean,retryAfterSeconds:number}>)} */(null), bodyReadTimeoutMs = 5000 }) {
   if (!Number.isInteger(bodyReadTimeoutMs) || bodyReadTimeoutMs < 1 || bodyReadTimeoutMs > 5000) throw new Error('Invalid body deadline');
   const protect = operation => async (request, id) => {
@@ -114,11 +115,11 @@ export function createExpansionRoutes({ env, findUser, loadStores, listAccounts,
     if (!Object.hasOwn(config.clients, provider)) rejectRoute(404, 'not_found');
     return config.clients[provider];
   };
-  async function connection(stores, session, connectionId, config) {
+  async function connection(stores, session, connectionId, config, localOnly = false) {
     const summary = await stores.tokenStore.getSummary({ tenantId: session.tenantId, connectionId });
     if (!summary || summary.tenantId !== session.tenantId || summary.connectionId !== connectionId) rejectRoute(404, 'not_found');
     const client = clientFor(config, summary.provider);
-    if (client.environment !== summary.environment || client.clientId !== summary.clientId || authorizationBindingForClient(client) !== summary.authorizationBinding) rejectRoute(404, 'not_found');
+    if (!localOnly && summary.status !== 'revoked' && (client.environment !== summary.environment || client.clientId !== summary.clientId || authorizationBindingForClient(client) !== summary.authorizationBinding)) rejectRoute(404, 'not_found');
     publicSummary(summary);
     return { summary, binding: Object.freeze({ tenantId: session.tenantId, connectionId: summary.connectionId, version: summary.version }) };
   }
@@ -174,6 +175,22 @@ export function createExpansionRoutes({ env, findUser, loadStores, listAccounts,
       if (!bound || bound.tenantId !== session.tenantId || bound.connectionId !== connectionId || (!idempotent && bound.version !== binding.version + 1) ||
           bound.provider !== summary.provider || bound.environment !== summary.environment || bound.accountStatus !== 'bound' || bound.providerAccountId !== selected.accountId) rejectRoute(503, 'expansion_unavailable');
       return json({ connection: publicSummary(bound) });
+    }),
+    disconnect: protect(async (request, connectionId) => {
+      const config = readExpansionRouteConfig(env);
+      if (!safeId(connectionId)) rejectRoute(400, 'invalid_request');
+      const url = urlFor(request, config, `/api/expansion/connections/${encodeURIComponent(connectionId)}/disconnect`, 'POST');
+      if (url.search) rejectRoute(400, 'invalid_request');
+      const selected = await body(request, 512, false, bodyReadTimeoutMs);
+      if (Object.keys(selected).sort().join(',') !== 'mode,version' || !['local_only','bound_organization'].includes(selected.mode) || !version(selected.version)) rejectRoute(400, 'invalid_request');
+      const session = await access(request, config, 'disconnect'), stores = await loadStores(session.tenantId);
+      const { summary, binding } = await connection(stores, session, connectionId, config, selected.mode === 'local_only');
+      if (selected.version !== binding.version || summary.status === 'revoked') rejectRoute(409, 'connection_changed');
+      if (summary.provider !== 'xero' || (selected.mode === 'bound_organization' && (summary.accountStatus !== 'bound' || summary.status !== 'available'))) rejectRoute(409, 'disconnect_unavailable');
+      const result = await disconnect(binding, selected.mode, { store: stores.tokenStore, clock });
+      if (!result || result.tenantId !== session.tenantId || result.connectionId !== connectionId || result.version !== binding.version + 1 || result.provider !== summary.provider || result.environment !== summary.environment || result.status !== 'revoked' || result.accountStatus !== 'unbound' || result.providerAccountId !== null ||
+          !(selected.mode === 'local_only' ? result.disconnectOutcome === 'local_only' : ['outcome_unknown','disconnected'].includes(result.disconnectOutcome))) rejectRoute(503, 'expansion_unavailable');
+      return json({ connection: publicSummary(result) });
     }),
     status: protect(async (request, connectionId) => {
       const config = readExpansionRouteConfig(env);

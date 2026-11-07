@@ -11,3 +11,5 @@ test('hung reserve is bounded and has no local admission fallback',async()=>{con
 test('late successful reservation after timeout does not admit or retry request',async()=>{let calls=0,resolve;const limiter=createSharedRouteLimiter({deadlineMs:10,reserve:()=>{calls++;return new Promise(r=>{resolve=r})}});await assert.rejects(()=>limiter('start','tenant-1'),unavailable);resolve({usageCount:1,retryAfterSeconds:100});await new Promise(r=>setTimeout(r,0));assert.equal(calls,1);});
 for(const deadlineMs of [0,5001,1.5,NaN])test('invalid time bound is rejected '+deadlineMs,()=>assert.throws(()=>createSharedRouteLimiter({reserve:async()=>{},deadlineMs}),unavailable));
 test('missing shared adapter cannot fall back to memory',()=>assert.throws(()=>createSharedRouteLimiter({}),unavailable));
+
+test('disconnect has an explicit strict tenant-wide budget',()=>{assert.deepEqual(ROUTE_LIMITS.disconnect,{limit:5,windowSeconds:300});});

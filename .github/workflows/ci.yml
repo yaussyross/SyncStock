@@ -117,6 +117,11 @@ jobs:
           SYNCSTOCK_EXPANSION_TEST_DATABASE_URL: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public
         run: node --import tsx scripts/expansion-account-binding-db-smoke.ts
 
+      - name: Expansion Xero disconnect destruction and outcome safety
+        env:
+          SYNCSTOCK_EXPANSION_TEST_DATABASE_URL: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public
+        run: node --import tsx scripts/expansion-disconnect-db-smoke.ts
+
       - name: Expansion shared route protection
         env:
           SYNCSTOCK_EXPANSION_TEST_DATABASE_URL: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public
@@ -165,6 +170,9 @@ jobs:
       - name: Launch surface regression
         run: npm run test:launch-surface
 
+      - name: Connection page isolation source checks
+        run: node --import tsx scripts/connection-page-isolation-smoke.ts
+
       - name: QuickBooks reconnect regression
         run: npm run test:qbo-reconnect
 
@@ -179,6 +187,9 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+      - name: Connection page production HTTP isolation
+        run: node scripts/connection-page-isolation-http.mjs
 
       - name: Public HTTP route smoke
         shell: bash
@@ -202,7 +213,8 @@ jobs:
             'GET /api/expansion/oauth/xero/callback' \
             'GET /api/expansion/connections/11111111-1111-4111-8111-111111111111' \
             'GET /api/expansion/connections/11111111-1111-4111-8111-111111111111/accounts' \
-            'POST /api/expansion/connections/11111111-1111-4111-8111-111111111111/bind'; do
+            'POST /api/expansion/connections/11111111-1111-4111-8111-111111111111/bind' \
+            'POST /api/expansion/connections/11111111-1111-4111-8111-111111111111/disconnect'; do
             read -r method route <<< "$endpoint"
             status="$(curl --silent --show-error -X "$method" -D /tmp/expansion-headers -o /tmp/expansion-body -w '%{http_code}' "http://127.0.0.1:3000$route")"
             test "$status" = "404"
@@ -217,3 +229,30 @@ jobs:
           name: package-lock
           path: package-lock.json
           retention-days: 1
+
+
+  connection_browser:
+    # Isolated synthetic QA only. No provider credentials, real database,
+    # production settings, deployment or persisted fixture build artifacts.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install repository dependencies
+        shell: bash
+        run: |
+          if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
+      - name: Install pinned browser test tooling
+        run: |
+          npm install --no-save --package-lock=false --no-audit --no-fund playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Test connection document isolation and disconnect UI
+        run: node scripts/run-connection-page-browser.mjs
+      - name: Verify temporary source cleanup
+        if: always()
+        run: test ! -e 'src/app/(standard)/isolation-test-fixture'

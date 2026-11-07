@@ -3,13 +3,13 @@
  * controls Next.js, platform access logs, trace attributes or log-drain metadata.
  * Add reviewed, code-owned enum fields rather than arbitrary strings/objects.
  */
-const ACTIONS = new Set(['start', 'callback', 'status', 'accounts', 'bind']);
+const ACTIONS = new Set(['start', 'callback', 'status', 'accounts', 'bind', 'disconnect']);
 const PROVIDERS = new Set(['xero', 'ebay']);
 const ENVIRONMENTS = new Set(['production', 'sandbox']);
 const STATUSES = new Set([200, 302, 303, 400, 401, 403, 404, 405, 409, 429, 503]);
 const REASONS = new Set(['none', 'not_found', 'sign_in_required', 'forbidden',
   'invalid_request', 'method_not_allowed', 'connection_changed',
-  'try_again_later', 'expansion_unavailable']);
+  'try_again_later', 'disconnect_unavailable', 'expansion_unavailable']);
 
 function ownData(input, key) {
   if (input === null || typeof input !== 'object') return undefined;

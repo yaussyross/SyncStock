@@ -30,6 +30,10 @@ export function expansionRoutes() {
       const { listConnectionAccounts } = await import('./account-binding.mjs');
       return listConnectionAccounts(...args);
     },
+    disconnect: async (...args: Parameters<typeof import('./disconnect-connection.mjs').disconnectConnection>) => {
+      const { disconnectConnection } = await import('./disconnect-connection.mjs');
+      return disconnectConnection(...args);
+    },
     bindAccount: async (...args: Parameters<typeof import('./account-binding.mjs').bindConnectionAccount>) => {
       const { bindConnectionAccount } = await import('./account-binding.mjs');
       return bindConnectionAccount(...args);

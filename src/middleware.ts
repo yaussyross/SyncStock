@@ -24,6 +24,41 @@ async function hasValidShopifyHmac(searchParams: URLSearchParams) {
 export async function middleware(req: NextRequest) {
   const { pathname, searchParams } = req.nextUrl;
 
+  // Next can resolve percent-encoded route segments to the same page. Apply
+  // the document policy to those aliases too, before any HTML is streamed.
+  let decodedPathname = pathname;
+  try { decodedPathname = decodeURIComponent(pathname); } catch { /* Next handles malformed URLs. */ }
+
+  // This document handles connection IDs and provider account choices. Keep
+  // third-party resources out even if a future component accidentally adds one.
+  // Next reads the nonce from the request CSP for its SSR/hydration scripts.
+  if (decodedPathname === "/settings/connections" || decodedPathname.startsWith("/settings/connections/")) {
+    const nonce = btoa(crypto.randomUUID());
+    const policy = [
+      "default-src 'self'",
+      `script-src 'self' 'nonce-${nonce}'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
+      "style-src 'self' 'unsafe-inline'",
+      "font-src 'self'",
+      "img-src 'self' data:",
+      "connect-src 'self'",
+      "frame-src 'none'",
+      "frame-ancestors 'none'",
+      "object-src 'none'",
+      "base-uri 'none'",
+      "form-action 'self'",
+    ].join("; ");
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set("Content-Security-Policy", policy);
+    const res = pathname !== decodedPathname
+      ? NextResponse.redirect(new URL(`${decodedPathname}${req.nextUrl.search}`, req.url))
+      : NextResponse.next({ request: { headers: requestHeaders } });
+    res.headers.set("Content-Security-Policy", policy);
+    res.headers.set("Referrer-Policy", "no-referrer");
+    res.headers.set("Cache-Control", "private, no-store, max-age=0");
+    res.headers.set("X-Content-Type-Options", "nosniff");
+    return res;
+  }
+
   // Shopify custom-distribution links first land on the configured app URL with
   // shop/host/timestamp metadata. Keep this compatibility path for the isolated
   // development app; the public production app uses /shopify/app + App Bridge.
@@ -76,5 +111,6 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/shopify/app/:path*", "/api/auth/shopify/callback"],
+  // Match encoded aliases too; exact raw-path matchers can miss them.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

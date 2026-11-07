@@ -58,10 +58,10 @@ Therefore **0 new expansion experiences are customer-ready**. The historical Sho
 
 ## Validation record
 
-- 745 offline tests pass, including provider-shaped fixtures, all 16 local pipeline paths, accounting safety, timeout bounds, replay provenance, account rebinding, cross-provider token-leak prevention and encrypted consent-store tests.
+- 795 offline tests pass, including provider-shaped fixtures, all 16 local pipeline paths, accounting safety, timeout bounds, replay provenance, account rebinding, cross-provider token-leak prevention and encrypted consent-store tests.
 - Production build and TypeScript no-emit check pass with dummy local CI configuration.
 - No provider credential, customer record or accounting transaction was used in these tests.
-- Database migration/billing/redaction integration checks are not run locally because this workspace has no disposable PostgreSQL service. Published head a4cb1e81 passed all 43 PostgreSQL groups (11 consent, 12 token storage, 10 account binding, 10 limiter), migration/schema/privilege checks, production build and HTTP smoke. The later narrow Xero callback-status alignment must repeat exact-head CI; it adds no migration.
+- Database migration/billing/redaction integration checks are not run locally because this workspace has no disposable PostgreSQL service. Published head b45a0ccb passed 745 offline tests and all 43 PostgreSQL groups (11 consent, 12 token storage, 10 account binding, 10 limiter), migration/schema/privilege checks, production build and HTTP smoke. The staged disconnect increment adds seven PostgreSQL groups, bringing the next exact-head requirement to 50. Browser isolation has a separate synthetic CI job and must be verified independently.
 - Two existing reviewer videos were absent from this local reconstructed snapshot. The remote tree retains them unchanged.
 
 ## References
@@ -160,3 +160,12 @@ Application routes stay silent. An optional closed-enum log projection drops all
 The API-consumer security standard recommends empty-body 302 responses for token-bearing URL endpoints. Xero success/handled-failure callbacks now use 302; eBay remains 303. Early rejections remain generic non-HTML JSON with no-store/no-referrer headers. Eight additional regression cases bring the local suite to 745; this does not prove ingress-log protection.
 
 [Security evidence and remediation](xero-security-readiness.md) records current code evidence and unresolved hosting, strong customer authentication, operator access, audit/monitoring, third-party page resources, disconnect/deletion and privacy/terms requirements. No compliance attestation has been made, no operational flags enabled, and no public policy changed. Real OAuth remains disabled pending these prerequisites.
+
+
+## Isolated setup document and narrow Xero disconnect
+
+The setup page now has a separate dynamic root layout, so ordinary-page third-party JavaScript does not remain in its document across cross-root navigation. App Bridge, Google Fonts and FeedbackLink are absent from setup. CSP nonces, self-only resources, no-referrer/no-store and encoded-path canonicalization defend that boundary. Ordinary pages retain their URLs/resources and Shopify framing rules. See [document isolation](../connection-page-isolation.md) for the precise tests and browser-verification limits.
+
+`POST /api/expansion/connections/{id}/disconnect` requires an explicit mode, current revision, owning session, same-origin POST and shared quota. Local-only mode destroys local credentials without claiming provider revocation. Bound-organization mode re-verifies the exact Xero tenant and connection ID, atomically destroys credentials, then issues at most one narrow DELETE. Only exact 204 records confirmed removal of that connection. Tokens and other Xero connections are not revoked; accounting records are not deleted. Timeouts, ambiguous writes and provider outcomes retain a durable unknown state without retries. The UI requires explicit consequence confirmation, locks repeated actions and requires status reconciliation after a lost response.
+
+[Disconnect design and tests](xero-disconnect-draft.md) cover tenant/app/account/version binding, original proof lifetime, delayed DB/CAS operations, refresh/delete races, terminal versions and conservative outcome reporting. New migrations remain draft-only. Real provider acceptance, production activation and general retention/deletion remain unperformed.

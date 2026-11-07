@@ -9,6 +9,7 @@ export const ROUTE_LIMITS=Object.freeze({
  callback:Object.freeze({limit:30,windowSeconds:900}),
  accounts:Object.freeze({limit:30,windowSeconds:300}),
  bind:Object.freeze({limit:10,windowSeconds:300}),
+ disconnect:Object.freeze({limit:5,windowSeconds:300}),
  status:Object.freeze({limit:120,windowSeconds:300}),
 });
 /** @param {{reserve: (request: {tenantId:string,action:string,limit:number,windowSeconds:number})=>Promise<any>,deadlineMs?:number}} options */

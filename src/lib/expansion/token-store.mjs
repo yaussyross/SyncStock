@@ -2,7 +2,7 @@
  * reclaimed. "available" means refreshable, not account-verified or customer-ready.
  */
 import { randomBytes, createHash } from 'node:crypto';
-import {consumeAccountProof} from './provider-accounts.mjs';
+import {consumeAccountProof,consumeDisconnectProof} from './provider-accounts.mjs';
 export class TokenStoreError extends Error {
   constructor(code, message) { super(message); this.name = 'TokenStoreError'; this.code = code; }
 }
@@ -21,14 +21,14 @@ const accountData=(value,provider)=>{
  return {accountId:value.accountId,providerConnectionId:value.providerConnectionId,verifiedAt:value.verifiedAt};
 };
 function binding(input) {
-  if (!input || !safe(input.connectionId) || !safe(input.tenantId) || !Number.isSafeInteger(input.version) || input.version < 1 || input.version >= 2147483647) fail('INVALID_BINDING', 'An exact tenant, connection and revision are required.');
+  if (!input || !safe(input.connectionId) || !safe(input.tenantId) || !Number.isSafeInteger(input.version) || input.version < 1 || input.version > 2147483647) fail('INVALID_BINDING', 'An exact tenant, connection and revision are required.');
   return { connectionId: input.connectionId, tenantId: input.tenantId, version: input.version };
 }
 function tokens(input) {
   if (!input || !scopes[input.provider] || !['production', ...(input.provider === 'ebay' ? ['sandbox'] : [])].includes(input.environment) || !safe(input.tenantId) || !safe(input.clientId,512) || !isHash(input.authorizationBinding) || !safe(input.accessToken,16384) || !safe(input.refreshToken,16384) || input.tokenType !== 'Bearer' || !Number.isSafeInteger(input.expiresAt) || input.expiresAt < 0 || !Number.isSafeInteger(input.refreshExpiresAt) || input.refreshExpiresAt < 0 || !Array.isArray(input.scopes) || !(input.scopes.join(' ')===scopes[input.provider].join(' ')||(input.provider==='ebay'&&input.scopes.join(' ')==='https://api.ebay.com/oauth/api_scope/sell.fulfillment.readonly'))) fail('INVALID_CREDENTIAL', 'Grant does not match the supported encrypted credential contract.');
   return { provider: input.provider, environment: input.environment, tenantId: input.tenantId, clientId: input.clientId, authorizationBinding: input.authorizationBinding, accessToken: input.accessToken, refreshToken: input.refreshToken, tokenType: 'Bearer', expiresAt: input.expiresAt, refreshExpiresAt: input.refreshExpiresAt, scopes: [...input.scopes], accountBinding:accountData(input.accountBinding,input.provider) };
 }
-const summary = row => Object.freeze({ connectionId: row.id, tenantId: row.tenantId, provider: row.provider, environment:row.environment,clientId:row.clientId,authorizationBinding:row.authorizationBinding,version: row.version, status: row.status, accountStatus:row.providerAccountId?'bound':'unbound',providerAccountId:row.providerAccountId??null,customerReady:false });
+const summary = row => Object.freeze({ connectionId: row.id, tenantId: row.tenantId, provider: row.provider, environment:row.environment,clientId:row.clientId,authorizationBinding:row.authorizationBinding,version: row.version, status: row.status, accountStatus:row.providerAccountId?'bound':'unbound',providerAccountId:row.providerAccountId??null,disconnectOutcome:row.disconnectOutcome??null,customerReady:false });
 const key = b => ({ id: b.connectionId, tenantId: b.tenantId, version: b.version });
 export function createTokenStore({ client, encrypt, decrypt, clock = Date.now }) {
   const table = client?.expansionOAuthGrant;
@@ -60,7 +60,7 @@ export function createTokenStore({ client, encrypt, decrypt, clock = Date.now })
       const credential=tokens(input), current=now();
       if(typeof input.grantId!=='string'||!/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(input.grantId)||input.status!=='account_binding_required'||input.providerAccountId!==null||input.customerReady!==false||credential.accountBinding!==null||credential.expiresAt<=current||credential.refreshExpiresAt<=current) fail('INVALID_CREDENTIAL','A current unbound grant from the trusted exchange is required.');
       const id=input.grantId, ciphertext=seal(id,1,credential);
-      const data={id,tenantId:credential.tenantId,provider:credential.provider,environment:credential.environment,clientId:credential.clientId,authorizationBinding:credential.authorizationBinding,version:1,status:'available',ciphertext,refreshFingerprint:fingerprint(credential),initialGrantFingerprint:fingerprint(credential),providerAccountId:null,providerConnectionId:null,accountVerifiedAt:null,accountBindingKey:null,claimHash:null,claimStartedAt:null,lastErrorCode:null};
+      const data={id,tenantId:credential.tenantId,provider:credential.provider,environment:credential.environment,clientId:credential.clientId,authorizationBinding:credential.authorizationBinding,version:1,status:'available',ciphertext,refreshFingerprint:fingerprint(credential),initialGrantFingerprint:fingerprint(credential),providerAccountId:null,providerConnectionId:null,accountVerifiedAt:null,accountBindingKey:null,claimHash:null,claimStartedAt:null,lastErrorCode:null,disconnectOutcome:null,disconnectAccountId:null,disconnectConnectionId:null,disconnectAttemptHash:null,disconnectStartedAt:null};
       try{return summary(await table.create({data}));}
       catch{
         // Retry persistence of the same exchange result safely, including when
@@ -80,18 +80,18 @@ export function createTokenStore({ client, encrypt, decrypt, clock = Date.now })
       return row?summary(row):null;
     },
     async getAccessCredential(input) {
-      const b=binding(input),current=now();
+      const b=binding(input);
       const row=await query(()=>table.findFirst({where:{...key(b),status:'available',claimHash:null}}));
       if(!row)fail('CREDENTIAL_UNAVAILABLE','Connection is unavailable, changed, held or refreshing.');
-      const credential=open(row);if(credential.expiresAt<=current)fail('ACCESS_EXPIRED','Refresh or reconnect before reading provider identity.');
+      const credential=open(row),current=now();if(credential.expiresAt<=current)fail('ACCESS_EXPIRED','Refresh or reconnect before reading provider identity.');
       return Object.freeze({...credential,...b,scopes:Object.freeze([...credential.scopes]),accountBinding:credential.accountBinding?Object.freeze({...credential.accountBinding}):null});
     },
     async bindVerifiedAccount(input, selectedAccountId, proof) {
-      const b=binding(input),current=now();
+      const b=binding(input);
       if(b.version>=2147483646||!safe(selectedAccountId,256))fail('INVALID_ACCOUNT_BINDING','Invalid account selection or exhausted connection revision.');
       const row=await query(()=>table.findFirst({where:{...key(b),status:'available',claimHash:null}}));
       if(!row)fail('CREDENTIAL_UNAVAILABLE','Connection changed or cannot be bound.');
-      const credential=open(row);
+      const credential=open(row),current=now();
       const account=consumeAccountProof(proof,{...credential,...b},selectedAccountId,current);
       if(credential.accountBinding){
         if(credential.accountBinding.accountId!==account.accountId||credential.accountBinding.providerConnectionId!==account.providerConnectionId)fail('ACCOUNT_REBIND_REJECTED','Disconnect and obtain fresh consent to bind a different account.');
@@ -138,9 +138,39 @@ export function createTokenStore({ client, encrypt, decrypt, clock = Date.now })
       const result=await query(()=>table.updateMany({where,data:{status:'held',claimHash:null,claimStartedAt:null,lastErrorCode:reason}}));
       return result.count===1;
     },
+    // Destruction is the durable, one-way claim. No provider write is allowed
+    // until this CAS succeeds unambiguously; a lost response cannot be retried.
+    async beginDisconnect(input, mode, proof) {
+      const b=binding(input);
+      if(b.version>=2147483647)fail('DISCONNECT_UNAVAILABLE','Connection revision is exhausted.');
+      if(!['local_only','bound_organization'].includes(mode))fail('INVALID_DISCONNECT','An explicit disconnect mode is required.');
+      const row=await query(()=>table.findFirst({where:key(b)}));
+      if(!row||row.status==='revoked'||row.disconnectOutcome!=null)fail('DISCONNECT_UNAVAILABLE','Connection changed or already disconnected.');
+      const credential=open(row),current=now();let freshness=null;
+      if(credential.provider!=='xero'||credential.environment!=='production')fail('DISCONNECT_UNAVAILABLE','Only Xero disconnect is supported.');
+      if(mode==='bound_organization'){
+        if(row.status!=='available'||row.claimHash!==null||credential.expiresAt<=current||!credential.accountBinding)fail('DISCONNECT_UNAVAILABLE','A current bound connection is required.');
+        freshness=consumeDisconnectProof(proof,{...credential,...b},credential.accountBinding.accountId,current);
+        if(freshness.account.providerConnectionId!==credential.accountBinding.providerConnectionId)fail('DISCONNECT_UNAVAILABLE','Provider connection identity changed.');
+      }
+      const attemptToken=randomBytes(32).toString('base64url');
+      const data={ciphertext:null,providerAccountId:null,providerConnectionId:null,accountVerifiedAt:null,accountBindingKey:null,status:'revoked',version:b.version+1,claimHash:null,claimStartedAt:null,lastErrorCode:'REVOKED',
+        disconnectOutcome:mode==='local_only'?'local_only':'outcome_unknown',disconnectAccountId:credential.accountBinding?.accountId??null,disconnectConnectionId:credential.accountBinding?.providerConnectionId??null,disconnectAttemptHash:hash(attemptToken),disconnectStartedAt:new Date(current)};
+      const changed=await query(()=>table.updateMany({where:{...key(b),status:row.status,ciphertext:row.ciphertext,claimHash:row.claimHash},data}));
+      if(changed.count!==1)fail('DISCONNECT_UNAVAILABLE','Connection changed before credential destruction.');
+      const checkedAt=now(),notBefore=freshness?.discoveredAt??current,notAfter=freshness?Math.min(freshness.expiresAt,freshness.discoveredAt+60000):current;
+      return Object.freeze({binding:Object.freeze({...b,version:data.version}),attemptToken,credential:mode==='bound_organization'?Object.freeze({...credential,...b}):null,notBefore,notAfter,checkedAt,remoteReady:mode==='bound_organization'&&checkedAt>=current&&checkedAt>=notBefore&&checkedAt<notAfter,summary:summary({...row,...data})});
+    },
+    async completeDisconnect(input, attemptToken) {
+      const b=binding(input);
+      if(!safe(attemptToken,100)||!/^[A-Za-z0-9_-]{43}$/.test(attemptToken))fail('INVALID_CLAIM','An exact disconnect claim is required.');
+      const changed=await query(()=>table.updateMany({where:{...key(b),status:'revoked',disconnectOutcome:'outcome_unknown',disconnectAttemptHash:hash(attemptToken)},data:{disconnectOutcome:'disconnected'}}));
+      if(changed.count!==1)fail('DISCONNECT_UNAVAILABLE','Disconnect outcome could not be recorded.');
+    },
     async revoke(input) {
       const b=binding(input);
-      const result=await query(()=>table.updateMany({where:key(b),data:{ciphertext:null,providerAccountId:null,providerConnectionId:null,accountVerifiedAt:null,accountBindingKey:null,status:'revoked',version:b.version+1,claimHash:null,claimStartedAt:null,lastErrorCode:'REVOKED'}}));
+      if(b.version>=2147483647)fail('INVALID_BINDING','Connection revision is exhausted.');
+      const result=await query(()=>table.updateMany({where:{...key(b),disconnectOutcome:null},data:{ciphertext:null,providerAccountId:null,providerConnectionId:null,accountVerifiedAt:null,accountBindingKey:null,status:'revoked',version:b.version+1,claimHash:null,claimStartedAt:null,lastErrorCode:'REVOKED'}}));
       return result.count===1;
     },
     async holdStaleRefreshes({maxAgeMs=120000,limit=100}={}) {

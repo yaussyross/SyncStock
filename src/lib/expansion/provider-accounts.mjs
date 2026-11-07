@@ -73,3 +73,10 @@ export function consumeAccountProof(proof,expected,selectedAccountId,now=Date.no
  proofs.delete(proof);
  return Object.freeze({accountId:account.accountId,providerConnectionId:account.providerConnectionId,verifiedAt:now});
 }
+
+/** Disconnect needs the original proof freshness window, not its consumption time. */
+export function consumeDisconnectProof(proof, expected, selectedAccountId, now=Date.now()) {
+ const evidence=proof&&proofs.get(proof);
+ const account=consumeAccountProof(proof,expected,selectedAccountId,now);
+ return Object.freeze({account,discoveredAt:evidence.discoveredAt,expiresAt:evidence.expiresAt});
+}

@@ -1,0 +1,89 @@
+{
+  "note": "Delete every from path and add the corresponding to path in the same commit. URLs unchanged. API routes are not moved. New isolation/catchall files are separate additions.",
+  "moves": [
+    {
+      "from": "src/app/app/layout.tsx",
+      "to": "src/app/(standard)/app/layout.tsx"
+    },
+    {
+      "from": "src/app/app/page.tsx",
+      "to": "src/app/(standard)/app/page.tsx"
+    },
+    {
+      "from": "src/app/dashboard/accounting/page.tsx",
+      "to": "src/app/(standard)/dashboard/accounting/page.tsx"
+    },
+    {
+      "from": "src/app/dashboard/billing/page.tsx",
+      "to": "src/app/(standard)/dashboard/billing/page.tsx"
+    },
+    {
+      "from": "src/app/dashboard/page.tsx",
+      "to": "src/app/(standard)/dashboard/page.tsx"
+    },
+    {
+      "from": "src/app/dashboard/privacy/page.tsx",
+      "to": "src/app/(standard)/dashboard/privacy/page.tsx"
+    },
+    {
+      "from": "src/app/dashboard/products/page.tsx",
+      "to": "src/app/(standard)/dashboard/products/page.tsx"
+    },
+    {
+      "from": "src/app/docs/page.tsx",
+      "to": "src/app/(standard)/docs/page.tsx"
+    },
+    {
+      "from": "src/app/error.tsx",
+      "to": "src/app/(standard)/error.tsx"
+    },
+    {
+      "from": "src/app/feedback/page.tsx",
+      "to": "src/app/(standard)/feedback/page.tsx"
+    },
+    {
+      "from": "src/app/layout.tsx",
+      "to": "src/app/(standard)/layout.tsx"
+    },
+    {
+      "from": "src/app/login/page.tsx",
+      "to": "src/app/(standard)/login/page.tsx"
+    },
+    {
+      "from": "src/app/not-found.tsx",
+      "to": "src/app/(standard)/not-found.tsx"
+    },
+    {
+      "from": "src/app/page.tsx",
+      "to": "src/app/(standard)/page.tsx"
+    },
+    {
+      "from": "src/app/privacy/page.tsx",
+      "to": "src/app/(standard)/privacy/page.tsx"
+    },
+    {
+      "from": "src/app/shopify/app/page.tsx",
+      "to": "src/app/(standard)/shopify/app/page.tsx"
+    },
+    {
+      "from": "src/app/signup/page.tsx",
+      "to": "src/app/(standard)/signup/page.tsx"
+    },
+    {
+      "from": "src/app/support/page.tsx",
+      "to": "src/app/(standard)/support/page.tsx"
+    },
+    {
+      "from": "src/app/terms/page.tsx",
+      "to": "src/app/(standard)/terms/page.tsx"
+    },
+    {
+      "from": "src/app/tools/bookkeeping-cost/page.tsx",
+      "to": "src/app/(standard)/tools/bookkeeping-cost/page.tsx"
+    },
+    {
+      "from": "src/app/settings/connections/page.tsx",
+      "to": "src/app/(connection-setup)/settings/connections/page.tsx"
+    }
+  ]
+}

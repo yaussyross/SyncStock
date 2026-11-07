@@ -75,6 +75,11 @@ model ExpansionOAuthGrant {
   claimHash            String?  @db.VarChar(64)
   claimStartedAt       DateTime?
   lastErrorCode        String?
+  disconnectOutcome      String?
+  disconnectAccountId    String?
+  disconnectConnectionId String?
+  disconnectAttemptHash  String? @db.VarChar(64)
+  disconnectStartedAt    DateTime?
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 

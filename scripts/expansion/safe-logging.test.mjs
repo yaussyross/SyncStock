@@ -22,9 +22,9 @@ test('projection retains only reviewed route metadata and has a bounded immutabl
 });
 
 for (const [field, values] of Object.entries({
-  action: ['start', 'callback', 'status', 'accounts', 'bind'], provider: ['xero', 'ebay'],
+  action: ['start', 'callback', 'status', 'accounts', 'bind', 'disconnect'], provider: ['xero', 'ebay'],
   environment: ['production', 'sandbox'], status: [200, 302, 303, 400, 401, 403, 404, 405, 409, 429, 503],
-  reason: ['none', 'not_found', 'sign_in_required', 'forbidden', 'invalid_request', 'method_not_allowed', 'connection_changed', 'try_again_later', 'expansion_unavailable'],
+  reason: ['none', 'not_found', 'sign_in_required', 'forbidden', 'invalid_request', 'method_not_allowed', 'connection_changed', 'try_again_later', 'disconnect_unavailable', 'expansion_unavailable'],
 })) test(`known ${field} values are retained without alteration`, () => {
   for (const value of values) assert.equal(decoded({ ...SAFE, [field]: value })[field], value);
 });

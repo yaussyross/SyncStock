@@ -6,28 +6,28 @@ const root = process.cwd();
 const read = (p: string) => fs.readFileSync(path.join(root, p), "utf8");
 const exists = (p: string) => fs.existsSync(path.join(root, p));
 
-const landing = read("src/app/page.tsx");
-const layout = read("src/app/layout.tsx");
-const signup = read("src/app/signup/page.tsx");
-const login = read("src/app/login/page.tsx");
-const embedded = read("src/app/shopify/app/page.tsx");
-const terms = read("src/app/terms/page.tsx");
-const billing = read("src/app/dashboard/billing/page.tsx");
-const feedback = read("src/app/feedback/page.tsx");
+const landing = read("src/app/(standard)/page.tsx");
+const layout = read("src/app/(standard)/layout.tsx");
+const signup = read("src/app/(standard)/signup/page.tsx");
+const login = read("src/app/(standard)/login/page.tsx");
+const embedded = read("src/app/(standard)/shopify/app/page.tsx");
+const terms = read("src/app/(standard)/terms/page.tsx");
+const billing = read("src/app/(standard)/dashboard/billing/page.tsx");
+const feedback = read("src/app/(standard)/feedback/page.tsx");
 const feedbackForm = read("src/components/FeedbackForm.tsx");
 const calculator = read("src/components/BookkeepingCalculator.tsx");
-const calculatorPage = read("src/app/tools/bookkeeping-cost/page.tsx");
-const support = read("src/app/support/page.tsx");
-const privacy = read("src/app/privacy/page.tsx");
+const calculatorPage = read("src/app/(standard)/tools/bookkeeping-cost/page.tsx");
+const support = read("src/app/(standard)/support/page.tsx");
+const privacy = read("src/app/(standard)/privacy/page.tsx");
 
 for (const p of [
-  "src/app/privacy/page.tsx",
-  "src/app/terms/page.tsx",
-  "src/app/support/page.tsx",
-  "src/app/docs/page.tsx",
-  "src/app/signup/page.tsx",
-  "src/app/login/page.tsx",
-  "src/app/app/page.tsx",
+  "src/app/(standard)/privacy/page.tsx",
+  "src/app/(standard)/terms/page.tsx",
+  "src/app/(standard)/support/page.tsx",
+  "src/app/(standard)/docs/page.tsx",
+  "src/app/(standard)/signup/page.tsx",
+  "src/app/(standard)/login/page.tsx",
+  "src/app/(standard)/app/page.tsx",
 ]) {
   assert.equal(exists(p), true, `required public surface missing: ${p}`);
 }

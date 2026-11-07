@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const root = process.cwd();
-const app = fs.readFileSync(path.join(root, "src/app/shopify/app/page.tsx"), "utf8");
+const app = fs.readFileSync(path.join(root, "src/app/(standard)/shopify/app/page.tsx"), "utf8");
 const css = fs.readFileSync(path.join(root, "src/app/globals.css"), "utf8");
 
 assert.match(app, /syncStatusPresentation/);

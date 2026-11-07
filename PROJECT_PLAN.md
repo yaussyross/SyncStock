@@ -166,3 +166,12 @@ Unsupported accounting treatments stay blocked until explicitly modeled and sand
 - Aligned Xero callbacks with its security standard's empty-body 302 recommendation; eBay retains 303. Eight added tests bring local coverage to 745 passing tests. Early callback errors remain non-HTML with no-store/no-referrer headers.
 - Added a source-backed security evidence/remediation checklist. Customer MFA/SSO, operational access/isolation, ingress query-log protection, immutable audit/monitoring, browser resource isolation, disconnect/deletion and Xero privacy/terms agreement remain unresolved.
 - A privacy amendment outline is kept separately for approval; the public privacy page was not changed. No security attestation, credential provisioning or production activation was performed.
+
+
+## November 7 isolated setup and Xero disconnect increment
+
+- Moved ordinary pages and the setup page into separate root-layout groups without changing their URLs. The setup document omits App Bridge, remote fonts and feedback controls, uses per-request nonce CSP and no-store/no-referrer headers, and canonicalizes encoded aliases. Ordinary Shopify resources/frame policies and branded 404 behavior are retained.
+- Added explicit tenant/session/CSRF-authorized Xero local credential removal or narrow bound-organization disconnect. Fresh provider proof binds the exact connection; local credentials are destroyed atomically before the single remote DELETE. Unknown outcomes remain durable, never automatically retried. No grant-wide token revocation or accounting-data deletion is performed.
+- Independent review reproduced and fixed a stale-proof timing bug. Freshness is checked after DB reads, after the destruction CAS and immediately before DELETE without extending the original evidence lifetime. The 795-test local expansion suite and TypeScript pass; seven new PostgreSQL groups are staged for exact-head CI.
+- Added portable synthetic HTTP/browser checks and an isolated browser CI job. Local Chromium could not start because its socket operation was prohibited; no browser result is claimed until the separate job actually passes. Temporary fixture source is absent from the deliverable.
+- No live provider requests, operational settings, public policy content or production changes were made. MFA/SSO, immutable audit/monitoring, verified ingress logging/hosting/operator controls, retention/general deletion and policy agreement remain rollout prerequisites.

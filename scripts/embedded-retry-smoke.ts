@@ -4,7 +4,7 @@ import path from "node:path";
 
 const root = process.cwd();
 const route = fs.readFileSync(path.join(root, "src/app/api/shopify/embedded/retry/route.ts"), "utf8");
-const app = fs.readFileSync(path.join(root, "src/app/shopify/app/page.tsx"), "utf8");
+const app = fs.readFileSync(path.join(root, "src/app/(standard)/shopify/app/page.tsx"), "utf8");
 
 assert.match(route, /skipped_no_mapping/);
 assert.match(route, /syncQueue\.add/);

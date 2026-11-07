@@ -16,11 +16,11 @@ retained. `serializeExpansionLogEvent(input)` produces that record as JSON.
 | Field | Accepted input | Invalid/missing input |
 | --- | --- | --- |
 | `event` | Always the code-owned `expansion.http` | Input ignored |
-| `action` | `start`, `callback`, `status`, `accounts`, `bind` | `unknown` |
+| `action` | `start`, `callback`, `status`, `accounts`, `bind`, `disconnect` | `unknown` |
 | `provider` | `xero`, `ebay` | `unknown` |
 | `environment` | `production`, `sandbox` | `unknown` |
 | `status` | Numeric `200`, `302`, `303`, `400`, `401`, `403`, `404`, `405`, `409`, `429`, `503` | `null` |
-| `reason` | `none`, `not_found`, `sign_in_required`, `forbidden`, `invalid_request`, `method_not_allowed`, `connection_changed`, `try_again_later`, `expansion_unavailable` | `unspecified` |
+| `reason` | `none`, `not_found`, `sign_in_required`, `forbidden`, `invalid_request`, `method_not_allowed`, `connection_changed`, `try_again_later`, `disconnect_unavailable`, `expansion_unavailable` | `unspecified` |
 
 Callers must construct these fields from server-owned facts, not request query or
 provider payload fields. The projection limits disclosure, not the truth of a
