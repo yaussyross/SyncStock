@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { projectExpansionLogEvent, serializeExpansionLogEvent } from '../../src/lib/expansion/safe-logging.mjs';
 
-const SAFE = Object.freeze({ action: 'callback', provider: 'xero', environment: 'production', status: 303, reason: 'none' });
+const SAFE = Object.freeze({ action: 'callback', provider: 'xero', environment: 'production', status: 302, reason: 'none' });
 const EXPECTED = { event: 'expansion.http', ...SAFE };
 const EMPTY = { event: 'expansion.http', action: 'unknown', provider: 'unknown', environment: 'unknown', status: null, reason: 'unspecified' };
 const SECRET = 'SYNTHETIC_PRIVATE_\"\\%2F_\r\n_FAKE_LOG_ENTRY';
@@ -23,7 +23,7 @@ test('projection retains only reviewed route metadata and has a bounded immutabl
 
 for (const [field, values] of Object.entries({
   action: ['start', 'callback', 'status', 'accounts', 'bind'], provider: ['xero', 'ebay'],
-  environment: ['production', 'sandbox'], status: [200, 303, 400, 401, 403, 404, 405, 409, 429, 503],
+  environment: ['production', 'sandbox'], status: [200, 302, 303, 400, 401, 403, 404, 405, 409, 429, 503],
   reason: ['none', 'not_found', 'sign_in_required', 'forbidden', 'invalid_request', 'method_not_allowed', 'connection_changed', 'try_again_later', 'expansion_unavailable'],
 })) test(`known ${field} values are retained without alteration`, () => {
   for (const value of values) assert.equal(decoded({ ...SAFE, [field]: value })[field], value);

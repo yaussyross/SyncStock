@@ -58,10 +58,10 @@ Therefore **0 new expansion experiences are customer-ready**. The historical Sho
 
 ## Validation record
 
-- 737 offline tests pass, including provider-shaped fixtures, all 16 local pipeline paths, accounting safety, timeout bounds, replay provenance, account rebinding, cross-provider token-leak prevention and encrypted consent-store tests.
+- 745 offline tests pass, including provider-shaped fixtures, all 16 local pipeline paths, accounting safety, timeout bounds, replay provenance, account rebinding, cross-provider token-leak prevention and encrypted consent-store tests.
 - Production build and TypeScript no-emit check pass with dummy local CI configuration.
 - No provider credential, customer record or accounting transaction was used in these tests.
-- Database migration/billing/redaction integration checks are not run locally because this workspace has no disposable PostgreSQL service. The last published head, 00c104e7, passed 11 consent and 12 token-storage PostgreSQL groups. The staged account-binding and limiter suites add 10 groups each and remain unrun. The eventual combined head must repeat migration/schema/privilege checks and all 43 database groups.
+- Database migration/billing/redaction integration checks are not run locally because this workspace has no disposable PostgreSQL service. Published head a4cb1e81 passed all 43 PostgreSQL groups (11 consent, 12 token storage, 10 account binding, 10 limiter), migration/schema/privilege checks, production build and HTTP smoke. The later narrow Xero callback-status alignment must repeat exact-head CI; it adds no migration.
 - Two existing reviewer videos were absent from this local reconstructed snapshot. The remote tree retains them unchanged.
 
 ## References
@@ -153,3 +153,10 @@ A new explicit `EXPANSION_QUERY_LOG_POLICY_VERIFIED` deployment attestation is r
 Application routes stay silent. An optional closed-enum log projection drops all URL/path/query, ID, headers/cookies, bodies, Errors and token values, and cannot invoke input getters or toJSON. Its 73 tests cover injection and secret handling. No new sink, console interception, platform configuration or log-drain subscription was introduced. See [Logging safety](logging-safety.md).
 
 737 offline tests pass, including 33 shared-limiter tests, 100 route-boundary tests and 73 safe-logging tests. The adapter smoke verifies SQL parameterization, monotonic/capped window structure and scoped DB timeouts without a database. A new 10-group PostgreSQL suite is staged for actual contention, lock-timeout, tenant and deletion verification. That suite has not run locally. No production migration, deployment configuration or live provider request was performed.
+
+
+## Xero security assessment and callback alignment
+
+The API-consumer security standard recommends empty-body 302 responses for token-bearing URL endpoints. Xero success/handled-failure callbacks now use 302; eBay remains 303. Early rejections remain generic non-HTML JSON with no-store/no-referrer headers. Eight additional regression cases bring the local suite to 745; this does not prove ingress-log protection.
+
+[Security evidence and remediation](xero-security-readiness.md) records current code evidence and unresolved hosting, strong customer authentication, operator access, audit/monitoring, third-party page resources, disconnect/deletion and privacy/terms requirements. No compliance attestation has been made, no operational flags enabled, and no public policy changed. Real OAuth remains disabled pending these prerequisites.

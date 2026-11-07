@@ -158,3 +158,11 @@ Unsupported accounting treatments stay blocked until explicitly modeled and sand
 - Added a default-failing infrastructure log-policy attestation gate. Routes remain silent; optional application log projection allows only code-owned enum metadata. Actual platform request/query capture remains an unverified rollout prerequisite, not something route code can scrub.
 - 737 offline tests pass, plus a local adapter/parameterization check. Added 10 real PostgreSQL limiter groups for later CI. Tests use synthetic users/tokens only. [Logging safety](docs/expansion/logging-safety.md) and OAuth setup docs describe boundaries.
 - Latest schema/routes/guardrails remain staged locally; no production configuration, credential or provider connection was changed.
+
+
+## November 7 Xero security assessment
+
+- Verified published a4cb1e81 passed all 737 offline tests, 43 PostgreSQL groups and full CI. The canonical preview is READY; production and real provider grants remain unchanged.
+- Aligned Xero callbacks with its security standard's empty-body 302 recommendation; eBay retains 303. Eight added tests bring local coverage to 745 passing tests. Early callback errors remain non-HTML with no-store/no-referrer headers.
+- Added a source-backed security evidence/remediation checklist. Customer MFA/SSO, operational access/isolation, ingress query-log protection, immutable audit/monitoring, browser resource isolation, disconnect/deletion and Xero privacy/terms agreement remain unresolved.
+- A privacy amendment outline is kept separately for approval; the public privacy page was not changed. No security attestation, credential provisioning or production activation was performed.

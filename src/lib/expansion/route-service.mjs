@@ -7,7 +7,9 @@ import { ExpansionRouteError, rejectRoute, readExpansionRouteConfig } from './ro
 const HEADERS = Object.freeze({ 'Cache-Control': 'no-store, max-age=0', Pragma: 'no-cache',
   'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff' });
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...HEADERS, 'Content-Type': 'application/json' } });
-const redirect = location => new Response(null, { status: 303, headers: { ...HEADERS, Location: location } });
+// Xero's API consumer security standard specifies a 302 for token-bearing
+// callback URLs. Both redirects have an empty body and a fixed same-origin target.
+const redirect = (location, provider) => new Response(null, { status: provider === 'xero' ? 302 : 303, headers: { ...HEADERS, Location: location } });
 const safeId = value => typeof value === 'string' && /^[^\s\x00-\x1f\x7f]{1,200}$/.test(value);
 const accountId = value => typeof value === 'string' && /^[^\s\x00-\x1f\x7f]{1,256}$/.test(value);
 const version = value => Number.isSafeInteger(value) && value > 0 && value < 2147483647;
@@ -139,11 +141,11 @@ export function createExpansionRoutes({ env, findUser, loadStores, listAccounts,
           { client, store: stores.consentStore, clock });
         const stored = await stores.tokenStore.insertUnboundGrant(grant);
         if (!stored || stored.tenantId !== session.tenantId || !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(stored.connectionId)) throw Error();
-        return redirect(`${config.setupUrl}?connection=${encodeURIComponent(stored.connectionId)}`);
+        return redirect(`${config.setupUrl}?connection=${encodeURIComponent(stored.connectionId)}`, client.provider);
       } catch {
         // State rejection, consent denial, transport and persistence failures all
         // land at the same fixed setup URL. No query/secret/error is reflected.
-        return redirect(config.setupUrl);
+        return redirect(config.setupUrl, client.provider);
       }
     }),
     accounts: protect(async (request, connectionId) => {

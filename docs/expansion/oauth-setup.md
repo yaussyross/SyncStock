@@ -52,6 +52,7 @@ identity responses are mock data and cannot authorize an account binding.
   environment, application, current tenant, and hashed web session. Duplicate
   security fields fail closed. Bounded unknown response parameters are ignored
   per RFC 6749; scope, session_state, next and returnUrl never grant authority.
+- Xero success and handled exchange/consent failures use an empty-body 302, following its API consumer security standard. eBay retains an empty-body 303. Preflight/authentication/configuration failures remain generic non-HTML JSON with no-store/no-referrer headers.
 - Success redirects only to `/settings/connections?connection=<stored UUID>` on
   the configured origin. Provider denial, bad state, or exchange/persistence
   failure redirects to the same fixed setup path without a query. Earlier

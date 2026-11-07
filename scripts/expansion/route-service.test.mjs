@@ -108,7 +108,7 @@ test('schema/store unavailability prevents state creation or provider exchange',
   assert.equal(f.calls.fetch, 0); assert.equal(f.pending.size, 0);
 });
 test('callback stores unbound encrypted grant before same-origin UUID-only redirect', async () => {
-  const f = fixture(), key = await state(f); const response = await f.routes.callback(callbackRequest(key), 'xero'); assert.equal(response.status, 303); await redacted(response);
+  const f = fixture(), key = await state(f); const response = await f.routes.callback(callbackRequest(key), 'xero'); assert.equal(response.status, 302); await redacted(response);
   const url = new URL(response.headers.get('location')); assert.equal(url.origin, ORIGIN); assert.equal(url.pathname, '/settings/connections'); assert.deepEqual([...url.searchParams.keys()], ['connection']);
   const stored = await f.database.store.getSummary({ tenantId: 'tenant-1', connectionId: url.searchParams.get('connection') }); assert.equal(stored.accountStatus, 'unbound'); assert.equal(stored.customerReady, false); assert.equal(f.calls.fetch, 1); assert.equal(f.pending.size, 0);
   const again = await f.routes.callback(callbackRequest(key), 'xero'); assert.equal(again.headers.get('location'), `${ORIGIN}/settings/connections`); assert.equal(f.calls.fetch, 1);
@@ -117,7 +117,7 @@ for (const query of ['&state=other&code=a', '&code=a&code=b', '&error=access_den
   const f = fixture(); const response = await f.routes.callback(callbackRequest('a'.repeat(43), query), 'xero'); assert.equal(response.status, 400); await redacted(response); assert.equal(f.calls.user, 0); assert.equal(f.calls.stores, 0); assert.equal(f.calls.fetch, 0);
 });
 for (const [label, cookie] of [['different session', `session=${token({ nonce: 'different' })}`], ['different user', `session=${token({ userId: 'tenant-2' })}`]]) test('callback consumes but never exchanges '+label, async () => {
-  const f = fixture(), key = await state(f); const response = await f.routes.callback(callbackRequest(key, '&code=PRIVATE-code', { cookie }), 'xero'); assert.equal(response.status, 303); assert.equal(response.headers.get('location'), `${ORIGIN}/settings/connections`); await redacted(response); assert.equal(f.calls.fetch, 0); assert.equal(f.pending.size, 0);
+  const f = fixture(), key = await state(f); const response = await f.routes.callback(callbackRequest(key, '&code=PRIVATE-code', { cookie }), 'xero'); assert.equal(response.status, 302); assert.equal(response.headers.get('location'), `${ORIGIN}/settings/connections`); await redacted(response); assert.equal(f.calls.fetch, 0); assert.equal(f.pending.size, 0);
 });
 test('provider errors are state-bound, consumed and never exposed or followed', async () => {
   const f = fixture(), key = await state(f); const response = await f.routes.callback(callbackRequest(key, '&error=access_denied&error_description=PRIVATE-token&error_uri=https://evil.invalid'), 'xero');
@@ -172,7 +172,7 @@ test('GET can never initiate OAuth consent or bind an account', async () => {
 test('unknown callback fields are ignored and cannot change scope, identity or fixed redirect', async () => {
   const f = fixture(), key = await state(f);
   const response = await f.routes.callback(callbackRequest(key, '&code=synthetic-code&scope=write_everything&session_state=PRIVATE-value&returnUrl=https://evil.invalid&next=//evil.invalid&tenantId=other'), 'xero');
-  assert.equal(response.status, 303); const location = new URL(response.headers.get('location'));
+  assert.equal(response.status, 302); const location = new URL(response.headers.get('location'));
   assert.equal(location.origin, ORIGIN); assert.equal(location.pathname, '/settings/connections'); assert.deepEqual([...location.searchParams.keys()], ['connection']);
   const credential = await f.database.store.getAccessCredential({ tenantId: 'tenant-1', connectionId: location.searchParams.get('connection'), version: 1 });
   assert.deepEqual(credential.scopes, ['accounting.settings.read', 'offline_access']); await redacted(response);
@@ -243,3 +243,31 @@ for(const limiter of [null,undefined,()=>true,async()=>false,async()=>({allowed:
 for(const operation of ['start','callback','accounts','bind','status'])test('shared denial blocks '+operation+' before storage/provider and carries Retry-After',async()=>{let calls=0,seen;const f=fixture({rateLimit:async(...args)=>{calls++;seen=args;return{allowed:false,retryAfterSeconds:83}}});const req=operation==='start'?startRequest():operation==='callback'?callbackRequest('a'.repeat(43)):operation==='accounts'?accountsRequest():operation==='bind'?bindRequest():request(`/api/expansion/connections/${ID}`);const response=await f.routes[operation](req,['start','callback'].includes(operation)?'xero':ID);assert.equal(response.status,429);assert.equal(response.headers.get('retry-after'),'83');await redacted(response);assert.equal(calls,1);assert.deepEqual(seen,[operation,'tenant-1']);assert.equal(f.calls.stores,0);assert.equal(f.calls.fetch,0);assert.equal(f.calls.bind,0);assert.equal(f.calls.list,0);});
 test('kill switch never initializes or calls a shared limiter',async()=>{let calls=0;const f=fixture({env:env({EXPANSION_OAUTH_ENABLED:'false'}),rateLimit:async()=>{calls++;throw Error('must not be called')}});assert.equal((await start(f)).status,404);assert.equal(calls,0);assert.equal(f.calls.user,0);});
 test('invalid cookie cannot spend another tenant quota',async()=>{let calls=0;const f=fixture({rateLimit:async()=>{calls++;return{allowed:true,retryAfterSeconds:0}}});assert.equal((await f.routes.start(startRequest({cookie:'session=invalid'}),'xero')).status,401);assert.equal(calls,0);});
+
+// Xero API consumer security standard, encryption-in-transit section:
+// token-bearing URL endpoints must not return HTML and should redirect with 302.
+for (const provider of ['xero', 'ebay']) for (const outcome of ['success', 'failure']) test(`${provider} callback ${outcome} has a fixed empty-body redirect and no referrer`, async () => {
+  const f = fixture({ env: env({ EXPANSION_EBAY_ENABLED: 'true', EXPANSION_EBAY_ENVIRONMENT: 'production',
+    EXPANSION_EBAY_CLIENT_ID: 'synthetic-ebay-client', EXPANSION_EBAY_CLIENT_SECRET: 'synthetic-ebay-secret',
+    EXPANSION_EBAY_CALLBACK_URL: `${ORIGIN}/api/expansion/oauth/ebay/callback`, EXPANSION_EBAY_RU_NAME: 'Synthetic-Runame' }),
+    exchangeCode: async () => { if(outcome === 'failure') throw Error('PRIVATE-provider-secret'); return {}; },
+    loadStores: async () => ({consentStore: {}, tokenStore: {insertUnboundGrant: async () => ({tenantId:'tenant-1',connectionId:ID})}}) });
+  const response = await f.routes.callback(request(`/api/expansion/oauth/${provider}/callback?state=${'a'.repeat(43)}&code=PRIVATE-code&next=https://evil.invalid`), provider);
+  assert.equal(response.status, provider === 'xero' ? 302 : 303);
+  assert.equal(response.headers.get('location'), `${ORIGIN}/settings/connections${outcome === 'success' ? `?connection=${ID}` : ''}`);
+  assert.equal(response.headers.get('content-type'), null);
+  assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
+  assert.equal(await redacted(response), '');
+});
+for (const [label, patch, options, suffix, status] of [
+  ['disabled', {env:env({EXPANSION_OAUTH_ENABLED:'false'})}, {}, '&code=PRIVATE-code', 404],
+  ['unverified log policy', {env:env({EXPANSION_QUERY_LOG_POLICY_VERIFIED:'false'})}, {}, '&code=PRIVATE-code', 503],
+  ['missing session', {}, {cookie:null}, '&code=PRIVATE-code', 401],
+  ['malformed response', {}, {}, '&code=PRIVATE-code&code=PRIVATE-other', 400],
+]) test(`Xero ${label} callback failure is non-HTML and never reflects URL credentials`, async () => {
+  const f=fixture(patch), response=await f.routes.callback(callbackRequest('a'.repeat(43),suffix,options),'xero');
+  assert.equal(response.status,status);assert.equal(response.headers.get('content-type'),'application/json');
+  assert.equal(response.headers.get('location'),null);assert.equal(response.headers.get('x-content-type-options'),'nosniff');
+  const value=await redacted(response);assert.equal(typeof JSON.parse(value).error,'string');assert.doesNotMatch(value,/[<>]/);
+  assert.equal(f.calls.fetch,0);assert.equal(f.calls.insert,0);
+});

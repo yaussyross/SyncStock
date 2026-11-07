@@ -6,7 +6,7 @@
 const ACTIONS = new Set(['start', 'callback', 'status', 'accounts', 'bind']);
 const PROVIDERS = new Set(['xero', 'ebay']);
 const ENVIRONMENTS = new Set(['production', 'sandbox']);
-const STATUSES = new Set([200, 303, 400, 401, 403, 404, 405, 409, 429, 503]);
+const STATUSES = new Set([200, 302, 303, 400, 401, 403, 404, 405, 409, 429, 503]);
 const REASONS = new Set(['none', 'not_found', 'sign_in_required', 'forbidden',
   'invalid_request', 'method_not_allowed', 'connection_changed',
   'try_again_later', 'expansion_unavailable']);
