@@ -25,15 +25,16 @@ export async function POST() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
-  const [shopifyConnection, qboConnection, mappingCount] = await Promise.all([
-    db.shopifyConnection.findUnique({ where: { userId: user.id }, select: { shopDomain: true, webhookId: true } }),
-    db.qboConnection.findUnique({ where: { userId: user.id }, select: { id: true } }),
-    db.productMapping.count({ where: { userId: user.id } }),
-  ]);
+  const shopifyConnection = await db.shopifyConnection.findUnique({
+    where: { userId: user.id },
+    select: { shopDomain: true },
+  });
 
-  if (!shopifyConnection || !shopifyConnection.webhookId || !qboConnection || mappingCount < 1) {
+  // Plan approval is available immediately after install/reinstall. Accounting
+  // setup and quota checks still gate order processing, not Shopify's pricing UI.
+  if (!shopifyConnection) {
     return NextResponse.json(
-      { error: "Finish Shopify, QuickBooks, and at least one product mapping before choosing a paid plan. Your 20-order trial remains free." },
+      { error: "Connect Shopify before choosing a plan. Open SyncStock from Shopify Admin to continue." },
       { status: 409 }
     );
   }

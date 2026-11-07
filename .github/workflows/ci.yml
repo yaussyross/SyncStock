@@ -111,6 +111,9 @@ jobs:
       - name: Shopify App Pricing catalog mapping
         run: npm run test:shopify-billing
 
+      - name: Shopify reinstall pricing access and sync readiness
+        run: npm run test:shopify-pricing-access
+
       - name: Shopify embedded ID token validation
         run: npm run test:shopify-auth
 
@@ -122,6 +125,11 @@ jobs:
 
       - name: Shopify reinstall account and token regression
         run: node --import tsx scripts/shopify-reinstall-smoke.ts
+
+      - name: Shopify shop redaction database regression
+        env:
+          SYNCSTOCK_REDACTION_TEST_DATABASE_URL: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public
+        run: npm run test:shop-redaction
 
       - name: Shopify API error payload normalization
         run: npm run test:shopify-errors

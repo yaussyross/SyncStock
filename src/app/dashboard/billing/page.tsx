@@ -48,7 +48,7 @@ export default function BillingPage() {
           <p className="section-kicker">LAUNCH PRICING</p>
           <h1 style={{ fontSize: 32, marginTop: 8, marginBottom: 8 }}>Choose a plan</h1>
           <p style={{ color: "var(--paper-dim)", marginBottom: 12 }}>Your first 20 synced orders are free. Paid plans are approved and billed by Shopify.</p>
-          <p style={{ color: "var(--paper-dim)", marginBottom: 8, fontSize: 13 }}>Setup safety gate: plan selection unlocks only after Shopify, QuickBooks, and at least one product mapping are ready, so you are not charged for an unusable setup.</p>
+          <p style={{ color: "var(--paper-dim)", marginBottom: 8, fontSize: 13 }}>You can choose a plan as soon as Shopify is connected. Order syncing still requires a working Shopify webhook, QuickBooks connection, and product mappings.</p>
           <p style={{ color: "var(--paper-dim)", marginBottom: 28, fontSize: 13 }}>{billingStatus}</p>
         </div>
         <button className="btn btn-secondary" onClick={openShopifyPlans}>Manage Shopify plan</button>

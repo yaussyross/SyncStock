@@ -278,7 +278,7 @@ export default function ShopifyAppHome() {
               <div className="section-kicker">PLAN</div>
               <strong style={{ display: "block", marginTop: 8 }}>{status.plan.label}</strong>
               <div style={{ color: "#6d7175", marginTop: 4 }}>{status.plan.used} / {status.plan.limit ?? "∞"} orders this period</div>
-              {status.quickbooks.connected && status.mappings.count > 0 && <button className="btn btn-small" style={{ marginTop: 12 }} onClick={openBilling}>Manage Shopify plan</button>}
+              {status.shopify.connected && <button className="btn btn-small" style={{ marginTop: 12 }} onClick={openBilling}>Manage Shopify plan</button>}
             </div>
             <div className="card">
               <div className="section-kicker">MAPPINGS</div>

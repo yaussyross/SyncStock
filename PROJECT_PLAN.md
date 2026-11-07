@@ -42,6 +42,13 @@ Ship a reliable public embedded Shopify app where one supported paid Shopify ord
 - Reply Watch re-enabled. No paid services purchased.
 - September 29 status was pending; the October 1 submission update below supersedes it.
 
+## November 7 privacy and billing correction
+
+- Shop redaction now removes all locally retained data for a verified single-shop embedded account, including QBO credentials, accounting settings, feedback and the account itself. Ownership checks, signed body/domain binding, a serializable transaction and bounded retries protect unrelated accounts; older deliveries do not erase a later shop lifecycle. Legacy or conflicting ownership returns an explicit failure for review rather than claiming erasure.
+- Shopify plan selection is available as soon as the authenticated Shopify connection exists, independently of QBO and mapping setup. Order synchronization retains its accounting setup and quota checks.
+- Regression coverage includes complete database erasure, unrelated-shop preservation, duplicate deliveries, rollback, stale events and reinstall-to-pricing without accounting setup. No schema migration or new dependencies are required.
+- This source correction does not establish current Shopify approval, reviewer access, IP allowlist configuration, or fresh end-to-end acceptance. Validate those separately before broader launch. No real orders, charges or external accounting records are changed by validation.
+
 ## Remaining public-launch gates
 
 October 1 update: Shopify's live HMAC checker reported HTTP 404 at
