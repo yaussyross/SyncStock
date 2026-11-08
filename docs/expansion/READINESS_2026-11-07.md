@@ -169,3 +169,11 @@ The setup page now has a separate dynamic root layout, so ordinary-page third-pa
 `POST /api/expansion/connections/{id}/disconnect` requires an explicit mode, current revision, owning session, same-origin POST and shared quota. Local-only mode destroys local credentials without claiming provider revocation. Bound-organization mode re-verifies the exact Xero tenant and connection ID, atomically destroys credentials, then issues at most one narrow DELETE. Only exact 204 records confirmed removal of that connection. Tokens and other Xero connections are not revoked; accounting records are not deleted. Timeouts, ambiguous writes and provider outcomes retain a durable unknown state without retries. The UI requires explicit consequence confirmation, locks repeated actions and requires status reconciliation after a lost response.
 
 [Disconnect design and tests](xero-disconnect-draft.md) cover tenant/app/account/version binding, original proof lifetime, delayed DB/CAS operations, refresh/delete races, terminal versions and conservative outcome reporting. New migrations remain draft-only. Real provider acceptance, production activation and general retention/deletion remain unperformed.
+
+## November 8 journal increment (draft)
+
+Atomic, minimized consent/grant lifecycle audit records are staged with append-only
+guards. This is not complete actor-attributed security monitoring or external
+immutable retention. See [lifecycle-audit-draft.md](lifecycle-audit-draft.md).
+The migration and real PostgreSQL acceptance tests need exact-head CI. Production
+and OAuth remain unchanged; zero additional customer-ready paths are claimed.

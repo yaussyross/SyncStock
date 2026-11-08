@@ -122,6 +122,11 @@ jobs:
           SYNCSTOCK_EXPANSION_TEST_DATABASE_URL: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public
         run: node --import tsx scripts/expansion-disconnect-db-smoke.ts
 
+      - name: Expansion lifecycle audit atomicity and runtime protections
+        env:
+          SYNCSTOCK_EXPANSION_TEST_DATABASE_URL: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public
+        run: node --import tsx scripts/expansion-lifecycle-audit-db-smoke.ts
+
       - name: Expansion shared route protection
         env:
           SYNCSTOCK_EXPANSION_TEST_DATABASE_URL: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public

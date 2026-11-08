@@ -98,3 +98,19 @@ Defining an owner or draft runbook is not evidence the process is operating.
 
 Read the current requirements before adopting an attestation or agreement. This
 document does not certify compliance or replace legal/security review.
+
+## November 8 lifecycle journal draft
+
+A staged migration now records atomic consent/grant database mutations with
+minimized hashed references and bounded state/outcome fields. It includes
+append-only guards and independent-client/privilege tests. See
+[lifecycle-audit-draft.md](lifecycle-audit-draft.md) for exact coverage and limits.
+This improves database evidence only: separately authenticated actor attribution,
+non-owner production runtime roles, external immutable custody, approved retention
+and erasure, monitoring and incident response remain unresolved. It must not be
+used as a blanket Xero security attestation or permission to enable OAuth.
+
+Previous isolation/disconnect increment at `086ff11` passed 795 offline tests,
+50 PostgreSQL groups, full CI and actual Chromium interaction tests. Canonical
+preview was READY. Browser back/forward checks did not prove BFCache eligibility.
+Production remained at `7b61a906`; no new live connection was established.

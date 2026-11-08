@@ -87,6 +87,33 @@ model ExpansionOAuthGrant {
   @@index([status, claimStartedAt])
 }
 
+// Draft database lifecycle journal, not a full security audit/monitoring sink.
+// Pseudonymous references survive source deletion. No browser/API access.
+// SQL triggers are the only normal writer; no runtime update/delete permission.
+model ExpansionLifecycleAudit {
+  id               BigInt   @id @default(autoincrement())
+  recordedAt       DateTime @default(dbgenerated("clock_timestamp()")) @db.Timestamptz(3)
+  entityKind       String   @db.VarChar(16)
+  operation        String   @db.VarChar(8)
+  tenantRef        String   @db.VarChar(64)
+  priorTenantRef   String?  @db.VarChar(64)
+  subjectRef       String   @db.VarChar(64)
+  priorSubjectRef  String?  @db.VarChar(64)
+  provider         String?  @db.VarChar(8)
+  environment      String?  @db.VarChar(16)
+  beforeVersion    Int?
+  afterVersion     Int?
+  beforeStatus     String?  @db.VarChar(16)
+  afterStatus      String?  @db.VarChar(16)
+  beforeBound      Boolean?
+  afterBound       Boolean?
+  beforeDisconnect String?  @db.VarChar(16)
+  afterDisconnect  String?  @db.VarChar(16)
+
+  @@index([tenantRef, recordedAt])
+  @@index([subjectRef, id])
+}
+
 // Shared fixed-window quotas for authenticated expansion route actions.
 // One bounded row per tenant/action; account deletion removes all buckets.
 model ExpansionRouteLimit {
