@@ -4,19 +4,28 @@ import jwt from "jsonwebtoken";
 import { db } from "@/lib/db";
 import { encrypt } from "@/lib/crypto";
 import { getCurrentUser } from "@/lib/session";
+import { userFromMobileOAuthHandoff } from "@/lib/mobile-oauth-session";
 
 type EmbeddedState = {
   userId: string;
   shopDomain: string;
   embedded: true;
+  authSource: "shopify";
+  iat: number;
+  exp: number;
 };
 
 function readEmbeddedState(state: string): EmbeddedState | null {
-  if (!process.env.NEXTAUTH_SECRET) return null;
+  if (!process.env.NEXTAUTH_SECRET || state.length > 8192) return null;
   try {
     const payload = jwt.verify(state, process.env.NEXTAUTH_SECRET, {
       issuer: "syncstock-qbo-embedded",
+      algorithms: ["HS256"],
+      maxAge: 600,
     }) as EmbeddedState;
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.authSource !== "shopify" || !Number.isSafeInteger(payload.iat) || !Number.isSafeInteger(payload.exp) ||
+        payload.iat > now || payload.exp <= now || payload.exp <= payload.iat || payload.exp - payload.iat > 600) return null;
     if (!payload.embedded || !payload.userId || !payload.shopDomain?.endsWith(".myshopify.com")) return null;
     return payload;
   } catch {
@@ -56,7 +65,7 @@ export async function GET(req: NextRequest) {
   const user = embeddedState
     ? await db.user.findUnique({ where: { id: embeddedState.userId } })
     : isMobile
-      ? await db.user.findUnique({ where: { id: mobileUserId! } })
+      ? await userFromMobileOAuthHandoff(mobileUserId!, "qbo", returnedState)
       : await getCurrentUser();
 
   if (!user) {

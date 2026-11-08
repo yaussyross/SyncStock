@@ -99,6 +99,54 @@ jobs:
           echo "anon/authenticated public-table grants: $forbidden_grants"
           test "$forbidden_grants" = "0"
 
+      - name: Expansion offline safety and acceptance tests
+        run: npm run test:expansion
+
+      - name: First-party session security tests
+        run: npm run test:session-security
+
+      - name: Session revocation database concurrency and isolation
+        env:
+          SYNCSTOCK_SESSION_TEST_DATABASE_URL: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public
+        run: node --import tsx scripts/session-revocation-db-smoke.ts
+
+      - name: Expansion consent database concurrency and isolation
+        env:
+          SYNCSTOCK_EXPANSION_TEST_DATABASE_URL: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public
+        run: node --import tsx scripts/expansion-consent-store-db-smoke.ts
+
+      - name: Expansion encrypted token storage and refresh concurrency
+        env:
+          SYNCSTOCK_EXPANSION_TEST_DATABASE_URL: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public
+        run: node --import tsx scripts/expansion-token-store-db-smoke.ts
+
+      - name: Expansion provider-account binding and tenant isolation
+        env:
+          SYNCSTOCK_EXPANSION_TEST_DATABASE_URL: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public
+        run: node --import tsx scripts/expansion-account-binding-db-smoke.ts
+
+      - name: Expansion Xero disconnect destruction and outcome safety
+        env:
+          SYNCSTOCK_EXPANSION_TEST_DATABASE_URL: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public
+        run: node --import tsx scripts/expansion-disconnect-db-smoke.ts
+
+      - name: Expansion lifecycle audit atomicity and runtime protections
+        env:
+          SYNCSTOCK_EXPANSION_TEST_DATABASE_URL: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public
+        run: node --import tsx scripts/expansion-lifecycle-audit-db-smoke.ts
+
+      - name: Expansion database security preflight
+        env:
+          SYNCSTOCK_EXPANSION_TEST_DATABASE_URL: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public
+        run: node --import tsx scripts/expansion-database-security-db-smoke.ts
+
+      - name: Expansion shared route protection
+        env:
+          SYNCSTOCK_EXPANSION_TEST_DATABASE_URL: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public
+        run: |
+          node --import tsx scripts/expansion-route-limit-adapter-smoke.ts
+          node --import tsx scripts/expansion-route-limit-db-smoke.ts
+
       - name: Reconciliation smoke tests
         run: npm run test:reconciliation
 
@@ -140,6 +188,9 @@ jobs:
       - name: Launch surface regression
         run: npm run test:launch-surface
 
+      - name: Connection page isolation source checks
+        run: node --import tsx scripts/connection-page-isolation-smoke.ts
+
       - name: QuickBooks reconnect regression
         run: npm run test:qbo-reconnect
 
@@ -155,6 +206,9 @@ jobs:
       - name: Production build
         run: npm run build
 
+      - name: Connection page production HTTP isolation
+        run: node scripts/connection-page-isolation-http.mjs
+
       - name: Public HTTP route smoke
         shell: bash
         run: |
@@ -165,9 +219,25 @@ jobs:
             if curl --fail --silent http://127.0.0.1:3000/ > /dev/null; then break; fi
             sleep 1
           done
-          for route in / /signup /login /privacy /terms /support /docs /tools/bookkeeping-cost /app /robots.txt /sitemap.xml; do
+          for route in / /signup /login /privacy /terms /support /docs /tools/bookkeeping-cost /app /robots.txt /sitemap.xml /settings/connections; do
             echo "Checking $route"
             curl --fail --silent --show-error "http://127.0.0.1:3000$route" > /dev/null
+          done
+          # Expansion is off by default. These checks must not contact a provider
+          # or query token/consent storage, even with malformed/missing auth.
+          for endpoint in \
+            'POST /api/expansion/oauth/xero/start' \
+            'POST /api/expansion/oauth/ebay/start' \
+            'GET /api/expansion/oauth/xero/callback' \
+            'GET /api/expansion/connections/11111111-1111-4111-8111-111111111111' \
+            'GET /api/expansion/connections/11111111-1111-4111-8111-111111111111/accounts' \
+            'POST /api/expansion/connections/11111111-1111-4111-8111-111111111111/bind' \
+            'POST /api/expansion/connections/11111111-1111-4111-8111-111111111111/disconnect'; do
+            read -r method route <<< "$endpoint"
+            status="$(curl --silent --show-error -X "$method" -D /tmp/expansion-headers -o /tmp/expansion-body -w '%{http_code}' "http://127.0.0.1:3000$route")"
+            test "$status" = "404"
+            grep -qi 'cache-control: no-store' /tmp/expansion-headers
+            grep -q '"error":"not_found"' /tmp/expansion-body
           done
 
       - name: Export generated package lock
@@ -177,3 +247,31 @@ jobs:
           name: package-lock
           path: package-lock.json
           retention-days: 1
+
+
+  connection_browser:
+    # Isolated synthetic QA only. No provider credentials, real database,
+    # production settings, deployment or persisted fixture build artifacts.
+    # Playwright 1.57 supports Ubuntu 24.04, not the moving latest runner image.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install repository dependencies
+        shell: bash
+        run: |
+          if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
+      - name: Install pinned browser test tooling
+        run: |
+          npm install --no-save --package-lock=false --no-audit --no-fund playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Test connection document isolation and disconnect UI
+        run: node scripts/run-connection-page-browser.mjs
+      - name: Verify temporary source cleanup
+        if: always()
+        run: test ! -e 'src/app/(standard)/isolation-test-fixture'

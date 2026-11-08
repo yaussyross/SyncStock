@@ -33,6 +33,6 @@ export async function POST(req: NextRequest) {
   }
 
   const res = NextResponse.json({ ok: true });
-  res.cookies.set({ ...sessionCookieOptions(), value: createSessionToken(user.id) });
+  res.cookies.set({ ...sessionCookieOptions(), value: createSessionToken(user.id, user.authVersion, "web") });
   return res;
 }

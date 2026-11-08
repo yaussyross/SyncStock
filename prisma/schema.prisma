@@ -14,6 +14,8 @@ datasource db {
 model User {
   id            String   @id @default(cuid())
   email         String   @unique
+  // Monotonic revocation epoch for first-party sessions, not Shopify ID tokens.
+  authVersion   Int      @default(0)
   passwordHash  String?
   createdAt     DateTime @default(now())
 
@@ -34,6 +36,98 @@ model User {
   orderAdjustments   OrderAdjustment[]
   complianceRequests ComplianceRequest[]
   feedback           Feedback[]
+  expansionOAuthConsents ExpansionOAuthConsent[]
+  expansionOAuthGrants ExpansionOAuthGrant[]
+  expansionRouteLimits ExpansionRouteLimit[]
+}
+
+// Pending expansion consent only. No access/refresh token is stored here.
+// tenantId must be the authenticated User.id, never a browser-supplied account.
+model ExpansionOAuthConsent {
+  stateHash  String   @id @db.VarChar(64)
+  tenantId   String
+  tenant     User     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ciphertext String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([expiresAt])
+  @@index([tenantId, expiresAt])
+}
+
+// Encrypted expansion grants. "available" is a token lifecycle state, not
+// provider-account acceptance or customer readiness. Claims never auto-expire.
+model ExpansionOAuthGrant {
+  id                   String   @id
+  tenantId             String
+  tenant               User     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  provider             String
+  environment          String
+  clientId             String
+  authorizationBinding String   @db.VarChar(64)
+  version              Int      @default(1)
+  status               String   @default("available")
+  ciphertext           String?
+  refreshFingerprint   String   @unique @db.VarChar(64)
+  initialGrantFingerprint String @unique @db.VarChar(64)
+  providerAccountId    String?
+  providerConnectionId String?
+  accountVerifiedAt    DateTime?
+  accountBindingKey    String?  @unique @db.VarChar(64)
+  claimHash            String?  @db.VarChar(64)
+  claimStartedAt       DateTime?
+  lastErrorCode        String?
+  disconnectOutcome      String?
+  disconnectAccountId    String?
+  disconnectConnectionId String?
+  disconnectAttemptHash  String? @db.VarChar(64)
+  disconnectStartedAt    DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([tenantId, status])
+  @@index([status, claimStartedAt])
+}
+
+// Draft database lifecycle journal, not a full security audit/monitoring sink.
+// Pseudonymous references survive source deletion. No browser/API access.
+// SQL triggers are the only normal writer; no runtime update/delete permission.
+model ExpansionLifecycleAudit {
+  id               BigInt   @id @default(autoincrement())
+  recordedAt       DateTime @default(dbgenerated("clock_timestamp()")) @db.Timestamptz(3)
+  entityKind       String   @db.VarChar(16)
+  operation        String   @db.VarChar(8)
+  tenantRef        String   @db.VarChar(64)
+  priorTenantRef   String?  @db.VarChar(64)
+  subjectRef       String   @db.VarChar(64)
+  priorSubjectRef  String?  @db.VarChar(64)
+  provider         String?  @db.VarChar(8)
+  environment      String?  @db.VarChar(16)
+  beforeVersion    Int?
+  afterVersion     Int?
+  beforeStatus     String?  @db.VarChar(16)
+  afterStatus      String?  @db.VarChar(16)
+  beforeBound      Boolean?
+  afterBound       Boolean?
+  beforeDisconnect String?  @db.VarChar(16)
+  afterDisconnect  String?  @db.VarChar(16)
+
+  @@index([tenantRef, recordedAt])
+  @@index([subjectRef, id])
+}
+
+// Shared fixed-window quotas for authenticated expansion route actions.
+// One bounded row per tenant/action; account deletion removes all buckets.
+model ExpansionRouteLimit {
+  tenantId        String
+  tenant          User     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  action          String
+  windowStartedAt DateTime @db.Timestamptz(3)
+  windowEndsAt    DateTime @db.Timestamptz(3)
+  usageCount      Int
+  updatedAt       DateTime @db.Timestamptz(3)
+
+  @@id([tenantId, action])
 }
 
 model ShopifyConnection {

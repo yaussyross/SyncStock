@@ -2,12 +2,12 @@ import { NextResponse } from "next/server";
 import OAuthClient from "intuit-oauth";
 import jwt from "jsonwebtoken";
 import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/session";
+import { getCurrentShopifyUser } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
 export async function POST() {
-  const user = await getCurrentUser();
+  const user = await getCurrentShopifyUser();
   if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   const shopify = await db.shopifyConnection.findUnique({ where: { userId: user.id } });
@@ -18,9 +18,9 @@ export async function POST() {
   }
 
   const state = jwt.sign(
-    { userId: user.id, shopDomain: shopify.shopDomain, embedded: true },
+    { userId: user.id, shopDomain: shopify.shopDomain, embedded: true, authSource: "shopify" },
     process.env.NEXTAUTH_SECRET,
-    { expiresIn: "10m", issuer: "syncstock-qbo-embedded" }
+    { algorithm: "HS256", expiresIn: "10m", issuer: "syncstock-qbo-embedded" }
   );
 
   const oauthClient = new OAuthClient({

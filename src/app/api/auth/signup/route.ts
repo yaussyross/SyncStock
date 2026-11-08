@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     throw error;
   }
 
-  const token = createSessionToken(user.id);
+  const token = createSessionToken(user.id, user.authVersion, "web");
   const res = NextResponse.json({ ok: true });
   res.cookies.set({ ...sessionCookieOptions(), value: token });
   return res;

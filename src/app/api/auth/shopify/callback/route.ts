@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { encrypt } from "@/lib/crypto";
 import { getCurrentUser } from "@/lib/session";
+import { userFromMobileOAuthHandoff } from "@/lib/mobile-oauth-session";
 
 const SHOPIFY_API_VERSION = "2026-07";
 
@@ -98,7 +99,7 @@ export async function GET(req: NextRequest) {
   }
   const isMobile = !!mobileUserId;
   const user = isMobile
-    ? await db.user.findUnique({ where: { id: mobileUserId } })
+    ? await userFromMobileOAuthHandoff(mobileUserId!, "shopify", state!, shop)
     : await getCurrentUser();
 
   if (!user) {

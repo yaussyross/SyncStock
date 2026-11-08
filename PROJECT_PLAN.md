@@ -108,3 +108,91 @@ Unsupported accounting treatments stay blocked until explicitly modeled and sand
 - Do not ask Ross to repeat already-completed generic Shopify production/distribution screenshots.
 - Escalate only a specific human-only Shopify, credential, legal/business, or payment barrier.
 - Do not ask for secrets in normal chat when a secure connector/credential flow is available.
+
+## November 7 isolated expansion readiness work (not deployed)
+
+- Current canonical source was reconstructed read-only at 7b61a906, with 157 text/source assets matching GitHub blob hashes. Two reviewer video files are not materialized in this isolated copy.
+- Added a default-off 16-experience registry, tenant/environment-bound consent state and PKCE utilities, and read-only request guards. No provider app, credential, token exchange, account grant, live read or accounting write is performed by these modules.
+- The consent-state store is an injected interface; a real transactional shared store and provider-specific OAuth routes remain required. In-memory test storage is not a production implementation.
+- All expansion experiences remain blocked without current provider evidence, mapping/dedup/accounting/deletion acceptance and an approved cutover. Sandbox evidence cannot produce a customer-ready verdict. Multi-channel requires accepted constituent sources and a matching accounting destination.
+- These additions complement, but do not claim to recover or integrate, the unavailable October 27 expansion branch. No push or deployment is authorized by this checkpoint.
+
+## November 7 recovered expansion integration
+
+- Consolidated the source and accounting modules into `src/lib/expansion`; added a single tenant-scoped local preview pipeline for all 16 experiences and a CI test command.
+- Added executable bounded GET transport, a native eBay operational-order reader and a native Xero account-catalog reader. No account has been connected by this code, no credentials provisioned, and no remote accounting writes enabled.
+- Fixed acceptance surviving account rebinding, replay provenance being silently discarded, unsupported balanced accounting directions, mutable-request token leakage across providers and unbounded async deadlines. Regression tests cover these cases.
+- 339 offline tests, production build and TypeScript check pass. Live provider acceptance remains unrun. See `docs/expansion/READINESS_2026-11-07.md` for exact remaining engineering and provider prerequisites.
+- The user's later request authorizes uploading the requested expansion code as a draft PR. Production remains unchanged; no merge or deployment is part of this increment.
+
+## November 7 durable consent-store increment
+
+- Added encrypted shared PostgreSQL pending-consent storage, atomic single-use consumption, bounded expiry cleanup and account-deletion cascade. No provider credentials, grants or public routes are created.
+- The additive migration is staged in the draft only. Production has not been migrated. Provider-specific OAuth exchange/refresh and credential lifecycle remain unfinished.
+- 363 offline tests pass. Added 10 real PostgreSQL acceptance groups covering independent-client races, expiry, tampering, tenant isolation and deletion cascade. These require exact-head remote CI before the increment is considered verified.
+
+## November 7 native OAuth transport increment
+
+- Added official-contract eBay/Xero confidential authorization, code exchange and refresh primitives. Provider-specific token types, RuName, expiry and rotation behavior are validated. Read scopes are fixed; no write scopes are requested.
+- Bound encrypted single-use consent to the exact OAuth application configuration. Added an 11th PostgreSQL group for encrypted app binding and wrong-app rejection.
+- Added 68 provider transport tests; 434 offline tests now cover this branch. Token requests in all tests use synthetic mocked responses, never live credentials.
+- No deployed OAuth routes, bearer-token vault, durable refresh lock/CAS coordinator, provider-account binding or real grant has been installed. This closes the native transport gap, not the full connection lifecycle. Production remains unchanged.
+
+## November 7 encrypted token storage increment
+
+- Added encrypted unbound grant storage with stable exchange IDs, idempotent inserts and unique initial/current refresh fingerprints. No plaintext access/refresh token columns are used.
+- Added cross-worker atomic refresh claims and encrypted token-pair compare-and-swap. Unknown outcomes stay held; stale claims are never automatically stolen. Revocation/deletion invalidates late work.
+- 41 focused storage/coordinator tests and 475 total offline tests cover the increment. Added 12 real PostgreSQL acceptance groups for CI. Independent review found no remaining blocking issue after fixing caller credential override and duplicate-grant refresh contention.
+- The migration remains staged only. No live credentials, provider-account binding, customer acceptance or deployed OAuth routes have been added. Production is unchanged.
+
+## November 7 provider identity and route increment
+
+- Added provider-verified Xero organization / eBay immutable seller identity discovery, opaque credential-bound proofs, explicit selected-account binding and a unique active account owner. Bound metadata is encrypted and survives token rotation; refresh/revoke/delete races fail closed.
+- Added default-off authenticated start/callback/status/accounts/bind HTTP routes and an isolated setup page. Current session, application fingerprint and same-origin writes are required; secrets never appear in responses.
+- 615 offline tests include 56 provider-account and 84 route-boundary tests. Added 10 PostgreSQL identity/binding groups and HTTP default-off checks to CI. Independent review found no remaining blocking safety issue. Browser visual/interactive QA and real grants remain unrun.
+- All migrations/configuration remain staged only. Rollout still requires approved credentials/migrations, shared rate/edge protection, log redaction and real acceptance. No active provider connection, accounting write or production change was made.
+
+## November 7 shared route protection and log safety
+
+- Added mandatory shared per-tenant/action PostgreSQL fixed-window limits, atomic overflow-safe counters, backward-clock protection and bounded DB/application waits. Failure never falls back to an in-memory allow; 429 includes Retry-After.
+- Added a default-failing infrastructure log-policy attestation gate. Routes remain silent; optional application log projection allows only code-owned enum metadata. Actual platform request/query capture remains an unverified rollout prerequisite, not something route code can scrub.
+- 737 offline tests pass, plus a local adapter/parameterization check. Added 10 real PostgreSQL limiter groups for later CI. Tests use synthetic users/tokens only. [Logging safety](docs/expansion/logging-safety.md) and OAuth setup docs describe boundaries.
+- Latest schema/routes/guardrails remain staged locally; no production configuration, credential or provider connection was changed.
+
+
+## November 7 Xero security assessment
+
+- Verified published a4cb1e81 passed all 737 offline tests, 43 PostgreSQL groups and full CI. The canonical preview is READY; production and real provider grants remain unchanged.
+- Aligned Xero callbacks with its security standard's empty-body 302 recommendation; eBay retains 303. Eight added tests bring local coverage to 745 passing tests. Early callback errors remain non-HTML with no-store/no-referrer headers.
+- Added a source-backed security evidence/remediation checklist. Customer MFA/SSO, operational access/isolation, ingress query-log protection, immutable audit/monitoring, browser resource isolation, disconnect/deletion and Xero privacy/terms agreement remain unresolved.
+- A privacy amendment outline is kept separately for approval; the public privacy page was not changed. No security attestation, credential provisioning or production activation was performed.
+
+
+## November 7 isolated setup and Xero disconnect increment
+
+- Moved ordinary pages and the setup page into separate root-layout groups without changing their URLs. The setup document omits App Bridge, remote fonts and feedback controls, uses per-request nonce CSP and no-store/no-referrer headers, and canonicalizes encoded aliases. Ordinary Shopify resources/frame policies and branded 404 behavior are retained.
+- Added explicit tenant/session/CSRF-authorized Xero local credential removal or narrow bound-organization disconnect. Fresh provider proof binds the exact connection; local credentials are destroyed atomically before the single remote DELETE. Unknown outcomes remain durable, never automatically retried. No grant-wide token revocation or accounting-data deletion is performed.
+- Independent review reproduced and fixed a stale-proof timing bug. Freshness is checked after DB reads, after the destruction CAS and immediately before DELETE without extending the original evidence lifetime. The 795-test local expansion suite and TypeScript pass; seven new PostgreSQL groups are staged for exact-head CI.
+- Added portable synthetic HTTP/browser checks and an isolated browser CI job. Local Chromium could not start because its socket operation was prohibited; no browser result is claimed until the separate job actually passes. Temporary fixture source is absent from the deliverable.
+- No live provider requests, operational settings, public policy content or production changes were made. MFA/SSO, immutable audit/monitoring, verified ingress logging/hosting/operator controls, retention/general deletion and policy agreement remain rollout prerequisites.
+
+## November 8 expansion lifecycle journal increment
+
+- Added draft-only transactional consent/grant mutation journaling with minimized, domain-separated hashed references and bounded state/outcome fields. Source writes and audit inserts commit or roll back together; audit failure fails closed. No raw credentials or provider identities are recorded.
+- Source-validated, fixed-search-path triggers and append-only guards block ordinary mutation/forgery and unaudited truncation. Real runtime role isolation remains an operational prerequisite; owner/DBA bypass and external immutable custody are explicitly not solved.
+- Added 10 static tests and 13 disposable PostgreSQL acceptance groups for lifecycle transitions, races, rollback, audit failure, secret exclusion, runtime permissions, trigger misuse and deletion-cascade evidence. Exact-head database CI remains required.
+- This is a database lifecycle journal, not a full actor-attributed security audit or monitoring system. Retention/export/erasure and capacity policy require approval before rollout. No production deployment, actual provider grant, external logging destination or legal policy was changed. See [audit boundaries](docs/expansion/lifecycle-audit-draft.md).
+
+## November 8 database-security gate increment
+
+- Added mandatory, fresh catalog verification after session authentication and before expansion quota, credential/state or provider work. Default-off and all existing configuration/CSRF/auth protections remain. Missing/unsafe/timed-out proof returns only the existing generic unavailable error; late success cannot resume the rejected operation.
+- The staged inspector evaluates runtime/session identity, dangerous role capabilities and memberships, ownership and effective/public/Data API privileges, pinned audit functions and trigger wiring, and journal schema/default/sequence/index protections. Unknown privileged routines are conservatively rejected. It creates no role, grant or credential.
+- Added route denial/ordering/deadline tests and disposable PostgreSQL tampering cases. Exact-head CI and final database fingerprint verification remain required. No production migration or OAuth activation was performed; operational role isolation and other Xero controls remain unverified. See [database preflight boundaries](docs/expansion/database-security-preflight.md).
+
+## November 8 revocable first-party sessions
+
+- Added persisted per-user authentication versions, bounded signed web/mobile session provenance, fresh admission checks and atomic compare-and-swap revocation. Legacy versionless sessions survive only at untouched version zero; login races may require signing in again. Requests already authorized are not cancelled.
+- Closed derived mobile OAuth bypasses using short-lived signed version/provider/state/shop-bound handoffs. Embedded QBO starts now require genuine Shopify App Bridge identity. This separate Shopify session and provider grants are not revoked by the first-party control.
+- Added an exact-origin, cookie-only, no-body POST with bounded uncertain outcomes and a user-confirmed session-security page. It suppresses repeat clicks and does not retry unknown writes. All expansion routes now reject revoked sessions before credential or provider work.
+- 909 expansion tests and eight focused session-security groups pass locally, plus real-handler mobile OAuth tests and TypeScript. Twelve independent-client PostgreSQL groups and browser interaction checks are staged for exact-head CI. The migration is draft-only; deploy schema before code and prohibit mixed legacy auth instances before exposing revocation.
+- This is a prerequisite for future MFA, not MFA enrollment, recovery or enforcement. No production settings, credentials, provider grants or legal policy changed. See [session revocation boundaries](docs/security/first-party-session-revocation.md).
