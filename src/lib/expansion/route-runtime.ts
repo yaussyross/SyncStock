@@ -15,7 +15,7 @@ export function expansionRoutes() {
     },
     findUser: async (id: string) => {
       const { db } = await import('../db');
-      return db.user.findUnique({ where: { id }, select: { id: true } });
+      return db.user.findUnique({ where: { id }, select: { id: true, authVersion: true } });
     },
     loadStores: async (tenantId: string) => {
       const [{ db }, { createPrismaConsentStore }, { createPrismaTokenStore }] = await Promise.all([

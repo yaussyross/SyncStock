@@ -24,7 +24,7 @@ function fixture(patch = {}) {
   const calls = { user: 0, stores: 0, fetch: 0, insert: 0, list: 0, bind: 0 }, pending = new Map(), database = setup();
   const consentStore = { async insert(key, value) { pending.set(key, structuredClone(value)); }, async take(key) { const value = pending.get(key); pending.delete(key); return value ?? null; } };
   const deps = {
-    env: env(), findUser: async id => { calls.user++; return { id }; },
+    env: env(), findUser: async id => { calls.user++; return { id, authVersion: 0 }; },
     loadStores: async () => { calls.stores++; return { consentStore, tokenStore: database.store }; },
     exchangeCode: (input, options) => exchangeProviderCode(input, { ...options, fetchImpl: async () => { calls.fetch++; return new Response(JSON.stringify({ access_token: 'PRIVATE-access-token', refresh_token: 'PRIVATE-refresh-token', expires_in: 1800, token_type: 'Bearer' }), { headers: { 'content-type': 'application/json' } }); } }),
     listAccounts: async binding => { calls.list++; return { ...binding, provider: 'xero', accounts: [{ accountId: 'account-1', label: 'Synthetic account', providerConnectionId: 'PRIVATE-provider-connection', accessToken: 'PRIVATE-access' }], customerReady: false }; },
@@ -293,7 +293,7 @@ for(const operation of ['start','callback','accounts','bind','status','disconnec
   const response=await f.routes[operation](req,['start','callback'].includes(operation)?'xero':ID);assert.equal(response.status,503);await redacted(response);assert.equal(checked,1);assert.equal(quota,0);assert.equal(f.calls.stores,0);assert.equal(f.calls.fetch+f.calls.bind+f.calls.list,0);
 });
 test('database check follows authentication and precedes quota and stores',async()=>{
-  const order=[];const f=fixture({findUser:async id=>{order.push('user');return{id};},verifyDatabaseSecurity:async()=>{order.push('security');return true;},rateLimit:async()=>{order.push('quota');return{allowed:true,retryAfterSeconds:0};},loadStores:async()=>{order.push('stores');throw Error('stop');}});
+  const order=[];const f=fixture({findUser:async id=>{order.push('user');return{id,authVersion:0};},verifyDatabaseSecurity:async()=>{order.push('security');return true;},rateLimit:async()=>{order.push('quota');return{allowed:true,retryAfterSeconds:0};},loadStores:async()=>{order.push('stores');throw Error('stop');}});
   assert.equal((await start(f)).status,503);assert.deepEqual(order,['user','security','quota','stores']);
 });
 test('disabled and unauthorized requests never invoke catalog inspection',async()=>{
@@ -315,3 +315,21 @@ test('database deadline also consumes late rejection without logging or retry',a
   let reject;const f=fixture({verifyDatabaseSecurity:()=>new Promise((_,r)=>{reject=r}),databaseSecurityTimeoutMs:10});assert.equal((await start(f)).status,503);reject(Error('PRIVATE-late-connection-error'));await new Promise(r=>setTimeout(r,0));assert.equal(f.calls.stores,0);assert.equal(f.calls.fetch,0);
 });
 for(const deadline of [0,2001,1.5,NaN])test('invalid database security deadline rejected '+deadline,()=>assert.throws(()=>fixture({databaseSecurityTimeoutMs:deadline}),/Invalid database security deadline/));
+
+for(const operation of ['start','callback','accounts','bind','status','disconnect'])test('revoked session blocks '+operation+' before database security quota stores or providers',async()=>{
+ let checked=0,quota=0;const f=fixture({findUser:async id=>({id,authVersion:1}),verifyDatabaseSecurity:async()=>{checked++;return true;},rateLimit:async()=>{quota++;return{allowed:true,retryAfterSeconds:0};}});
+ const req=operation==='start'?startRequest():operation==='callback'?callbackRequest('a'.repeat(43)):operation==='accounts'?accountsRequest():operation==='bind'?bindRequest():operation==='disconnect'?request(`/api/expansion/connections/${ID}/disconnect`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({version:1,mode:'local_only'})}):request(`/api/expansion/connections/${ID}`);
+ const response=await f.routes[operation](req,['start','callback'].includes(operation)?'xero':ID);assert.equal(response.status,401);await redacted(response);assert.equal(checked+quota+f.calls.stores+f.calls.fetch+f.calls.bind+f.calls.list,0);
+});
+test('matching version web session accepted; new mobile and partially typed sessions rejected',async()=>{
+ const f=fixture({findUser:async id=>({id,authVersion:3})});
+ assert.equal((await f.routes.start(startRequest({cookie:`session=${token({authVersion:3,sessionKind:'web'})}`}), 'xero')).status,200);
+ for(const payload of [{authVersion:2,sessionKind:'web'},{authVersion:4,sessionKind:'web'},{authVersion:3,sessionKind:'mobile'},{authVersion:3},{sessionKind:'web'}])assert.equal((await f.routes.start(startRequest({cookie:`session=${token(payload)}`}), 'xero')).status,401);
+});
+test('legacy session rejected when stored version unavailable or malformed',async()=>{
+ for(const authVersion of [undefined,null,-1,'0',1.5,2147483648]){const f=fixture({findUser:async id=>({id,authVersion})});assert.equal((await start(f)).status,401);assert.equal(f.calls.stores,0);}
+});
+test('revocation after consent start blocks callback without consuming state',async()=>{
+ let authVersion=0;const f=fixture({findUser:async id=>({id,authVersion})});const pending=await state(f);authVersion=1;
+ const response=await f.routes.callback(callbackRequest(pending),'xero');assert.equal(response.status,401);assert.equal(f.pending.size,1);assert.equal(f.calls.fetch,0);
+});

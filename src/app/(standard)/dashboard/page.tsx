@@ -48,6 +48,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           <a href="/dashboard/products" className="btn btn-secondary">Product mappings</a>
           <a href="/dashboard/privacy" className="btn btn-secondary">Privacy requests</a>
           <a href="/dashboard/billing" className="btn btn-secondary">Billing</a>
+          <a href="/dashboard/security" className="btn btn-secondary">Session security</a>
           <LogoutButton />
         </div>
       </div>

@@ -113,3 +113,14 @@ preflight before quota, consent/grant access or provider work. A missing/unsafe
 inspection returns the generic unavailable response. Configuration flags alone
 are insufficient. See [database-security-preflight.md](database-security-preflight.md).
 No production role or permission is changed by this implementation.
+
+### Session-revocation prerequisite (draft)
+
+The User.authVersion migration must precede the version-aware application.
+Expansion's cookie-only session check now reads the persisted version; revoked
+sessions fail before provider/state work. Legacy versionless sessions are accepted
+only at version zero and new mobile tokens cannot act as web cookies. This is
+not MFA/SSO. Do not expose the revocation control while older JWT-only instances
+remain active, and do not downgrade or restore old versions without an approved
+security-reconciliation process. See
+[session rollout and limits](../security/first-party-session-revocation.md).

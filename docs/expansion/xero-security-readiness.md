@@ -123,3 +123,19 @@ and altered/missing audit protections without granting permissions or enabling
 OAuth. See [database-security-preflight.md](database-security-preflight.md) for
 its conservative acceptance policy and point-in-time limits. Operational role
 provisioning, deployment verification and all other Xero controls remain required.
+
+## November 8 revocable-session prerequisite
+
+The latest draft adds persisted first-party authentication versions and explicit
+web/mobile session provenance. Expansion admission reads the current version,
+rejecting revoked or deleted accounts before database preflight, quota, consent,
+credential or provider operations. It closes mobile OAuth handoff bypasses and
+adds a guarded, user-confirmed sign-out control. Independently Shopify-authenticated
+sessions and provider grants remain separate and are not revoked by this control.
+
+This improves future MFA recovery/revocation readiness; it does **not** provide
+MFA, SSO, enrollment or verified strong-authentication assurance. Legacy mobile
+query-token input remains a documented pre-launch risk. Rollout needs coordinated
+schema/code deployment with no old auth instances, tested backup/rollback handling,
+and the other unresolved controls above. See
+[session revocation boundaries](../security/first-party-session-revocation.md).

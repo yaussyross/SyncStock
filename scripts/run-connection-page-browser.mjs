@@ -18,7 +18,8 @@ try {
  await writeFile(path.join(fixture,'page.tsx'),`"use client";
 import Link from "next/link";
 import {useRouter} from "next/navigation";
-export default function Fixture(){const router=useRouter();return <main><Link href="/settings/connections?connection=00000000-0000-4000-8000-000000000001">Setup link</Link><button onClick={()=>router.push("/settings/connections")}>Setup router</button></main>;}
+import RevokeSessionsPanel from "@/components/RevokeSessionsPanel";
+export default function Fixture(){const router=useRouter();return <main><Link href="/settings/connections?connection=00000000-0000-4000-8000-000000000001">Setup link</Link><button onClick={()=>router.push("/settings/connections")}>Setup router</button><RevokeSessionsPanel /></main>;}
 `);
  await new Promise((resolve,reject)=>{
   const build=spawn('npm',['run','build'],{env,stdio:'inherit'});

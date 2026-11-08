@@ -102,6 +102,14 @@ jobs:
       - name: Expansion offline safety and acceptance tests
         run: npm run test:expansion
 
+      - name: First-party session security tests
+        run: npm run test:session-security
+
+      - name: Session revocation database concurrency and isolation
+        env:
+          SYNCSTOCK_SESSION_TEST_DATABASE_URL: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public
+        run: node --import tsx scripts/session-revocation-db-smoke.ts
+
       - name: Expansion consent database concurrency and isolation
         env:
           SYNCSTOCK_EXPANSION_TEST_DATABASE_URL: postgresql://syncstock:syncstock@127.0.0.1:5432/syncstock?schema=public

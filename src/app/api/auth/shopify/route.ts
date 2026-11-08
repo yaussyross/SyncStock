@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import jwt from "jsonwebtoken";
+import { getMobileSessionIdentity } from "@/lib/session";
+import { createMobileOAuthHandoff } from "@/lib/mobile-oauth-session";
 
 const oauthCookieOptions = {
   httpOnly: true,
@@ -24,26 +25,21 @@ export async function GET(req: NextRequest) {
     }
   }
   const isMobile = req.nextUrl.searchParams.get("mobile") === "1";
-  const mobileToken = req.nextUrl.searchParams.get("token");
+  // Existing deferred mobile callers may still supply the query token. Prefer
+  // Authorization; never forward either token into the provider redirect URL.
+  const authorization = req.headers.get("authorization");
+  const mobileToken = authorization?.startsWith("Bearer ") ? authorization.slice(7) : req.nextUrl.searchParams.get("token");
 
-  if (!shop || !shop.endsWith(".myshopify.com")) {
+  if (!shop || !/^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(shop)) {
     return NextResponse.json(
       { error: "Invalid shop domain. Expected format: your-store.myshopify.com" },
       { status: 400 }
     );
   }
 
-  let mobileUserId: string | null = null;
-  if (isMobile) {
-    if (!mobileToken) {
-      return NextResponse.json({ error: "Missing mobile session token." }, { status: 401 });
-    }
-    try {
-      const payload = jwt.verify(mobileToken, process.env.NEXTAUTH_SECRET!) as { userId: string };
-      mobileUserId = payload.userId;
-    } catch {
-      return NextResponse.json({ error: "Invalid or expired mobile session." }, { status: 401 });
-    }
+  const mobileIdentity = isMobile && mobileToken ? await getMobileSessionIdentity(mobileToken) : null;
+  if (isMobile && !mobileIdentity) {
+    return NextResponse.json({ error: "Invalid or expired mobile session." }, { status: 401 });
   }
 
   const state = crypto.randomBytes(16).toString("hex");
@@ -62,8 +58,9 @@ export async function GET(req: NextRequest) {
   // browser-bound state/shop values available for callback validation.
   res.cookies.set("shopify_oauth_state", state, oauthCookieOptions);
   res.cookies.set("shopify_oauth_shop", shop, oauthCookieOptions);
-  if (mobileUserId) {
-    res.cookies.set("shopify_oauth_mobile_user", mobileUserId, oauthCookieOptions);
+  res.cookies.delete("shopify_oauth_mobile_user");
+  if (mobileIdentity) {
+    res.cookies.set("shopify_oauth_mobile_user", createMobileOAuthHandoff(mobileIdentity, "shopify", state, shop), oauthCookieOptions);
   }
   return res;
 }

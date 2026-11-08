@@ -98,5 +98,40 @@ try {
  await page.waitForURL('**/login');
  await page.waitForFunction(()=>window.__syntheticBridgeLoaded===true);
  console.log('PASS: setup exit creates ordinary document and restores ordinary resources.');
+ // Reuse the temporary fixture to test the actual session-control component;
+ // never bypass server authentication or enable this fixture in shipped source.
+ let revokeMode='success',revokeCalls=0,revokeStarted;
+ const nextRevokeStarted=()=>new Promise(resolve=>{revokeStarted=resolve;});
+ await page.route('**/api/auth/revoke-sessions',async route=>{
+   revokeCalls++;revokeStarted?.();revokeStarted=undefined;assert.equal(route.request().method(),'POST');assert.equal(route.request().postData(),null);
+   if(revokeMode==='timeout')return;
+   if(revokeMode==='success')return route.fulfill({json:{ok:true,scope:'first_party_sessions'}});
+   if(revokeMode==='signin')return route.fulfill({status:401,json:{error:'sign_in_required'}});
+   return route.fulfill({status:503,json:{error:'outcome_unknown'}});
+ });
+ await page.goto(origin+'/isolation-test-fixture');
+ const revokeButton=()=>page.getByRole('button',{name:'Sign out these sessions',exact:true});
+ const revokeConsent=()=>page.getByRole('checkbox',{name:'I want to sign out these sessions, including this browser.',exact:true});
+ assert(await revokeButton().isDisabled());assert.equal(revokeCalls,0);
+ await revokeConsent().check();await revokeConsent().uncheck();assert(await revokeButton().isDisabled());
+ await revokeConsent().check();await revokeButton().dblclick();
+ await page.getByText('Your previous password-based sessions are signed out.',{exact:true}).waitFor();assert.equal(revokeCalls,1);
+ assert.equal(await revokeButton().count(),0);
+ assert.equal(await page.getByRole('link',{name:'Sign in again',exact:true}).getAttribute('href'),'/login');
+ for(const mode of ['signin','unknown']){
+   revokeMode=mode;await page.reload();await revokeConsent().check();await revokeButton().click();
+   await page.getByText(mode==='signin'?'Your session is expired or has changed. Sign in again before managing sessions.':'We could not confirm whether the sessions were signed out.',{exact:false}).waitFor();
+   assert.equal(await revokeButton().count(),0);
+ }
+ revokeMode='timeout';await page.reload();await revokeConsent().check();const timedStart=nextRevokeStarted();await revokeButton().click();await timedStart;
+ const sent=revokeCalls;await page.clock.fastForward(11000);
+ await page.getByText('We could not confirm whether the sessions were signed out.',{exact:false}).waitFor();
+ await page.clock.fastForward(60000);assert.equal(revokeCalls,sent);assert.equal(await revokeButton().count(),0);
+ await page.reload();await revokeConsent().check();const navigatingStart=nextRevokeStarted();await revokeButton().click();await navigatingStart;
+ const navigating=revokeCalls;await page.getByRole('link',{name:'Setup link',exact:true}).click();
+ await page.waitForURL('**/settings/connections?*');await page.clock.fastForward(11000);assert.equal(revokeCalls,navigating);
+ await page.goBack();await revokeButton().waitFor();assert(await revokeButton().isDisabled());assert.equal(revokeCalls,navigating);
+ assert.deepEqual(errors,[]);
+ console.log('PASS: session revocation requires explicit confirmation, suppresses duplicate clicks, handles confirmed/stale/unknown/timeout outcomes, and does not retry after navigation.');
  await context.close();
 } finally {await browser.close();}
