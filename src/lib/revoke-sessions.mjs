@@ -6,7 +6,30 @@ const result = (status, body) => new Response(JSON.stringify(body), {
   status, headers: { ...HEADERS, 'Content-Type': 'application/json' },
 });
 const validVersion = value => Number.isInteger(value) && value >= 0 && value < 2147483647;
-export function createRevokeSessionsRoute({ env, getSession, revoke, deadlineMs = 2000 }) {
+async function hasEmptyBody(request, deadlineMs) {
+  if (request.body === null) return true;
+  let reader, timer;
+  try {
+    reader = request.body.getReader();
+    const timeout = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('Body deadline')), deadlineMs); });
+    // Next's Node adapter supplies a stream even for an ordinary zero-byte POST.
+    // Accept EOF, not just a null body. Bounded reads prevent endless empty chunks.
+    for (let reads = 0; reads < 16; reads++) {
+      if (request.signal.aborted) return false;
+      const chunk = await Promise.race([reader.read(), timeout]);
+      if (chunk.done) return true;
+      if (!(chunk.value instanceof Uint8Array) || chunk.value.byteLength !== 0) return false;
+    }
+    return false;
+  } catch { return false; }
+  finally {
+    clearTimeout(timer);
+    try { void reader?.cancel().catch(() => {}); } catch {}
+    try { reader?.releaseLock(); } catch {}
+  }
+}
+export function createRevokeSessionsRoute({ env, getSession, revoke, deadlineMs = 2000, bodyDeadlineMs = 250 }) {
+  if (!Number.isInteger(bodyDeadlineMs) || bodyDeadlineMs < 1 || bodyDeadlineMs > 250) throw new Error('Invalid body deadline');
   if (!Number.isInteger(deadlineMs) || deadlineMs < 1 || deadlineMs > 2000) throw new Error('Invalid deadline');
   return async request => {
     if (request.method !== 'POST') return result(405, { error: 'method_not_allowed' });
@@ -24,7 +47,7 @@ export function createRevokeSessionsRoute({ env, getSession, revoke, deadlineMs 
     }
     // There are no browser-selectable identity/version fields. Do not read an
     // unbounded body, even if Content-Length lies or Transfer-Encoding is used.
-    if (request.body !== null || ![null, '0'].includes(request.headers.get('content-length'))) {
+    if (![null, '0'].includes(request.headers.get('content-length')) || !await hasEmptyBody(request, bodyDeadlineMs)) {
       return result(400, { error: 'invalid_request' });
     }
     let timer, expired = false;

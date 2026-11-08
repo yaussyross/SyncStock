@@ -3,6 +3,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { createRequire } from 'node:module';
 import http from 'node:http';
 import https from 'node:https';
+import { Readable } from 'node:stream';
 
 // Exercise the real Next request-context/session/HTTP adapter with synthetic
 // persistence only. Network tripwires make an accidental provider call fail.
@@ -53,7 +54,7 @@ async function main() {
     // stores are necessary; unit storage alone is not a request context.
     const session = requireModule('../../src/lib/session.ts');
     const { POST } = requireModule('../../src/app/api/auth/revoke-sessions/route.ts');
-    const { NextRequest } = requireModule('next/server');
+    const { NextRequestAdapter } = requireModule('next/dist/server/web/spec-extension/adapters/next-request.js');
     const { signFirstPartySession } = requireModule('../../src/lib/first-party-session.mjs');
     const jwt = requireModule('jsonwebtoken');
     const work = requireModule('next/dist/server/app-render/work-async-storage.external.js').workAsyncStorage;
@@ -88,9 +89,16 @@ async function main() {
     for (const headers of rejectedSecurity) assert.equal(await run(headers, session.getCurrentFirstPartyWebSession), null);
     stage = 'http-mutation';
     const headers = { origin: 'https://review.invalid', cookie: `session=${web}` };
-    const post = () => run(headers, () => POST(new NextRequest('https://review.invalid/api/auth/revoke-sessions', {
-      method: 'POST', headers,
-    })));
+    // The real Node adapter supplies a non-null stream even for a zero-byte
+    // browser POST. A direct new NextRequest without a body misses this edge.
+    const post = () => run(headers, () => {
+      const request = NextRequestAdapter.fromNodeNextRequest({
+        url: 'https://review.invalid/api/auth/revoke-sessions',
+        method: 'POST', headers, body: Readable.from([]),
+      }, new AbortController().signal);
+      assert.notEqual(request.body, null);
+      return POST(request);
+    });
     let response = await post();
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { ok: true, scope: 'first_party_sessions' });

@@ -59,8 +59,8 @@ work. No claim of Xero security compliance is made.
 
 ## Additional acceptance checks
 
-- `npm run test:expansion`: 905 local tests, including nine expansion revocation
-  checks and 53 guarded endpoint boundary/deadline checks.
+- `npm run test:expansion`: 909 local tests, including nine expansion revocation
+  checks and 57 guarded endpoint boundary/deadline checks.
 - `npm run test:session-security`: eight core groups, the synthetic real-handler
   mobile OAuth smoke test and actual Next request-context/session/POST-wrapper
   runtime probe. Both runtime checks block outbound network operations.
@@ -74,3 +74,10 @@ work. No claim of Xero security compliance is made.
 
 Real PostgreSQL and Chromium results require the exact commit's CI; local unit
 passes do not claim either has run.
+
+
+A transport regression uses Next's actual Node request adapter, which represents
+an empty POST as a non-null stream. The endpoint accepts zero-byte EOF, rejects
+all payload bytes (including a false Content-Length), and bounds empty-stream
+reads to 16 chunks and 250 milliseconds before authentication. This additional
+check is separate from the 2-second authentication/revocation deadline.
