@@ -85,10 +85,6 @@ async function main() {
   const publicParameters=await control.$queryRawUnsafe<{count:bigint}[]>(`SELECT count(*) FROM pg_catalog.pg_parameter_acl p CROSS JOIN LATERAL pg_catalog.aclexplode(p.paracl) a WHERE a.grantee=0`);
   assert.equal(publicParameters[0].count,0n,'Use a clean disposable PostgreSQL cluster without PUBLIC parameter grants');
   await run(async(admin,runtime)=>{
-   // Temporary draft-CI bootstrap, only a known code-owned constraint digest.
-   const fingerprint=await admin.$queryRawUnsafe<{digest:string}[]>(`SELECT pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(pg_catalog.pg_get_constraintdef(c.oid),'UTF8')),'hex') AS digest FROM pg_catalog.pg_constraint c JOIN pg_catalog.pg_class r ON r.oid=c.conrelid JOIN pg_catalog.pg_namespace n ON n.oid=r.relnamespace WHERE n.nspname='public' AND r.relname='ExpansionLifecycleAudit' AND c.conname='ExpansionLifecycleAudit_shape_check'`);
-   assert.match(fingerprint[0]?.digest,/^[0-9a-f]{64}$/);
-   console.log('Known audit CHECK definition fingerprint:',fingerprint[0].digest);
    assert.equal(await createPrismaDatabaseSecurityGate(runtime)(),true);
    assert.equal(await createPrismaDatabaseSecurityGate(runtime)(),true);
    assert.equal(await createPrismaDatabaseSecurityGate(admin)(),false);
@@ -176,6 +172,13 @@ async function main() {
     `CREATE FUNCTION public.security_indirect_${suffix}() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER AS $$ BEGIN RETURN NEW; END; $$`,
     `REVOKE ALL ON FUNCTION public.security_indirect_${suffix}() FROM PUBLIC`,
    ]);
+   // Same name, validation status and referenced-column set, but every clause
+   // is a tautology. Only the canonical CHECK-definition fingerprint rejects it.
+   const checkedColumns=['entityKind','operation','tenantRef','priorTenantRef','subjectRef','priorSubjectRef','provider','environment','beforeStatus','afterStatus','beforeDisconnect','afterDisconnect'];
+   await bad([
+    'ALTER TABLE public."ExpansionLifecycleAudit" DROP CONSTRAINT "ExpansionLifecycleAudit_shape_check"',
+    `ALTER TABLE public."ExpansionLifecycleAudit" ADD CONSTRAINT "ExpansionLifecycleAudit_shape_check" CHECK (${checkedColumns.map(column=>`("${column}" IS NULL OR "${column}" IS NOT NULL)`).join(' AND ')})`,
+   ]);
    await bad('ALTER FUNCTION public.expansion_audit_grant_change() RENAME TO security_hidden_function');
    // Inert alias is created only to test ACL inspection; never invoked.
    await bad(`CREATE FUNCTION public.security_internal_${suffix}(bigint) RETURNS bigint LANGUAGE internal AS 'int8inc'`);
@@ -201,13 +204,13 @@ async function main() {
    });
   });
   const failed=createPrismaDatabaseSecurityGate({$transaction:async()=>{throw Error('SECRET_HOST_ROLE');}} as any);
-  assert.equal(await failed(),false);groups++;
+  assert.equal(await failed(),false);
  } finally {
   try {await control.$disconnect();} catch(error) {
    console.error(`Synthetic cleanup failure: case=${activeCase} stage=control_disconnect code=${safeCode(error)}`);
    process.exitCode=1;
   }
  }
- console.log(`Expansion database security: ${groups} checks passed`);
+ console.log(`Expansion database security: ${groups} real database scenarios passed; adapter-failure sanitization mock passed separately`);
 }
 main().catch(error=>{const stage=stages.has(error?.stage)?error.stage:activeStage;console.error(`Expansion database security smoke failed: case=${activeCase} stage=${stage} code=${safeCode(error)}`);process.exitCode=1;});

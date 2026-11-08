@@ -40,7 +40,8 @@ even if the latter's direct EXECUTE privilege was revoked: indirect invocation t
 can still be dangerous. The four pinned audit helper functions are the only
 reviewed exception. This does not attest arbitrary installed extensions.
 
-Known audit function bodies are fingerprinted. Expected source and journal trigger
+Known audit function bodies and the PostgreSQL-deparsed audit CHECK expression
+are fingerprinted. Expected source and journal trigger
 wiring, enablement, fixed search paths and function execution properties must
 match. Missing objects or unexpected protections fail closed. Runtime roles must
 not have source TRIGGER/TRUNCATE permissions or direct journal access. The gate

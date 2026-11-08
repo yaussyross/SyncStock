@@ -47,3 +47,12 @@ test('audit shape, defaults, sequence linkage and validated indexes are inspecte
  test('explicit parameter ACL grants to runtime, Data API roles and PUBLIC are rejected',()=>{assert.match(DATABASE_SECURITY_QUERY,/pg_catalog\.pg_parameter_acl/);assert.match(DATABASE_SECURITY_QUERY,/pg_catalog\.aclexplode\(p\.paracl\)/);assert.match(DATABASE_SECURITY_QUERY,/a\.grantee=0 OR a\.grantee IN \(SELECT oid FROM exposed\)/);});
 
 test('backend original authenticated identity must match effective role',()=>{assert.match(DATABASE_SECURITY_QUERY,/pg_catalog\.pg_stat_activity a JOIN runtime r ON r\.oid=a\.usesysid/);assert.match(DATABASE_SECURITY_QUERY,/a\.pid=pg_catalog\.pg_backend_pid\(\)\)=1/);});
+
+test('canonical PostgreSQL CHECK definition is fingerprinted without bootstrap output',()=>{
+ assert.match(DATABASE_SECURITY_QUERY,/pg_catalog\.pg_get_constraintdef\(c\.oid\)/);
+ assert.ok(DATABASE_SECURITY_QUERY.includes('01f65a0e782b2b44f8a13eabfcd62dfb32101a9221901a599aabf428a281ea0c'));
+ const smoke=readFileSync(new URL('../expansion-database-security-db-smoke.ts',import.meta.url),'utf8');
+ assert.doesNotMatch(smoke,/Known audit CHECK definition fingerprint|fingerprint\[0\]|bootstrap/);
+ assert.match(smoke,/Same name, validation status and referenced-column set/);
+ assert.match(smoke,/IS NULL OR/);
+});

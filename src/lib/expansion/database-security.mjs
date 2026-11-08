@@ -98,6 +98,7 @@ SELECT COALESCE((
    AND c.convalidated AND NOT c.condeferrable AND i.indisvalid AND i.indisready AND i.indisunique AND i.indisprimary)
  AND EXISTS (SELECT FROM pg_catalog.pg_constraint c JOIN objects o ON o.oid=c.conrelid WHERE o.relname='ExpansionLifecycleAudit'
    AND c.conname='ExpansionLifecycleAudit_shape_check' AND c.contype='c' AND c.convalidated AND NOT c.connoinherit
+   AND pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(pg_catalog.pg_get_constraintdef(c.oid),'UTF8')),'hex')='01f65a0e782b2b44f8a13eabfcd62dfb32101a9221901a599aabf428a281ea0c'
    AND ARRAY(SELECT x FROM pg_catalog.unnest(c.conkey) x ORDER BY x)=ARRAY[3,4,5,6,7,8,9,10,13,14,17,18]::smallint[])
  AND (SELECT count(*) FROM pg_catalog.pg_index i JOIN objects o ON o.oid=i.indrelid JOIN pg_catalog.pg_class c ON c.oid=i.indexrelid
    WHERE o.relname='ExpansionLifecycleAudit' AND i.indisvalid AND i.indisready AND i.indpred IS NULL AND i.indexprs IS NULL AND

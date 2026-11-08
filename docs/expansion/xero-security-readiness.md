@@ -117,7 +117,7 @@ Production remained at `7b61a906`; no new live connection was established.
 
 ## November 8 database-security gate draft
 
-A new fail-closed catalog preflight is being wired into every authenticated
+A new fail-closed catalog preflight is wired into every authenticated
 expansion route before quota/store/provider work. It rejects unsafe runtime roles
 and altered/missing audit protections without granting permissions or enabling
 OAuth. See [database-security-preflight.md](database-security-preflight.md) for
