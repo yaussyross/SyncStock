@@ -177,3 +177,10 @@ guards. This is not complete actor-attributed security monitoring or external
 immutable retention. See [lifecycle-audit-draft.md](lifecycle-audit-draft.md).
 The migration and real PostgreSQL acceptance tests need exact-head CI. Production
 and OAuth remain unchanged; zero additional customer-ready paths are claimed.
+
+## November 8 database-role preflight (draft)
+
+Expansion routes now require a fresh, bounded database-security verdict before
+quota/store/provider work. Unsafe roles or altered audit protections fail closed.
+This does not grant privileges or verify the live deployment. See
+[database-security-preflight.md](database-security-preflight.md).

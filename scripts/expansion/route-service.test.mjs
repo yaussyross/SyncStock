@@ -29,7 +29,7 @@ function fixture(patch = {}) {
     exchangeCode: (input, options) => exchangeProviderCode(input, { ...options, fetchImpl: async () => { calls.fetch++; return new Response(JSON.stringify({ access_token: 'PRIVATE-access-token', refresh_token: 'PRIVATE-refresh-token', expires_in: 1800, token_type: 'Bearer' }), { headers: { 'content-type': 'application/json' } }); } }),
     listAccounts: async binding => { calls.list++; return { ...binding, provider: 'xero', accounts: [{ accountId: 'account-1', label: 'Synthetic account', providerConnectionId: 'PRIVATE-provider-connection', accessToken: 'PRIVATE-access' }], customerReady: false }; },
     bindAccount: async binding => { calls.bind++; return summary({ ...binding, version: binding.version + 1, accountStatus: 'bound', providerAccountId: 'account-1', accessToken: 'PRIVATE-access' }); },
-    clock: () => NOW, rateLimit:async()=>({allowed:true,retryAfterSeconds:0}), ...patch,
+    clock: () => NOW, verifyDatabaseSecurity:async()=>true, rateLimit:async()=>({allowed:true,retryAfterSeconds:0}), ...patch,
   };
   return { routes: createExpansionRoutes(deps), deps, calls, pending, database };
 }
@@ -281,3 +281,37 @@ test('disconnect local result is sanitized and includes explicit outcome',async(
 test('disconnect stale version and unbound remote reject before service call',async()=>{for(const value of [{version:2,mode:'local_only'},{version:1,mode:'bound_organization'}]){const f=disconnectFixture();assert.equal((await f.routes.disconnect(disconnectRequest(value),ID)).status,409);assert.equal(f.count(),0);}});
 test('old app binding permits local-only destruction but never remote deletion',async()=>{const f=disconnectFixture({loadStores:async()=>({tokenStore:{getSummary:async()=>summary({clientId:'old-app',authorizationBinding:'b'.repeat(64),accountStatus:'bound',providerAccountId:'old-account'})}})});assert.equal((await f.routes.disconnect(disconnectRequest(),ID)).status,200);assert.equal((await f.routes.disconnect(disconnectRequest({version:1,mode:'bound_organization'}),ID)).status,404);assert.equal(f.count(),1);});
 test('revoked disconnect cannot be repeated and terminal status is readable',async()=>{const f=disconnectFixture({loadStores:async()=>({tokenStore:{getSummary:async()=>summary({status:'revoked',version:2147483647,disconnectOutcome:'outcome_unknown'})}})});const response=await f.routes.status(request(`/api/expansion/connections/${ID}`),ID);assert.equal(response.status,200);assert.equal((await response.json()).connection.disconnectOutcome,'outcome_unknown');assert.equal((await f.routes.disconnect(disconnectRequest(),ID)).status,409);assert.equal(f.count(),0);});
+
+
+for(const gate of [null,undefined,async()=>false,async()=>null,async()=>undefined,async()=>1,async()=>({ok:true}),async()=>{throw Error('PRIVATE-role-and-catalog');}])test('missing or malformed database security gate fails closed '+String(gate),async()=>{
+  let quota=0;const f=fixture({verifyDatabaseSecurity:gate,rateLimit:async()=>{quota++;return{allowed:true,retryAfterSeconds:0};}});
+  const response=await start(f);assert.equal(response.status,503);assert.equal(response.headers.get('location'),null);assert.deepEqual(JSON.parse(await redacted(response)),{error:'expansion_unavailable'});assert.equal(quota,0);assert.equal(f.calls.stores,0);assert.equal(f.calls.fetch,0);assert.equal(f.pending.size,0);
+});
+for(const operation of ['start','callback','accounts','bind','status','disconnect'])test('database security denial blocks '+operation+' before quota storage and providers',async()=>{
+  let checked=0,quota=0;const f=fixture({verifyDatabaseSecurity:async()=>{checked++;return false;},rateLimit:async()=>{quota++;return{allowed:true,retryAfterSeconds:0};}});
+  const req=operation==='start'?startRequest():operation==='callback'?callbackRequest('a'.repeat(43)):operation==='accounts'?accountsRequest():operation==='bind'?bindRequest():operation==='disconnect'?request(`/api/expansion/connections/${ID}/disconnect`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({version:1,mode:'local_only'})}):request(`/api/expansion/connections/${ID}`);
+  const response=await f.routes[operation](req,['start','callback'].includes(operation)?'xero':ID);assert.equal(response.status,503);await redacted(response);assert.equal(checked,1);assert.equal(quota,0);assert.equal(f.calls.stores,0);assert.equal(f.calls.fetch+f.calls.bind+f.calls.list,0);
+});
+test('database check follows authentication and precedes quota and stores',async()=>{
+  const order=[];const f=fixture({findUser:async id=>{order.push('user');return{id};},verifyDatabaseSecurity:async()=>{order.push('security');return true;},rateLimit:async()=>{order.push('quota');return{allowed:true,retryAfterSeconds:0};},loadStores:async()=>{order.push('stores');throw Error('stop');}});
+  assert.equal((await start(f)).status,503);assert.deepEqual(order,['user','security','quota','stores']);
+});
+test('disabled and unauthorized requests never invoke catalog inspection',async()=>{
+  let checked=0;const inspect=async()=>{checked++;throw Error('must not query');};const off=fixture({env:env({EXPANSION_OAUTH_ENABLED:'false'}),verifyDatabaseSecurity:inspect});assert.equal((await start(off)).status,404);assert.equal(off.calls.user,0);
+  const unauth=fixture({verifyDatabaseSecurity:inspect});assert.equal((await unauth.routes.start(startRequest({cookie:null}),'xero')).status,401);assert.equal(checked,0);
+});
+test('database proof is never cached across requests',async()=>{
+  let checked=0;const f=fixture({verifyDatabaseSecurity:async()=>++checked===1});assert.equal((await start(f)).status,200);assert.equal((await start(f)).status,503);assert.equal(checked,2);assert.equal(f.calls.stores,1);
+});
+test('callback cannot consume a one-time consent after database check fails',async()=>{
+  let allowed=true;const f=fixture({verifyDatabaseSecurity:async()=>allowed});const original=await state(f);assert.equal(f.pending.size,1);allowed=false;
+  const response=await f.routes.callback(callbackRequest(original),'xero');assert.equal(response.status,503);assert.equal(response.headers.get('location'),null);assert.equal(f.pending.size,1);assert.equal(f.calls.fetch,0);
+});
+test('database deadline rejects once and late success cannot resume work',async()=>{
+  let checked=0,resolve;const f=fixture({verifyDatabaseSecurity:()=>{checked++;return new Promise(r=>{resolve=r});},databaseSecurityTimeoutMs:15});
+  const started=Date.now(),response=await start(f);assert.equal(response.status,503);await redacted(response);assert.ok(Date.now()-started<1000);assert.equal(checked,1);assert.equal(f.calls.stores,0);resolve(true);await new Promise(r=>setTimeout(r,0));assert.equal(f.calls.stores,0);assert.equal(f.pending.size,0);assert.equal(f.calls.fetch,0);
+});
+test('database deadline also consumes late rejection without logging or retry',async()=>{
+  let reject;const f=fixture({verifyDatabaseSecurity:()=>new Promise((_,r)=>{reject=r}),databaseSecurityTimeoutMs:10});assert.equal((await start(f)).status,503);reject(Error('PRIVATE-late-connection-error'));await new Promise(r=>setTimeout(r,0));assert.equal(f.calls.stores,0);assert.equal(f.calls.fetch,0);
+});
+for(const deadline of [0,2001,1.5,NaN])test('invalid database security deadline rejected '+deadline,()=>assert.throws(()=>fixture({databaseSecurityTimeoutMs:deadline}),/Invalid database security deadline/));

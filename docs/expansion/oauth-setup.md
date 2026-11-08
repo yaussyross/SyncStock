@@ -105,3 +105,11 @@ This protects authenticated operations, not malformed/unauthenticated traffic, n
 
 Tests use synthetic sessions, accounts, in-memory stores and stubbed provider
 responses. No live provider calls, real credentials, or real user grants were used.
+
+## Database-role gate (November 8 draft)
+
+Every authenticated expansion route now requires a fresh bounded database-security
+preflight before quota, consent/grant access or provider work. A missing/unsafe
+inspection returns the generic unavailable response. Configuration flags alone
+are insufficient. See [database-security-preflight.md](database-security-preflight.md).
+No production role or permission is changed by this implementation.

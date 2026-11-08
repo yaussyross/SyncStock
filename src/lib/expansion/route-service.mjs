@@ -93,7 +93,8 @@ function publicAccounts(accounts) {
   });
 }
 export function createExpansionRoutes({ env, findUser, loadStores, listAccounts, bindAccount, disconnect,
-  beginConsent = beginProviderConsent, exchangeCode = exchangeProviderCode, clock = Date.now, rateLimit = /** @type {null|((action:string,tenantId:string)=>Promise<{allowed:boolean,retryAfterSeconds:number}>)} */(null), bodyReadTimeoutMs = 5000 }) {
+  beginConsent = beginProviderConsent, exchangeCode = exchangeProviderCode, clock = Date.now, verifyDatabaseSecurity = /** @type {null|(()=>Promise<boolean>)} */(null), databaseSecurityTimeoutMs = 2000, rateLimit = /** @type {null|((action:string,tenantId:string)=>Promise<{allowed:boolean,retryAfterSeconds:number}>)} */(null), bodyReadTimeoutMs = 5000 }) {
+  if (!Number.isInteger(databaseSecurityTimeoutMs) || databaseSecurityTimeoutMs < 1 || databaseSecurityTimeoutMs > 2000) throw new Error('Invalid database security deadline');
   if (!Number.isInteger(bodyReadTimeoutMs) || bodyReadTimeoutMs < 1 || bodyReadTimeoutMs > 5000) throw new Error('Invalid body deadline');
   const protect = operation => async (request, id) => {
     try { return await operation(request, id); }
@@ -103,9 +104,22 @@ export function createExpansionRoutes({ env, findUser, loadStores, listAccounts,
       return response;
     }
   };
+  async function verifyDatabase() {
+    let timer;
+    try {
+      const verified = await Promise.race([
+        Promise.resolve().then(() => verifyDatabaseSecurity()),
+        new Promise((_, reject) => { timer = setTimeout(() => reject(new ExpansionRouteError(503, 'expansion_unavailable')), databaseSecurityTimeoutMs); }),
+      ]);
+      if (verified !== true) rejectRoute(503, 'expansion_unavailable');
+    } finally { clearTimeout(timer); }
+  }
   async function access(request, config, action) {
-    if(typeof rateLimit!=='function')rejectRoute(503,'expansion_unavailable');
+    if(typeof rateLimit!=='function'||typeof verifyDatabaseSecurity!=='function')rejectRoute(503,'expansion_unavailable');
     const session = await authenticateExpansionSession(request, { secret: config.sessionSecret, findUser, clock });
+    // This fresh catalog check precedes quota writes, credential/state reads and
+    // provider work. A late result never resumes an already rejected request.
+    await verifyDatabase();
     const verdict=await rateLimit(action,session.tenantId);
     if(!verdict||typeof verdict.allowed!=='boolean'||!Number.isSafeInteger(verdict.retryAfterSeconds)||verdict.retryAfterSeconds<0||verdict.retryAfterSeconds>3600||(!verdict.allowed&&verdict.retryAfterSeconds<1))rejectRoute(503,'expansion_unavailable');
     if(!verdict.allowed)throw Object.assign(new ExpansionRouteError(429,'try_again_later'),{retryAfterSeconds:verdict.retryAfterSeconds});

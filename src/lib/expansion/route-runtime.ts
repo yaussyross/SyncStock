@@ -5,6 +5,10 @@ import { createExpansionRoutes } from './route-service.mjs';
 export function expansionRoutes() {
   return createExpansionRoutes({
     env: process.env,
+    verifyDatabaseSecurity: async () => {
+      const [{db},{createPrismaDatabaseSecurityGate}]=await Promise.all([import('../db'),import('./prisma-database-security')]);
+      return createPrismaDatabaseSecurityGate(db)();
+    },
     rateLimit: async (action: string,tenantId: string) => {
       const [{db},{createPrismaRouteLimiter}]=await Promise.all([import('../db'),import('./prisma-route-limiter')]);
       return createPrismaRouteLimiter(db)(action,tenantId);
